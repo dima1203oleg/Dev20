@@ -605,7 +605,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
           {/* Kyiv Node */}
           <div 
             onClick={() => {
-              const reg = regions.find(r => r.id === 'kyiv_obl' || r.id === 'kyiv_city');
+              const reg = (regions || INITIAL_REGIONS).find(r => r.id === 'kyiv_obl' || r.id === 'kyiv_city');
               if (reg && onSelectRegion) onSelectRegion(reg);
             }}
             className="absolute top-[32%] left-[47%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
@@ -624,7 +624,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
           {/* Kharkiv Node */}
           <div 
             onClick={() => {
-              const reg = regions.find(r => r.id === 'kharkiv');
+              const reg = (regions || INITIAL_REGIONS).find(r => r.id === 'kharkiv');
               if (reg && onSelectRegion) onSelectRegion(reg);
             }}
             className="absolute top-[36%] left-[73%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
@@ -642,7 +642,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
           {/* Dnipro Node */}
           <div 
             onClick={() => {
-              const reg = regions.find(r => r.id === 'dnipro');
+              const reg = (regions || INITIAL_REGIONS).find(r => r.id === 'dnipro');
               if (reg && onSelectRegion) onSelectRegion(reg);
             }}
             className="absolute top-[55%] left-[67%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
@@ -661,7 +661,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
           {/* Odesa Node */}
           <div 
             onClick={() => {
-              const reg = regions.find(r => r.id === 'odesa');
+              const reg = (regions || INITIAL_REGIONS).find(r => r.id === 'odesa');
               if (reg && onSelectRegion) onSelectRegion(reg);
             }}
             className="absolute top-[68%] left-[44%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"

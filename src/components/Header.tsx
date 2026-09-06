@@ -51,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
     }`}>
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
         
-        {/* Left: Brand Logo & Slogan ("НА ВАШОМУ БОЦІ") */}
+        {/* Left: Brand Logo & Slogan ("НА КРОК ПОПЕРЕДУ") */}
         <div 
           onClick={() => handleNavClick('HOME')}
           className="flex items-center gap-3 cursor-pointer select-none group flex-shrink-0"
@@ -95,16 +95,16 @@ export const Header: React.FC<HeaderProps> = ({
             <div className={`text-[9px] font-bold tracking-[0.18em] uppercase font-sans -mt-0.5 ${
               isDark ? 'text-slate-400' : 'text-slate-400'
             }`}>
-              НА ВАШОМУ БОЦІ
+              НА КРОК ПОПЕРЕДУ
             </div>
           </div>
         </div>
 
-        {/* Center: Desktop Navigation Tabs (Головна, Мережа, Фінанси, Профіль) */}
-        <nav className="hidden md:flex items-center gap-8 lg:gap-10">
+        {/* Center: Global Navigation Links (Головна, Можливості, Як це працює, Партнерська програма, Тарифи, Про нас) */}
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
           <button
             onClick={() => handleNavClick('HOME')}
-            className={`relative py-5 text-sm font-semibold transition-colors cursor-pointer ${
+            className={`relative py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
               activeSection === 'HOME'
                 ? (isDark ? 'text-white font-bold' : 'text-blue-600 font-bold')
                 : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
@@ -117,14 +117,32 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           <button
+            onClick={() => handleNavClick('HOME')}
+            className={`py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
+              isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>Можливості</span>
+          </button>
+
+          <button
+            onClick={() => handleNavClick('HOME')}
+            className={`py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
+              isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>Як це працює</span>
+          </button>
+
+          <button
             onClick={() => handleNavClick('NETWORK')}
-            className={`relative py-5 text-sm font-semibold transition-colors cursor-pointer ${
+            className={`relative py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
               activeSection === 'NETWORK'
                 ? (isDark ? 'text-white font-bold' : 'text-blue-600 font-bold')
                 : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
             }`}
           >
-            <span>Мережа</span>
+            <span>Партнерська програма</span>
             {activeSection === 'NETWORK' && (
               <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
             )}
@@ -132,13 +150,13 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={() => handleNavClick('FINANCE')}
-            className={`relative py-5 text-sm font-semibold transition-colors cursor-pointer ${
+            className={`relative py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
               activeSection === 'FINANCE'
                 ? (isDark ? 'text-white font-bold' : 'text-blue-600 font-bold')
                 : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
             }`}
           >
-            <span>Фінанси</span>
+            <span>Тарифи</span>
             {activeSection === 'FINANCE' && (
               <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
             )}
@@ -146,13 +164,13 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={() => handleNavClick('PROFILE')}
-            className={`relative py-5 text-sm font-semibold transition-colors cursor-pointer ${
+            className={`relative py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
               activeSection === 'PROFILE'
                 ? (isDark ? 'text-white font-bold' : 'text-blue-600 font-bold')
                 : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
             }`}
           >
-            <span>Профіль</span>
+            <span>Про нас</span>
             {activeSection === 'PROFILE' && (
               <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
             )}
