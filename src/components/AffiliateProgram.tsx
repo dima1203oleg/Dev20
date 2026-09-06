@@ -1,1459 +1,1033 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Users, 
+  UserPlus, 
   TrendingUp, 
-  ShieldCheck, 
-  DollarSign, 
-  Sparkles, 
-  Lock, 
-  Unlock, 
-  ArrowRight, 
-  CheckCircle2, 
-  Copy, 
+  Percent, 
+  Wallet, 
   Share2, 
-  Award, 
-  Layers, 
-  HelpCircle, 
-  Zap, 
-  Coins, 
+  QrCode, 
+  Copy, 
+  ExternalLink, 
+  RotateCw, 
+  Maximize2, 
+  Crown, 
+  ArrowRight, 
   ChevronRight, 
-  ChevronDown,
+  Check, 
+  Sparkles,
   Info,
-  Sliders,
-  Check,
-  Percent,
-  Network,
-  QrCode,
-  Download,
-  Send,
-  CreditCard,
-  Building2,
-  Wallet,
-  ArrowUpRight,
-  Filter,
-  Search,
-  ExternalLink,
-  Code2
+  Layers,
+  List,
+  BarChart2,
+  PieChart,
+  ShieldCheck,
+  Award
 } from 'lucide-react';
-import { 
-  AFFILIATE_RANKS, 
-  getRankByL1Count, 
-  getNextRank, 
-  calculateAffiliateEarnings, 
-  SAMPLE_SIMULATED_TRANSACTIONS, 
-  SAMPLE_PARTNER_TREE,
-  SAMPLE_PAYOUT_HISTORY,
-  AFFILIATE_PROMO_TEMPLATES,
-  FAQ_AFFILIATE 
-} from '../data/affiliateData';
-import { 
-  AffiliateRankId, 
-  AffiliatePartnerNode, 
-  AffiliatePayoutRequest,
-  AffiliatePromoTemplate 
-} from '../types';
-import { Financial3DCardCarousel } from './finance/Financial3DCardCarousel';
-import { GeminiSparkle } from './common/GeminiSparkle';
+import { playWebAudioSound } from '../utils/sirenAudio';
 
 interface AffiliateProgramProps {
   onOpenMap?: () => void;
   onOpenSimulator?: () => void;
+  theme?: 'light' | 'dark';
 }
 
-type AffiliateTab = 'CALCULATOR' | 'NETWORK' | 'PROMO' | 'PAYOUTS' | 'MATRIX';
+interface PartnerNode {
+  id: string;
+  name: string;
+  level: 'ME' | 'L1' | 'L2';
+  avatar: string;
+  earnings: string;
+  peopleCount: number;
+  status: 'ACTIVE' | 'NEW' | 'TOP';
+  x: number;
+  y: number;
+  parentId?: string;
+}
 
 export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   onOpenMap,
-  onOpenSimulator
+  onOpenSimulator,
+  theme = 'light',
 }) => {
-  // Navigation tab
-  const [activeTab, setActiveTab] = useState<AffiliateTab>('CALCULATOR');
+  const [activeTab, setActiveTab] = useState<'VISUAL' | 'TREE' | 'LIST' | 'ANALYTICS'>('VISUAL');
+  const [levelFilter, setLevelFilter] = useState<'ALL' | 'L1' | 'L2'>('ALL');
+  const [selectedPartner, setSelectedPartner] = useState<PartnerNode | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [isRotating, setIsRotating] = useState(true);
 
-  // Calculator inputs
-  const [l1Count, setL1Count] = useState<number>(15); // Default to Bronze tier to demonstrate L1 and L2
-  const [avgL2PerL1, setAvgL2PerL1] = useState<number>(3); // 3 referrals on average per L1
-  const [subscriptionPrice, setSubscriptionPrice] = useState<number>(200); // 200 UAH (~$5)
-  const [currency, setCurrency] = useState<'UAH' | 'USD'>('UAH');
-  const [copiedLink, setCopiedLink] = useState<boolean>(false);
-  const [copiedPromoId, setCopiedPromoId] = useState<string | null>(null);
-  
-  // Custom Transaction Simulator
-  const [simTxAmount, setSimTxAmount] = useState<number>(200);
+  const isDark = theme === 'dark';
 
-  // Network Search & Filters
-  const [networkSearch, setNetworkSearch] = useState<string>('');
-  const [networkLevelFilter, setNetworkLevelFilter] = useState<'ALL' | 'L1' | 'L2'>('ALL');
-  const [expandedL1Ids, setExpandedL1Ids] = useState<Record<string, boolean>>({
-    'USR-L1-01': true,
-    'USR-L1-02': true
-  });
+  const partnerNodes: PartnerNode[] = [
+    { id: 'me', name: 'Олександр', level: 'ME', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', earnings: '₴ 12 460', peopleCount: 2847, status: 'TOP', x: 50, y: 50 },
+    
+    // L1 inner ring
+    { id: 'l1-1', name: 'Марія К.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80', earnings: '₴ 4 230', peopleCount: 284, status: 'TOP', x: 50, y: 22, parentId: 'me' },
+    { id: 'l1-2', name: 'Ігор С.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80', earnings: '₴ 3 950', peopleCount: 192, status: 'TOP', x: 74, y: 34, parentId: 'me' },
+    { id: 'l1-3', name: 'Анна В.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80', earnings: '₴ 3 120', peopleCount: 176, status: 'ACTIVE', x: 70, y: 68, parentId: 'me' },
+    { id: 'l1-4', name: 'Дмитро Л.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80', earnings: '₴ 2 460', peopleCount: 148, status: 'ACTIVE', x: 30, y: 68, parentId: 'me' },
+    { id: 'l1-5', name: 'Олена П.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80', earnings: '₴ 2 180', peopleCount: 132, status: 'ACTIVE', x: 26, y: 34, parentId: 'me' },
+    { id: 'l1-6', name: 'Сергій Т.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80', earnings: '₴ 1 640', peopleCount: 94, status: 'NEW', x: 50, y: 78, parentId: 'me' },
 
-  // Promo Link Builder
-  const [customRefSlug, setCustomRefSlug] = useState<string>('partner_pro');
-  const [utmSource, setUtmSource] = useState<string>('telegram');
+    // L2 outer constellation
+    { id: 'l2-1', name: 'Вікторія', level: 'L2', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&auto=format&fit=crop&q=80', earnings: '₴ 890', peopleCount: 42, status: 'ACTIVE', x: 50, y: 8, parentId: 'l1-1' },
+    { id: 'l2-2', name: 'Андрій', level: 'L2', avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=120&auto=format&fit=crop&q=80', earnings: '₴ 720', peopleCount: 38, status: 'NEW', x: 68, y: 12, parentId: 'l1-1' },
+    { id: 'l2-3', name: 'Катерина', level: 'L2', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', earnings: '₴ 640', peopleCount: 29, status: 'ACTIVE', x: 88, y: 24, parentId: 'l1-2' },
+    { id: 'l2-4', name: 'Михайло', level: 'L2', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80', earnings: '₴ 580', peopleCount: 24, status: 'ACTIVE', x: 92, y: 48, parentId: 'l1-2' },
+    { id: 'l2-5', name: 'Тетяна', level: 'L2', avatar: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=120&auto=format&fit=crop&q=80', earnings: '₴ 510', peopleCount: 21, status: 'ACTIVE', x: 85, y: 78, parentId: 'l1-3' },
+    { id: 'l2-6', name: 'Богдан', level: 'L2', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80', earnings: '₴ 490', peopleCount: 18, status: 'NEW', x: 50, y: 92, parentId: 'l1-6' },
+    { id: 'l2-7', name: 'Юлія', level: 'L2', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80', earnings: '₴ 460', peopleCount: 17, status: 'ACTIVE', x: 15, y: 78, parentId: 'l1-4' },
+    { id: 'l2-8', name: 'Павло', level: 'L2', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80', earnings: '₴ 420', peopleCount: 15, status: 'ACTIVE', x: 8, y: 48, parentId: 'l1-5' },
+    { id: 'l2-9', name: 'Софія', level: 'L2', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80', earnings: '₴ 380', peopleCount: 12, status: 'ACTIVE', x: 12, y: 24, parentId: 'l1-5' },
+    { id: 'l2-10', name: 'Ярослав', level: 'L2', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80', earnings: '₴ 310', peopleCount: 9, status: 'NEW', x: 32, y: 12, parentId: 'l1-1' },
+  ];
 
-  // Payout Request Form State
-  const [payoutAmount, setPayoutAmount] = useState<string>('2000');
-  const [payoutMethod, setPayoutMethod] = useState<'MONOBANK' | 'PRIVATBANK' | 'IBAN' | 'USDT_TRC20'>('MONOBANK');
-  const [payoutAccount, setPayoutAccount] = useState<string>('');
-  const [payoutSuccessMessage, setPayoutSuccessMessage] = useState<string | null>(null);
-
-  // Derived calculations
-  const calc = useMemo(() => {
-    return calculateAffiliateEarnings(l1Count, avgL2PerL1, subscriptionPrice);
-  }, [l1Count, avgL2PerL1, subscriptionPrice]);
-
-  const currencySymbol = currency === 'UAH' ? '₴' : '$';
-
-  const fullCustomRefUrl = useMemo(() => {
-    const base = `https://sirenua.com/ref/${customRefSlug.trim() || 'partner'}`;
-    return utmSource ? `${base}?utm_source=${utmSource}` : base;
-  }, [customRefSlug, utmSource]);
-
-  const handleCopyLink = (textToCopy: string, isPromoId?: string) => {
-    navigator.clipboard.writeText(textToCopy);
-    if (isPromoId) {
-      setCopiedPromoId(isPromoId);
-      setTimeout(() => setCopiedPromoId(null), 2500);
-    } else {
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2500);
-    }
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText('https://siren.ua/r/OLEKSANDR25');
+    setCopiedLink(true);
+    playWebAudioSound('click');
+    setTimeout(() => setCopiedLink(false), 2000);
   };
-
-  const toggleL1Expand = (id: string) => {
-    setExpandedL1Ids(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleRequestPayoutSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const amountNum = parseFloat(payoutAmount);
-    if (isNaN(amountNum) || amountNum < 500) {
-      alert('Мінімальна сума виведення коштів становить 500 ₴');
-      return;
-    }
-    if (!payoutAccount.trim()) {
-      alert('Будь ласка, вкажіть реквізити або номер картки/гаманця');
-      return;
-    }
-
-    setPayoutSuccessMessage(`Заявку на виплату ${amountNum} ₴ через ${payoutMethod} успішно створено! Обробка займає до 24 годин.`);
-    setTimeout(() => setPayoutSuccessMessage(null), 6000);
-  };
-
-  // Filtered partners
-  const filteredPartners = useMemo(() => {
-    return SAMPLE_PARTNER_TREE.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(networkSearch.toLowerCase()) || 
-                            p.id.toLowerCase().includes(networkSearch.toLowerCase());
-      const matchesLevel = networkLevelFilter === 'ALL' || p.level === networkLevelFilter;
-      return matchesSearch && matchesLevel;
-    });
-  }, [networkSearch, networkLevelFilter]);
-
-  // Grouped L1 and L2 for tree view
-  const l1Partners = useMemo(() => {
-    return SAMPLE_PARTNER_TREE.filter(p => p.level === 'L1');
-  }, []);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-16">
+    <div className="space-y-5 animate-in fade-in duration-200">
       
-      {/* Top Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-slate-950/60 backdrop-blur-2xl border border-white/10 p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* 1. Top Hero Section: "Моя мережа — моя сила" + 6 Quick Metric Cards (1:1 with Screenshot 1) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
         
-        <div className="relative z-10 max-w-5xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-blue-300 text-xs font-mono font-bold tracking-wider backdrop-blur-md">
-            <GeminiSparkle className="w-3.5 h-3.5 text-blue-400" />
-            <span>ПАРТНЕРСЬКА ПРОГРАМА SIRENUA PRO · ДВОРІВНЕВА СИСТЕМА</span>
+        {/* Left Headline & Action Pill */}
+        <div className="lg:col-span-4 space-y-3">
+          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
+            isDark ? 'bg-slate-900 border border-slate-800 text-slate-300' : 'bg-blue-50 border border-blue-100 text-blue-700'
+          }`}>
+            <span>🇺🇦</span>
+            <span>Разом будуємо безпечну Україну</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            Оновлена дворівнева модель винагород <span className="gemini-gradient-text">L1 & L2</span>
+          <h1 className={`text-3xl sm:text-4xl font-black tracking-tight leading-tight ${
+            isDark ? 'text-white' : 'text-slate-900'
+          }`}>
+            Моя мережа — <br />
+            <span className="text-blue-600">моя сила</span>
           </h1>
 
-          <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-            Прозора, математично збалансована партнерська програма. Отримуйте винагороду з особистих платних передплат (L1), 
-            а від 10 активних L1 переходьте у <strong className="text-white font-bold">Bronze</strong> та відкривайте другий рівень (L2) 
-            для зростання вашого пасивного доходу.
+          <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className="font-bold text-slate-700 dark:text-slate-300">Люди. Довіра. Результат.</span><br />
+            Розширюй свою мережу, підтримуй партнерів, відстежуй активність і разом робимо Україну безпечнішою.
           </p>
 
-          {/* Key Business Rules Pill Matrix */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
-            <div className="bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all rounded-2xl p-3.5 flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-blue-500/15 text-blue-400 mt-0.5 shrink-0 border border-blue-500/20">
-                <Users className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-bold text-white text-xs">Ранг = тільки L1</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  Ранг визначається виключно кількістю власних активних платних L1. L2 не підвищує ранг.
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all rounded-2xl p-3.5 flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-purple-500/15 text-purple-400 mt-0.5 shrink-0 border border-purple-500/20">
-                <Lock className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-bold text-white text-xs">Розблокування L2</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  Starter має 0% з L2. Починаючи з Bronze (10+ L1) автоматично відкривається 10% L2.
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all rounded-2xl p-3.5 flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 mt-0.5 shrink-0 border border-emerald-500/20">
-                <Percent className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-bold text-white text-xs">50% Max Cap</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  Максимальна сумарна виплата з 1 транзакції: 25% L1 + 25% L2 на рівні Platinum.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3D Financial Carousel: БАЛАНС → ЗАРОБЛЕНО → ДОСТУПНО ДО ВИВОДУ */}
-      <div className="w-full space-y-2">
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
-              <GeminiSparkle className="w-3.5 h-3.5 text-blue-400" />
-              3D ФІНАНСОВИЙ ОГЛЯД ПАРТНЕРА
-            </span>
-            <span className="text-[10px] font-mono text-slate-500 hidden sm:inline">
-              · 3 просторові картки: Баланс, Заробіток, Вивід
-            </span>
-          </div>
-          <button
-            onClick={() => setActiveTab('PAYOUTS')}
-            className="text-xs font-mono text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
-          >
-            Кабінет виплат →
-          </button>
-        </div>
-
-        <Financial3DCardCarousel
-          onOpenPayout={() => setActiveTab('PAYOUTS')}
-        />
-      </div>
-
-      {/* Navigation Sub-Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
-        {[
-          { id: 'CALCULATOR' as AffiliateTab, label: 'Калькулятор та Ранги', icon: Sliders },
-          { id: 'NETWORK' as AffiliateTab, label: 'Дерево Мережі (L1/L2)', icon: Network },
-          { id: 'PROMO' as AffiliateTab, label: 'Промо-Матеріали та QR', icon: QrCode },
-          { id: 'PAYOUTS' as AffiliateTab, label: 'Кабінет Виплат', icon: Wallet },
-          { id: 'MATRIX' as AffiliateTab, label: 'Порівняльна Таблиця', icon: Layers },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
-                isActive
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-[0_0_15px_rgba(99,102,241,0.35)]'
-                  : 'bg-white/5 text-slate-400 border-white/10 hover:text-white hover:bg-white/10'
+              onClick={() => {
+                setShowInviteModal(true);
+                playWebAudioSound('click');
+              }}
+              className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <span>Запросити партнерів</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={handleCopyLink}
+              className={`px-3.5 py-2.5 rounded-2xl font-semibold text-xs border shadow-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                isDark 
+                  ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800' 
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
               }`}
             >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
+              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedLink ? 'Скопійовано' : 'Скопіювати посилання'}</span>
             </button>
-          );
-        })}
+
+            <button
+              onClick={() => {
+                setShowQRModal(true);
+                playWebAudioSound('click');
+              }}
+              className={`p-2.5 rounded-2xl font-semibold text-xs border shadow-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                isDark 
+                  ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800' 
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+              title="Показати QR-код"
+            >
+              <QrCode className="w-4 h-4 text-blue-600" />
+              <span>Показати QR</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Right: 6 Metric Cards in 3x2 Grid (1:1 with Screenshot 1) */}
+        <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
+          
+          {/* Card 1: Усього в мережі */}
+          <div className={`p-4 rounded-2xl border transition-all ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                isDark ? 'bg-blue-950/80 text-blue-400' : 'bg-blue-50 text-blue-600'
+              }`}>
+                <Users className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                <TrendingUp className="w-2.5 h-2.5" /> +12%
+              </span>
+            </div>
+            <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Усього в мережі</div>
+            <div className="text-2xl font-black mt-0.5">2 847</div>
+            <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Всі рівні</div>
+          </div>
+
+          {/* Card 2: Активні L1 */}
+          <div className={`p-4 rounded-2xl border transition-all ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                isDark ? 'bg-cyan-950/80 text-cyan-400' : 'bg-cyan-50 text-cyan-600'
+              }`}>
+                <UserPlus className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                <TrendingUp className="w-2.5 h-2.5" /> +8%
+              </span>
+            </div>
+            <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Активні L1</div>
+            <div className="text-2xl font-black mt-0.5">247</div>
+            <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Перший рівень</div>
+          </div>
+
+          {/* Card 3: Активні L2 */}
+          <div className={`p-4 rounded-2xl border transition-all ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                isDark ? 'bg-purple-950/80 text-purple-400' : 'bg-purple-50 text-purple-600'
+              }`}>
+                <Layers className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                <TrendingUp className="w-2.5 h-2.5" /> +15%
+              </span>
+            </div>
+            <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Активні L2</div>
+            <div className="text-2xl font-black mt-0.5">2 600</div>
+            <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Другий рівень</div>
+          </div>
+
+          {/* Card 4: Нові за 30 днів */}
+          <div className={`p-4 rounded-2xl border transition-all ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                isDark ? 'bg-emerald-950/80 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+              }`}>
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                <TrendingUp className="w-2.5 h-2.5" /> +42%
+              </span>
+            </div>
+            <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Нові за 30 днів</div>
+            <div className="text-2xl font-black mt-0.5">84</div>
+            <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Приєдналися</div>
+          </div>
+
+          {/* Card 5: Конверсія в оплату */}
+          <div className={`p-4 rounded-2xl border transition-all ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                isDark ? 'bg-blue-950/80 text-blue-400' : 'bg-blue-50 text-blue-600'
+              }`}>
+                <Percent className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                <TrendingUp className="w-2.5 h-2.5" /> +2.4%
+              </span>
+            </div>
+            <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Конверсія в оплату</div>
+            <div className="text-2xl font-black mt-0.5">13.8%</div>
+            <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Від активних</div>
+          </div>
+
+          {/* Card 6: Мережевий дохід */}
+          <div className={`p-4 rounded-2xl border transition-all ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                isDark ? 'bg-indigo-950/80 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
+              }`}>
+                <Wallet className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                <TrendingUp className="w-2.5 h-2.5" /> +28%
+              </span>
+            </div>
+            <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Мережевий дохід</div>
+            <div className="text-2xl font-black mt-0.5">₴ 12 460</div>
+            <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>За 30 днів</div>
+          </div>
+
+        </div>
+
       </div>
 
-      {/* TAB 1: CALCULATOR & TIERS */}
-      {activeTab === 'CALCULATOR' && (
-        <div className="space-y-8 animate-in fade-in duration-200">
+      {/* 2. Middle 3-Column Grid: Traffic Sources (Left) | 3D Node Constellation (Center) | Rank & Top Partners (Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        
+        {/* Left Column (3 cols): Джерела трафіку & Динаміка зростання */}
+        <div className="lg:col-span-3 space-y-4 flex flex-col justify-between">
           
-          {/* Interactive Tier Matrix Table / Cards */}
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Card: Джерела трафіку */}
+          <div className={`p-5 rounded-3xl border ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold">Джерела трафіку</h3>
+              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline">
+                <span>Всі</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* Donut Chart with Center Total 2 847 */}
+            <div className="flex items-center justify-center my-3 relative">
+              <svg viewBox="0 0 100 100" className="w-32 h-32 transform -rotate-90">
+                {/* TikTok 38% */}
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#2563EB" strokeWidth="12" strokeDasharray="90.7 238.7" strokeDashoffset="0" />
+                {/* Instagram 24% */}
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#8B5CF6" strokeWidth="12" strokeDasharray="57.3 238.7" strokeDashoffset="-90.7" />
+                {/* YouTube 16% */}
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#EF4444" strokeWidth="12" strokeDasharray="38.2 238.7" strokeDashoffset="-148" />
+                {/* Telegram 12% */}
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#38BDF8" strokeWidth="12" strokeDasharray="28.6 238.7" strokeDashoffset="-186.2" />
+                {/* Others 10% */}
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#CBD5E1" strokeWidth="12" strokeDasharray="23.9 238.7" strokeDashoffset="-214.8" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                <span className="text-base font-black leading-tight">2 847</span>
+                <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Всього</span>
+              </div>
+            </div>
+
+            {/* Legend breakdown */}
+            <div className="space-y-1.5 text-xs pt-1">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                  <span>TikTok</span>
+                </span>
+                <span className="font-bold">38%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                  <span>Instagram</span>
+                </span>
+                <span className="font-bold">24%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                  <span>YouTube</span>
+                </span>
+                <span className="font-bold">16%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
+                  <span>Telegram</span>
+                </span>
+                <span className="font-bold">12%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                  <span>Інші</span>
+                </span>
+                <span className="font-bold">10%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card: Динаміка зростання */}
+          <div className={`p-5 rounded-3xl border ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
               <div>
-                <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-amber-400" />
-                  <span>Таблиця рангів та умов винагород</span>
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Натисніть на картку будь-якого рангу для швидкого перегляду умов або тесту в калькуляторі
-                </p>
+                <h3 className="text-sm font-bold">Динаміка зростання</h3>
+                <span className="text-xs font-bold text-emerald-500">+490%</span>
               </div>
-
-              <div className="text-xs font-mono text-cyan-400 bg-cyan-950/40 px-3 py-1 rounded-full border border-cyan-800/60">
-                Поточний розрахунковий ранг: <strong className="text-cyan-200 uppercase">{calc.currentRank.name}</strong>
-              </div>
+              <span className={`text-[11px] px-2 py-0.5 rounded-lg border ${
+                isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
+              }`}>
+                За 6 місяців ▾
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-              {AFFILIATE_RANKS.map((tier) => {
-                const isCurrentActive = calc.currentRank.id === tier.id;
-                const isStarter = tier.id === 'STARTER';
-
-                return (
-                  <div
-                    key={tier.id}
-                    onClick={() => {
-                      setL1Count(tier.minL1);
-                    }}
-                    className={`relative rounded-2xl p-4 transition-all cursor-pointer border flex flex-col justify-between ${
-                      isCurrentActive
-                        ? 'bg-slate-900 border-amber-400 ring-2 ring-amber-500/30 shadow-xl shadow-amber-950/50'
-                        : 'bg-slate-950/80 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/60'
-                    }`}
-                  >
-                    {/* Active Badge */}
-                    {isCurrentActive && (
-                      <div className="absolute -top-2.5 right-3 bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full shadow-md">
-                        ВАШ РАНГ
-                      </div>
-                    )}
-
-                    <div>
-                      {/* Rank Header */}
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-black text-sm text-slate-100">{tier.name}</span>
-                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${tier.badgeColor}`}>
-                          {tier.minL1}{tier.maxL1 ? `–${tier.maxL1}` : '+'} L1
-                        </span>
-                      </div>
-
-                      <div className="text-[11px] text-slate-400 mb-4 line-clamp-2">
-                        {tier.description}
-                      </div>
-
-                      {/* Percentages Box */}
-                      <div className="space-y-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800/80 font-mono text-xs mb-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-slate-400 text-[11px]">Рівень 1 (L1):</span>
-                          <span className="font-black text-amber-300">{tier.l1Percent}%</span>
-                        </div>
-
-                        <div className="flex justify-between items-center pt-1.5 border-t border-slate-800">
-                          <span className="text-slate-400 text-[11px]">Рівень 2 (L2):</span>
-                          {isStarter ? (
-                            <span className="font-bold text-slate-500 flex items-center gap-1">
-                              <Lock className="w-3 h-3 text-slate-600" />
-                              0%
-                            </span>
-                          ) : (
-                            <span className="font-black text-emerald-400 flex items-center gap-1">
-                              <Unlock className="w-3 h-3 text-emerald-400" />
-                              {tier.l2Percent}%
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Summary of Total Potential */}
-                      <div className="text-[11px] text-slate-400 flex items-center justify-between mb-3 px-1">
-                        <span>Разом L1+L2:</span>
-                        <span className="font-bold text-slate-200">
-                          {tier.l1Percent + tier.l2Percent}% {tier.id === 'PLATINUM' ? '(Max)' : ''}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Requirements / Status Footer */}
-                    <div className="pt-2 border-t border-slate-800/80 text-[11px]">
-                      {isStarter ? (
-                        <span className="text-slate-400">Тільки особисті запрошення</span>
-                      ) : (
-                        <span className="text-amber-400/90 font-medium">L2 розблоковано</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Interactive Live Earnings Calculator */}
-          <div className="bg-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  <Sliders className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-slate-100">
-                    Інтерактивний калькулятор партнерського прибутку
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Змінюйте параметри та спостерігайте за автоматичною зміною рангу та нарахувань
-                  </p>
-                </div>
-              </div>
-
-              {/* Currency Toggle */}
-              <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-mono">
-                <button
-                  onClick={() => {
-                    setCurrency('UAH');
-                    setSubscriptionPrice(200);
-                  }}
-                  className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                    currency === 'UAH' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  ₴ Гривня (200 грн)
-                </button>
-                <button
-                  onClick={() => {
-                    setCurrency('USD');
-                    setSubscriptionPrice(5);
-                  }}
-                  className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                    currency === 'USD' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  $ Долар ($5)
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              {/* Controls & Sliders (7 Cols on LG) */}
-              <div className="lg:col-span-7 space-y-6">
-                
-                {/* Slider 1: L1 Count */}
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                        <Users className="w-4 h-4 text-amber-400" />
-                        <span>Кількість ваших активних платних L1</span>
-                      </label>
-                      <span className="text-[11px] text-slate-400 block mt-0.5">
-                        Визначає ваш ранг та відсоток комісії
-                      </span>
-                    </div>
-                    <span className="font-mono text-lg font-black text-amber-300 bg-amber-950/60 px-3 py-1 rounded-xl border border-amber-800">
-                      {l1Count} L1
-                    </span>
-                  </div>
-
-                  <input
-                    type="range"
-                    min={1}
-                    max={250}
-                    value={l1Count}
-                    onChange={(e) => setL1Count(parseInt(e.target.value))}
-                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+            {/* Growth Curve Chart */}
+            <div className="h-28 flex items-end justify-between gap-1 pt-3">
+              {[
+                { month: 'Бер', val: 20 },
+                { month: 'Кві', val: 35 },
+                { month: 'Тра', val: 45 },
+                { month: 'Чер', val: 60 },
+                { month: 'Лип', val: 80 },
+                { month: 'Сер', val: 100 },
+              ].map((item, idx) => (
+                <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div 
+                    className="w-full bg-blue-500 rounded-t-md transition-all hover:bg-blue-600"
+                    style={{ height: `${item.val}%`, opacity: 0.3 + (idx * 0.14) }}
                   />
-
-                  {/* Quick Preset Buttons */}
-                  <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                    <span className="text-slate-500 text-[11px]">Швидкі пресети:</span>
-                    {[
-                      { label: 'Starter (5)', val: 5 },
-                      { label: 'Bronze (15)', val: 15 },
-                      { label: 'Silver (45)', val: 45 },
-                      { label: 'Gold (100)', val: 100 },
-                      { label: 'Platinum (210)', val: 210 },
-                    ].map((preset) => (
-                      <button
-                        key={preset.val}
-                        onClick={() => setL1Count(preset.val)}
-                        className={`px-2 py-0.5 rounded-lg border font-mono text-[11px] transition-all ${
-                          l1Count === preset.val
-                            ? 'bg-amber-500 text-slate-950 font-bold border-amber-400'
-                            : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Slider 2: Average L2 per L1 */}
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                        <Network className="w-4 h-4 text-emerald-400" />
-                        <span>Середня кількість L2 на одного вашого L1</span>
-                      </label>
-                      <span className="text-[11px] text-slate-400 block mt-0.5">
-                        Скільки платних підписників у середньому залучає кожен ваш партнер
-                      </span>
-                    </div>
-                    <span className="font-mono text-lg font-black text-emerald-300 bg-emerald-950/60 px-3 py-1 rounded-xl border border-emerald-800">
-                      {avgL2PerL1} L2/партнер
-                    </span>
-                  </div>
-
-                  <input
-                    type="range"
-                    min={0}
-                    max={15}
-                    step={1}
-                    value={avgL2PerL1}
-                    onChange={(e) => setAvgL2PerL1(parseInt(e.target.value))}
-                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-400"
-                  />
-
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Загалом рефералів 2-го рівня (L2):</span>
-                    <span className="font-mono font-bold text-slate-200">
-                      {calc.totalL2Count} користувачів
-                    </span>
-                  </div>
-                </div>
-
-                {/* Price Input & Rank Progress Card */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  
-                  {/* Price card */}
-                  <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-2">
-                    <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                      <Coins className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Вартість підписки Pro</span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={subscriptionPrice}
-                        onChange={(e) => setSubscriptionPrice(Math.max(1, parseInt(e.target.value) || 0))}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-slate-100 focus:outline-none focus:border-amber-400"
-                      />
-                      <span className="font-mono font-bold text-slate-400 text-sm">{currencySymbol}</span>
-                    </div>
-                  </div>
-
-                  {/* Next rank status */}
-                  <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-300">Прогрес до рангу:</span>
-                      <span className="font-mono text-amber-400 font-bold">
-                        {calc.nextRank ? calc.nextRank.name : 'Максимальний'}
-                      </span>
-                    </div>
-                    
-                    {calc.nextRank ? (
-                      <>
-                        <div className="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
-                          <div 
-                            className="bg-gradient-to-r from-amber-500 to-emerald-400 h-full transition-all duration-300"
-                            style={{ width: `${calc.progressToNextRankPercent}%` }}
-                          />
-                        </div>
-                        <div className="text-[11px] text-slate-400 flex justify-between">
-                          <span>Ще {calc.l1NeededForNextRank} L1 для {calc.nextRank.name}</span>
-                          <span>{calc.progressToNextRankPercent}%</span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-xs text-emerald-400 font-medium flex items-center gap-1 pt-1">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Ви досягли найвищого рангу Platinum!</span>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-
-                {/* Status notice for L2 Lock / Unlock */}
-                {!calc.isL2Unlocked ? (
-                  <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-3">
-                    <Lock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <span className="font-bold block">Рівень L2 заблоковано (Ранг Starter: 1–9 L1)</span>
-                      <p className="text-amber-300/80 text-[11px]">
-                        Ви зараз отримуєте 5% з L1. Щоб відкрити нарахування 10% з другого рівня (L2), 
-                        досягніть 10 активних платних L1 для переходу в ранг <strong>Bronze</strong>.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs flex items-start gap-3">
-                    <Unlock className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <span className="font-bold block">Рівень L2 активовано ({calc.currentRank.l2Percent}% винагороди)</span>
-                      <p className="text-emerald-300/80 text-[11px]">
-                        Завдяки наявності {l1Count} активних L1 ви перебуваєте на ранзі {calc.currentRank.name} і 
-                        щомісяця заробляєте з усієї глибини 2-го рівня!
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-
-              {/* Results Column (5 Cols on LG) */}
-              <div className="lg:col-span-5 space-y-4">
-                
-                {/* Total Income Highlight Box */}
-                <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-amber-500/40 rounded-3xl p-6 shadow-xl space-y-5">
-                  
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <span className="font-mono text-xs font-bold text-slate-400">
-                      РОЗРАХУНКОВИЙ ДОХІД ПАРТНЕРА
-                    </span>
-                    <span className={`text-[10px] font-mono font-black px-2 py-0.5 rounded-md border ${calc.currentRank.badgeColor}`}>
-                      {calc.currentRank.name} ({calc.currentRank.l1Percent}% / {calc.currentRank.l2Percent}%)
-                    </span>
-                  </div>
-
-                  {/* Main Monthly Total */}
-                  <div>
-                    <span className="text-xs text-slate-400 font-medium">Щомісячний пасивний дохід:</span>
-                    <div className="flex items-baseline gap-2 mt-1">
-                      <span className="font-mono text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-emerald-400">
-                        {Math.round(calc.totalMonthlyIncome).toLocaleString()} {currencySymbol}
-                      </span>
-                      <span className="text-xs text-slate-400 font-mono">/ місяць</span>
-                    </div>
-                  </div>
-
-                  {/* Annual Total */}
-                  <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/90 flex items-center justify-between">
-                    <div>
-                      <span className="text-[11px] text-slate-400 block">Річний прогноз:</span>
-                      <span className="font-mono text-lg font-bold text-amber-300">
-                        {Math.round(calc.totalAnnualIncome).toLocaleString()} {currencySymbol}
-                      </span>
-                    </div>
-                    <span className="text-[10px] px-2 py-1 rounded bg-amber-950/60 text-amber-300 border border-amber-800 font-mono">
-                      12 МІСЯЦІВ
-                    </span>
-                  </div>
-
-                  {/* Detailed Breakdown L1 and L2 */}
-                  <div className="space-y-3 pt-2">
-                    
-                    {/* L1 item */}
-                    <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-slate-200 flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-amber-400" />
-                          Рівень 1 (Ваші {l1Count} L1 · {calc.currentRank.l1Percent}%):
-                        </span>
-                        <span className="font-mono font-bold text-amber-300">
-                          +{Math.round(calc.l1MonthlyIncome).toLocaleString()} {currencySymbol}
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-mono text-slate-500 pl-3.5">
-                        Формула: {l1Count} × {subscriptionPrice}{currencySymbol} × {calc.currentRank.l1Percent}%
-                      </div>
-                    </div>
-
-                    {/* L2 item */}
-                    <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-slate-200 flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${calc.isL2Unlocked ? 'bg-emerald-400' : 'bg-slate-600'}`} />
-                          Рівень 2 ({calc.totalL2Count} партнерських L2 · {calc.currentRank.l2Percent}%):
-                        </span>
-                        <span className={`font-mono font-bold ${calc.isL2Unlocked ? 'text-emerald-400' : 'text-slate-500'}`}>
-                          {calc.isL2Unlocked 
-                            ? `+${Math.round(calc.l2MonthlyIncome).toLocaleString()} ${currencySymbol}`
-                            : '0 (Заблоковано)'}
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-mono text-slate-500 pl-3.5">
-                        {calc.isL2Unlocked 
-                          ? `Формула: ${calc.totalL2Count} × ${subscriptionPrice}${currencySymbol} × ${calc.currentRank.l2Percent}%`
-                          : 'Потрібно 10 L1 для розблокування 10% L2 у Bronze'}
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* Total network size stats */}
-                  <div className="pt-3 border-t border-slate-800 text-xs text-slate-400 flex justify-between font-mono">
-                    <span>Загальний розмір мережі:</span>
-                    <span className="text-slate-200 font-bold">{calc.totalNetworkSize} платних підписників</span>
-                  </div>
-
-                </div>
-
-                {/* Quick Link Card */}
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-3">
-                  <span className="text-xs font-bold text-slate-300 block">Ваше партнерське посилання:</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      readOnly
-                      value="https://sirenua.com/ref/partner_active"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono text-amber-300 focus:outline-none"
-                    />
-                    <button
-                      onClick={() => handleCopyLink('https://sirenua.com/ref/partner_active')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shrink-0 ${
-                        copiedLink
-                          ? 'bg-emerald-500 text-slate-950'
-                          : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
-                      }`}
-                    >
-                      {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedLink ? 'Скопійовано' : 'Копіювати'}</span>
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* Visual Multi-Tier Network Structure & Single Transaction Breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            {/* Left: Interactive Single Transaction Simulator (6 Cols) */}
-            <div className="lg:col-span-6 bg-slate-950 border border-slate-800 rounded-3xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Percent className="w-4 h-4 text-amber-400" />
-                  <h3 className="text-sm font-bold text-slate-200">
-                    Симулятор розподілу однієї транзакції
-                  </h3>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-800">
-                  50% MAX CAP
-                </span>
-              </div>
-
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Перевірте, скільки система виплачує прямим спонсорам L1 та L2 з будь-якого чеку передплати.
-              </p>
-
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-400 shrink-0">Сума транзакції:</span>
-                {[
-                  { label: '200 грн (1 міс)', amount: 200 },
-                  { label: '600 грн (3 міс)', amount: 600 },
-                  { label: '2400 грн (Рік)', amount: 2400 },
-                ].map((p) => (
-                  <button
-                    key={p.amount}
-                    onClick={() => setSimTxAmount(p.amount)}
-                    className={`px-2.5 py-1 rounded-xl text-xs font-mono transition-all border ${
-                      simTxAmount === p.amount
-                        ? 'bg-amber-500/20 text-amber-200 border-amber-500/50 font-bold'
-                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Transaction Distribution Visualizer */}
-              <div className="space-y-2.5 pt-2">
-                
-                {/* L1 direct commission */}
-                <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-slate-200">1. Прямий партнер L1 ({calc.currentRank.l1Percent}%):</span>
-                    <span className="text-[11px] text-slate-400 block font-mono">
-                      {simTxAmount} грн × {calc.currentRank.l1Percent}%
-                    </span>
-                  </div>
-                  <span className="font-mono text-base font-black text-amber-300">
-                    {(simTxAmount * calc.currentRank.l1Rate).toFixed(1)} грн
-                  </span>
-                </div>
-
-                {/* L2 sponsor commission */}
-                <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-slate-200">2. Спонсор 2-го рівня L2 ({calc.currentRank.l2Percent}%):</span>
-                    <span className="text-[11px] text-slate-400 block font-mono">
-                      {calc.isL2Unlocked 
-                        ? `${simTxAmount} грн × ${calc.currentRank.l2Percent}%`
-                        : 'Заблоковано на Starter (0%)'}
-                    </span>
-                  </div>
-                  <span className={`font-mono text-base font-black ${calc.isL2Unlocked ? 'text-emerald-400' : 'text-slate-600'}`}>
-                    {calc.isL2Unlocked ? `${(simTxAmount * calc.currentRank.l2Rate).toFixed(1)} грн` : '0 грн'}
-                  </span>
-                </div>
-
-                {/* System remaining */}
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">3. Серверна інфраструктура SirenUA:</span>
-                  <span className="font-mono font-bold text-slate-300">
-                    {(simTxAmount - (simTxAmount * calc.currentRank.l1Rate) - (calc.isL2Unlocked ? simTxAmount * calc.currentRank.l2Rate : 0)).toFixed(1)} грн
-                  </span>
-                </div>
-
-              </div>
-
-              <div className="text-[11px] text-slate-400 bg-slate-900/40 p-3 rounded-xl border border-slate-800/60 font-mono">
-                ℹ️ На максимальному ранзі <strong>Platinum</strong> система виплачує рівно 50% (25% L1 + 25% L2 = {(simTxAmount * 0.5).toFixed(0)} грн).
-              </div>
-            </div>
-
-            {/* Right: Simulated Real-time Transactions Feed (6 Cols) */}
-            <div className="lg:col-span-6 bg-slate-950 border border-slate-800 rounded-3xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-sm font-bold text-slate-200">
-                    Останні нарахування за підписками
-                  </h3>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
-                  LIVE
-                </span>
-              </div>
-
-              <div className="space-y-2.5">
-                {SAMPLE_SIMULATED_TRANSACTIONS.map((tx) => {
-                  const isL1 = tx.level === 'L1';
-                  const rate = isL1 ? calc.currentRank.l1Rate : (calc.isL2Unlocked ? calc.currentRank.l2Rate : 0);
-                  const earning = tx.amount * rate;
-
-                  return (
-                    <div 
-                      key={tx.id}
-                      className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                            isL1 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                          }`}>
-                            {tx.level}
-                          </span>
-                          <span className="text-xs font-bold text-slate-200">{tx.user}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          {tx.plan} ({tx.amount} грн) · <span className="text-slate-500">{tx.date}</span>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="font-mono text-sm font-black text-emerald-400 block">
-                          +{earning.toFixed(0)} грн
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-500">
-                          {isL1 ? `${calc.currentRank.l1Percent}%` : (calc.isL2Unlocked ? `${calc.currentRank.l2Percent}%` : '0%')}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-          </div>
-
-          {/* FAQ Accordion Section */}
-          <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4">
-            <div className="flex items-center gap-2.5 pb-2 border-b border-slate-800">
-              <HelpCircle className="w-5 h-5 text-amber-400" />
-              <h3 className="text-lg font-bold text-slate-100">
-                Часті запитання щодо партнерської програми (FAQ)
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              {FAQ_AFFILIATE.map((faq, idx) => (
-                <div 
-                  key={idx}
-                  className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 space-y-1.5"
-                >
-                  <div className="text-xs font-bold text-slate-200 flex items-start gap-2">
-                    <span className="text-amber-400 font-mono">Q:</span>
-                    <span>{faq.q}</span>
-                  </div>
-                  <p className="text-[12px] text-slate-400 leading-relaxed pl-5">
-                    {faq.a}
-                  </p>
+                  <span className="text-[10px] text-slate-400">{item.month}</span>
                 </div>
               ))}
             </div>
           </div>
 
         </div>
-      )}
 
-      {/* TAB 2: NETWORK TREE (L1 / L2) */}
-      {activeTab === 'NETWORK' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
+        {/* Center Column (6 cols): 3D Interactive Holographic Constellation Visualizer */}
+        <div className={`lg:col-span-6 rounded-3xl border p-5 flex flex-col justify-between relative overflow-hidden ${
+          isDark ? 'bg-[#090E18] border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+        }`}>
           
-          {/* Header & Search Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-6">
-            <div className="space-y-1">
-              <h2 className="text-lg sm:text-xl font-bold text-slate-100 flex items-center gap-2">
-                <Network className="w-5 h-5 text-amber-400" />
-                <span>Ієрархія та структура партнерської мережі</span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                Переглядайте ваших прямих рефералів 1-го рівня (L1) та створені ними гілки 2-го рівня (L2)
-              </p>
-            </div>
-
-            {/* Quick Metrics */}
-            <div className="flex items-center gap-3 font-mono text-xs">
-              <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
-                Активних L1: <strong className="text-amber-300">{l1Partners.length}</strong>
-              </div>
-              <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
-                Загалом у базі: <strong className="text-emerald-300">{SAMPLE_PARTNER_TREE.length}</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* Filters Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Пошук за ім'ям чи ID..."
-                value={networkSearch}
-                onChange={(e) => setNetworkSearch(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              {(['ALL', 'L1', 'L2'] as const).map((lvl) => (
+          {/* Top Control Bar: Tabs & Filter */}
+          <div className="flex flex-wrap items-center justify-between gap-2 z-20">
+            {/* View switcher tabs */}
+            <div className={`p-1 rounded-xl inline-flex items-center gap-1 border ${
+              isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200/60'
+            }`}>
+              {[
+                { id: 'VISUAL', label: 'Візуалізація' },
+                { id: 'TREE', label: 'Дерево' },
+                { id: 'LIST', label: 'Список' },
+                { id: 'ANALYTICS', label: 'Аналітика' },
+              ].map((t) => (
                 <button
-                  key={lvl}
-                  onClick={() => setNetworkLevelFilter(lvl)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all border ${
-                    networkLevelFilter === lvl
-                      ? 'bg-amber-500 text-slate-950 border-amber-400'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                  key={t.id}
+                  onClick={() => {
+                    setActiveTab(t.id as any);
+                    playWebAudioSound('click');
+                  }}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    activeTab === t.id
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
                   }`}
                 >
-                  {lvl === 'ALL' ? 'Всі рівні' : lvl}
+                  {t.label}
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Interactive Tree List */}
-          <div className="space-y-3">
-            {l1Partners.map((l1) => {
-              const isExpanded = expandedL1Ids[l1.id];
-              const children = SAMPLE_PARTNER_TREE.filter(p => p.parentId === l1.id);
-              
-              // Skip if search filter hides both parent and children
-              const parentMatches = l1.name.toLowerCase().includes(networkSearch.toLowerCase()) || l1.id.toLowerCase().includes(networkSearch.toLowerCase());
-              const hasMatchingChildren = children.some(c => c.name.toLowerCase().includes(networkSearch.toLowerCase()) || c.id.toLowerCase().includes(networkSearch.toLowerCase()));
-
-              if (networkSearch && !parentMatches && !hasMatchingChildren) {
-                return null;
-              }
-
-              return (
-                <div key={l1.id} className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden">
-                  
-                  {/* L1 Header Row */}
-                  <div className="p-4 flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 border-b border-slate-800/80">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => toggleL1Expand(l1.id)}
-                        className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-                      >
-                        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      </button>
-
-                      <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center font-black text-amber-300 text-xs font-mono">
-                        L1
-                      </div>
-
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm text-slate-100">{l1.name}</span>
-                          <span className="text-[10px] font-mono text-slate-500 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
-                            {l1.id}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                          <span>{l1.plan} ({l1.planPrice} ₴)</span>
-                          <span>•</span>
-                          <span>Приєднався: {l1.joinDate}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-xs font-mono">
-                      <div className="text-right">
-                        <span className="text-slate-400 block text-[10px]">Команда L2:</span>
-                        <span className="font-bold text-slate-200">{l1.l2ChildrenCount || 0} партнерів</span>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="text-slate-400 block text-[10px]">Прибуток з гілки:</span>
-                        <span className="font-black text-emerald-400">+{l1.totalEarnedFromNode} ₴</span>
-                      </div>
-
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-800 text-[10px] font-bold">
-                        ACTIVE
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Children (L2) Container */}
-                  {isExpanded && children.length > 0 && (
-                    <div className="p-4 pl-12 space-y-2 bg-slate-950/90">
-                      <div className="text-[11px] text-slate-500 font-mono mb-2 flex items-center gap-1.5">
-                        <Network className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Підключені реферали 2-го рівня (L2) від {l1.name}:</span>
-                      </div>
-
-                      {children.map((l2) => (
-                        <div 
-                          key={l2.id}
-                          className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-black text-emerald-300 text-[10px] font-mono">
-                              L2
-                            </div>
-                            <div>
-                              <span className="font-bold text-slate-200">{l2.name}</span>
-                              <span className="text-[10px] font-mono text-slate-500 ml-2">ID: {l2.id}</span>
-                              <div className="text-[11px] text-slate-400">
-                                {l2.plan} ({l2.planPrice} ₴) · {l2.joinDate}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-4 font-mono text-right">
-                            <div>
-                              <span className="text-[10px] text-slate-500 block">Ваш дохід L2:</span>
-                              <span className="font-bold text-emerald-400">+{l2.totalEarnedFromNode} ₴</span>
-                            </div>
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-800 text-[10px]">
-                              ACTIVE
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {isExpanded && children.length === 0 && (
-                    <div className="p-4 pl-12 text-xs text-slate-500 font-mono italic">
-                      Цей партнер ще не залучив користувачів L2.
-                    </div>
-                  )}
-
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-      )}
-
-      {/* TAB 3: PROMO & QR CODE GENERATOR */}
-      {activeTab === 'PROMO' && (
-        <div className="space-y-8 animate-in fade-in duration-200">
-          
-          {/* Custom Link & UTM Builder */}
-          <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-            <div className="space-y-1">
-              <h2 className="text-lg sm:text-xl font-bold text-slate-100 flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-amber-400" />
-                <span>Генератор персональних реферальних посилань та QR-кодів</span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                Створюйте власні посилання з UTM-мітками для точного відстеження джерел переходів (Telegram, YouTube, TikTok тощо)
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300">Ваш реферальний псевдонім (Slug):</label>
-                <input
-                  type="text"
-                  value={customRefSlug}
-                  onChange={(e) => setCustomRefSlug(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300">Джерело трафіку (utm_source):</label>
-                <select
-                  value={utmSource}
-                  onChange={(e) => setUtmSource(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-400"
-                >
-                  <option value="telegram">Telegram канал / група</option>
-                  <option value="instagram">Instagram Stories / Bio</option>
-                  <option value="youtube">YouTube Опис відео</option>
-                  <option value="tiktok">TikTok Профіль</option>
-                  <option value="website">Власний сайт / Блог</option>
-                  <option value="friends">Пряма рекомендація друзям</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Generated Link Result Bar */}
-            <div className="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/40 space-y-3">
-              <span className="text-xs font-bold text-slate-300 block">Ваше згенероване посилання:</span>
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                <input
-                  readOnly
-                  value={fullCustomRefUrl}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono text-amber-300 focus:outline-none"
-                />
-                <button
-                  onClick={() => handleCopyLink(fullCustomRefUrl)}
-                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all"
-                >
-                  {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  <span>{copiedLink ? 'Скопійовано!' : 'Копіювати'}</span>
-                </button>
-                <a
-                  href={`https://t.me/share/url?url=${encodeURIComponent(fullCustomRefUrl)}&text=${encodeURIComponent('🚨 Перевірте інтерактивну карту повітряних загроз SirenUA Pro')}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>В Telegram</span>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Ready-to-use Promo Templates */}
-          <div className="space-y-4">
-            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <Share2 className="w-4 h-4 text-cyan-400" />
-              <span>Готові рекламні тексти для публікацій</span>
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {AFFILIATE_PROMO_TEMPLATES.map((tmpl) => (
-                <div 
-                  key={tmpl.id}
-                  className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3 flex flex-col justify-between"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-amber-400">{tmpl.platform}</span>
-                      <span className="text-[10px] font-mono text-slate-500">{tmpl.id}</span>
-                    </div>
-                    <div className="font-bold text-sm text-slate-200">{tmpl.title}</div>
-                    <p className="text-xs text-slate-400 whitespace-pre-line leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 font-sans">
-                      {tmpl.text.replace('https://sirenua.com/ref/partner_link', fullCustomRefUrl)}
-                    </p>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between">
-                    <div className="flex flex-wrap gap-1 text-[10px] text-slate-500 font-mono">
-                      {tmpl.tags.map((t, idx) => <span key={idx}>{t}</span>)}
-                    </div>
-
-                    <button
-                      onClick={() => handleCopyLink(tmpl.text.replace('https://sirenua.com/ref/partner_link', fullCustomRefUrl), tmpl.id)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1 transition-all"
-                    >
-                      {copiedPromoId === tmpl.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedPromoId === tmpl.id ? 'Скопійовано' : 'Копіювати'}</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Embed Widget Snippet */}
-          <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 space-y-3">
+            {/* Level Filter & Controls */}
             <div className="flex items-center gap-2">
-              <Code2 className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-bold text-slate-200">HTML Віджет для вставки на ваш сайт</h3>
-            </div>
-            <p className="text-xs text-slate-400">
-              Вставте цей код у бічну панель або шапку сайту для показу статусу тривог з вашим партнерським посиланням:
-            </p>
-            <div className="relative">
-              <pre className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-[11px] font-mono text-cyan-300 overflow-x-auto">
-{`<a href="${fullCustomRefUrl}" target="_blank" style="display:inline-flex;align-items:center;padding:8px 14px;background:#0f172a;color:#f59e0b;border:1px solid #f59e0b;border-radius:12px;text-decoration:none;font-weight:bold;font-size:13px;">
-  🚨 Карта тривог SirenUA Pro
-</a>`}
-              </pre>
-              <button
-                onClick={() => handleCopyLink(`<a href="${fullCustomRefUrl}" target="_blank" style="display:inline-flex;align-items:center;padding:8px 14px;background:#0f172a;color:#f59e0b;border:1px solid #f59e0b;border-radius:12px;text-decoration:none;font-weight:bold;font-size:13px;">\n  🚨 Карта тривог SirenUA Pro\n</a>`)}
-                className="absolute right-3 top-3 px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-mono font-bold hover:bg-slate-700 transition-colors"
+              <select 
+                value={levelFilter}
+                onChange={(e) => setLevelFilter(e.target.value as any)}
+                className={`text-xs font-semibold px-2.5 py-1 rounded-lg border outline-none cursor-pointer ${
+                  isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'
+                }`}
               >
-                Копіювати код
+                <option value="ALL">Рівні: L1 + L2</option>
+                <option value="L1">Тільки L1</option>
+                <option value="L2">Тільки L2</option>
+              </select>
+
+              <button 
+                onClick={() => setIsRotating(!isRotating)}
+                className={`p-1.5 rounded-lg border ${
+                  isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
+                }`}
+                title="Обертання сузір'я"
+              >
+                <RotateCw className={`w-3.5 h-3.5 ${isRotating ? 'animate-spin-slow' : ''}`} />
               </button>
             </div>
           </div>
 
-        </div>
-      )}
+          {/* Legend Row (1:1 with Screenshot 1) */}
+          <div className="flex flex-wrap items-center gap-3 text-[11px] pt-3 z-20 text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600" /> Ви</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-cyan-400" /> L1 (прямі партнери)</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500" /> L2 (другий рівень)</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Активний</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400" /> Новий</span>
+            <span className="flex items-center gap-1.5">👑 Найкращий партнер</span>
+          </div>
 
-      {/* TAB 4: PAYOUTS & WALLET */}
-      {activeTab === 'PAYOUTS' && (
-        <div className="space-y-8 animate-in fade-in duration-200">
-          
-          {/* Balance Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* 3D Holographic Constellation Map Canvas */}
+          <div className="relative w-full h-[360px] sm:h-[400px] flex items-center justify-center my-2 select-none overflow-hidden">
             
-            <div className="bg-slate-950 border border-slate-800 rounded-3xl p-5 space-y-1">
-              <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
-                <Wallet className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Доступно до виведення:</span>
-              </span>
-              <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-400">
-                4 820 ₴
-              </div>
-              <span className="text-[11px] text-slate-500 block">Готово до миттєвої виплати</span>
-            </div>
+            {/* Background Nebula Atmosphere */}
+            <div className={`absolute inset-0 rounded-3xl pointer-events-none ${
+              isDark 
+                ? 'bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent' 
+                : 'bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-50/80 via-transparent to-transparent'
+            }`} />
 
-            <div className="bg-slate-950 border border-slate-800 rounded-3xl p-5 space-y-1">
-              <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-amber-400" />
-                <span>В обробці (Hold 7 днів):</span>
-              </span>
-              <div className="text-2xl sm:text-3xl font-black font-mono text-amber-300">
-                1 200 ₴
-              </div>
-              <span className="text-[11px] text-slate-500 block">Очікує підтвердження білінгу</span>
-            </div>
+            {/* Glowing Orbit Rings */}
+            <div className={`absolute w-[220px] h-[220px] rounded-full border border-dashed pointer-events-none ${
+              isDark ? 'border-blue-500/20' : 'border-blue-200/80'
+            }`} />
+            <div className={`absolute w-[340px] h-[340px] rounded-full border border-dashed pointer-events-none ${
+              isDark ? 'border-purple-500/15' : 'border-purple-200/60'
+            }`} />
 
-            <div className="bg-slate-950 border border-slate-800 rounded-3xl p-5 space-y-1">
-              <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Всього виплачено за весь час:</span>
-              </span>
-              <div className="text-2xl sm:text-3xl font-black font-mono text-slate-100">
-                26 450 ₴
-              </div>
-              <span className="text-[11px] text-slate-500 block">3 успішні транзакції</span>
-            </div>
-
-          </div>
-
-          {/* Payout Request Form */}
-          <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5">
-            <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-                <span>Замовити виведення партнерської винагороди</span>
-              </h3>
-              <span className="text-[11px] font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                Мін. сума: 500 ₴ / $15
-              </span>
-            </div>
-
-            {payoutSuccessMessage && (
-              <div className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>{payoutSuccessMessage}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleRequestPayoutSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* Method */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300">Платіжний метод:</label>
-                  <select
-                    value={payoutMethod}
-                    onChange={(e) => setPayoutMethod(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-400"
-                  >
-                    <option value="MONOBANK">Monobank (UAH Картка / Банка)</option>
-                    <option value="PRIVATBANK">ПриватБанк (UAH Картка)</option>
-                    <option value="IBAN">Розрахунковий рахунок IBAN (ФОП / ТОВ)</option>
-                    <option value="USDT_TRC20">USDT TRC-20 (Crypto)</option>
-                  </select>
-                </div>
-
-                {/* Amount */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300">Сума виведення (₴):</label>
-                  <input
-                    type="number"
-                    min="500"
-                    max="4820"
-                    value={payoutAmount}
-                    onChange={(e) => setPayoutAmount(e.target.value)}
-                    placeholder="Наприклад: 2000"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-400"
+            {/* Connecting Lines SVG Layer */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none">
+              {partnerNodes.map((node) => {
+                if (node.id === 'me') return null;
+                const parent = partnerNodes.find(p => p.id === (node.parentId || 'me')) || partnerNodes[0];
+                return (
+                  <line
+                    key={`line-${node.id}`}
+                    x1={`${parent.x}%`}
+                    y1={`${parent.y}%`}
+                    x2={`${node.x}%`}
+                    y2={`${node.y}%`}
+                    stroke={node.level === 'L1' ? '#3B82F6' : '#A855F7'}
+                    strokeWidth={node.level === 'L1' ? '1.5' : '1'}
+                    strokeOpacity={node.level === 'L1' ? '0.4' : '0.25'}
+                    strokeDasharray={node.status === 'NEW' ? '4 2' : 'none'}
                   />
-                </div>
+                );
+              })}
+            </svg>
 
-              </div>
+            {/* Partner Avatar Nodes */}
+            {partnerNodes.map((node) => {
+              if (levelFilter === 'L1' && node.level === 'L2') return null;
+              if (levelFilter === 'L2' && node.level === 'L1') return null;
 
-              {/* Account / IBAN / Wallet */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300">
-                  {payoutMethod === 'USDT_TRC20' ? 'Адреса USDT TRC-20 гаманця:' : 'Номер картки / IBAN рахунок:'}
-                </label>
-                <input
-                  type="text"
-                  value={payoutAccount}
-                  onChange={(e) => setPayoutAccount(e.target.value)}
-                  placeholder={payoutMethod === 'USDT_TRC20' ? 'TX...' : '4441 1144 ... або UA89...'}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-400"
-                />
-              </div>
+              const isMe = node.id === 'me';
 
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all shadow-lg shadow-amber-950/50"
+              return (
+                <div
+                  key={node.id}
+                  onClick={() => {
+                    setSelectedPartner(node);
+                    playWebAudioSound('click');
+                  }}
+                  className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 hover:scale-125 z-20 group ${
+                    isMe ? 'z-30' : ''
+                  }`}
+                  style={{ left: `${node.x}%`, top: `${node.y}%` }}
                 >
-                  Підтвердити заявку на виплату
-                </button>
-              </div>
-            </form>
+                  {isMe ? (
+                    /* Central Core Node: Oleksandr */
+                    <div className="relative flex flex-col items-center">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 shadow-xl shadow-blue-500/30 flex items-center justify-center relative">
+                        <div className="w-full h-full rounded-full overflow-hidden border-2 border-white">
+                          <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </div>
+                        {/* Crown Badge */}
+                        <div className="absolute -top-2 bg-amber-400 text-slate-900 rounded-full p-1 shadow-md">
+                          <Crown className="w-3 h-3 fill-slate-900" />
+                        </div>
+                      </div>
+                      <div className="text-center mt-1">
+                        <div className={`text-xs font-black leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{node.name}</div>
+                        <div className="text-[10px] text-blue-500 font-bold">Gold Partner • 20%</div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Orbiting Partner Node */
+                    <div className="relative flex flex-col items-center">
+                      <div className={`rounded-full p-0.5 shadow-md flex items-center justify-center relative ${
+                        node.level === 'L1' 
+                          ? 'w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-tr from-blue-500 to-cyan-400' 
+                          : 'w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-tr from-purple-500 to-indigo-400'
+                      }`}>
+                        <div className="w-full h-full rounded-full overflow-hidden border border-white bg-slate-800">
+                          <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </div>
+                        {/* Top Performer Crown */}
+                        {node.status === 'TOP' && (
+                          <div className="absolute -top-1.5 -right-1 bg-amber-400 text-slate-900 rounded-full p-0.5 shadow-xs">
+                            <Crown className="w-2.5 h-2.5 fill-slate-900" />
+                          </div>
+                        )}
+                        {/* Activity Ring */}
+                        {node.status === 'ACTIVE' && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
+                        )}
+                        {node.status === 'NEW' && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 border border-white" />
+                        )}
+                      </div>
+                      
+                      {/* Name tooltip on hover */}
+                      <span className={`text-[9px] font-bold mt-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity ${
+                        isDark ? 'text-slate-200' : 'text-slate-800'
+                      }`}>
+                        {node.name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Orbit Counter Nodes ("+12", "+28") (1:1 with Screenshot 1) */}
+            <div className="absolute top-[48%] left-[24%] px-2 py-0.5 rounded-full bg-blue-500/80 text-white font-black text-[10px] shadow-sm pointer-events-none">
+              +12
+            </div>
+            <div className="absolute top-[48%] right-[24%] px-2 py-0.5 rounded-full bg-blue-500/80 text-white font-black text-[10px] shadow-sm pointer-events-none">
+              +28
+            </div>
+
+            {/* Hint pill on top right of map */}
+            <div className={`absolute top-2 right-2 px-3 py-1 rounded-xl text-[10px] font-medium border backdrop-blur-sm pointer-events-none ${
+              isDark ? 'bg-slate-900/80 border-slate-800 text-slate-400' : 'bg-white/90 border-slate-200 text-slate-500'
+            }`}>
+              Натисніть на партнера, щоб побачити деталі
+            </div>
+
           </div>
 
-          {/* Payout History Table */}
-          <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-slate-400" />
-              <span>Історія попередніх виплат</span>
-            </h3>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead>
-                  <tr className="border-b border-slate-800 text-slate-500">
-                    <th className="pb-2">ID Транзакції</th>
-                    <th className="pb-2">Метод</th>
-                    <th className="pb-2">Реквізити</th>
-                    <th className="pb-2">Дата</th>
-                    <th className="pb-2">Сума</th>
-                    <th className="pb-2 text-right">Статус</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-900">
-                  {SAMPLE_PAYOUT_HISTORY.map((p) => (
-                    <tr key={p.id} className="text-slate-300">
-                      <td className="py-3 text-amber-400 font-bold">{p.id}</td>
-                      <td className="py-3">{p.method}</td>
-                      <td className="py-3 text-slate-400">{p.targetAccount}</td>
-                      <td className="py-3 text-slate-500">{p.date}</td>
-                      <td className="py-3 font-bold text-slate-100">
-                        {p.amount} {p.currency === 'UAH' ? '₴' : 'USDT'}
-                      </td>
-                      <td className="py-3 text-right">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold">
-                          {p.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Under-Map Stats Counter Bar (1:1 with Screenshot 1) */}
+          <div className={`grid grid-cols-4 gap-2 pt-3 border-t text-center ${
+            isDark ? 'border-slate-800' : 'border-slate-100'
+          }`}>
+            <div>
+              <div className="text-base font-black text-blue-600">247</div>
+              <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>L1 партнерів</div>
+            </div>
+            <div>
+              <div className="text-base font-black text-purple-500">2 600</div>
+              <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>L2 партнерів</div>
+            </div>
+            <div>
+              <div className="text-base font-black text-emerald-500">931</div>
+              <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Активних</div>
+            </div>
+            <div>
+              <div className="text-base font-black text-amber-500">84</div>
+              <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Нових за 30 днів</div>
             </div>
           </div>
 
         </div>
-      )}
 
-      {/* TAB 5: SIDE-BY-SIDE MATRIX COMPARISON */}
-      {activeTab === 'MATRIX' && (
-        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 animate-in fade-in duration-200">
-          <div className="space-y-1 border-b border-slate-800 pb-4">
-            <h2 className="text-lg sm:text-xl font-bold text-slate-100 flex items-center gap-2">
-              <Layers className="w-5 h-5 text-amber-400" />
-              <span>Детальна порівняльна матриця рангів</span>
-            </h2>
-            <p className="text-xs text-slate-400">
-              Повний огляд умов, відсоткових ставок та привілеїв кожного партнерського рівня
+        {/* Right Column (3 cols): Мій ранг & Топ-партнери у мережі */}
+        <div className="lg:col-span-3 space-y-4 flex flex-col justify-between">
+          
+          {/* Card: Мій ранг */}
+          <div className={`p-5 rounded-3xl border ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold">Мій ранг</h3>
+            </div>
+
+            <div className="flex items-center justify-between mt-1">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center">
+                  <Crown className="w-5 h-5 fill-amber-500" />
+                </div>
+                <div>
+                  <div className="text-sm font-black">Gold Partner</div>
+                  <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Ставка: <span className="font-bold text-slate-800 dark:text-slate-200">20%</span></div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedPartner(partnerNodes[0])}
+                className="w-7 h-7 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 flex items-center justify-center cursor-pointer"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Progress to Platinum */}
+            <div className="mt-4 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>До наступного рівня: <span className="font-bold text-slate-800 dark:text-slate-200">Platinum</span></span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div className="h-full bg-blue-600 rounded-full" style={{ width: '57%' }} />
+              </div>
+              <div className="text-right text-[10px] font-mono text-slate-400">
+                2 847 / 5 000
+              </div>
+            </div>
+
+            <div className={`grid grid-cols-2 gap-2 mt-3 pt-3 border-t text-xs ${
+              isDark ? 'border-slate-800' : 'border-slate-100'
+            }`}>
+              <div>
+                <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Потрібно ще</div>
+                <div className="text-sm font-black">18</div>
+                <div className={`text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>активних L1</div>
+              </div>
+              <div>
+                <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Поточний темп</div>
+                <div className="text-sm font-black text-emerald-500">+18</div>
+                <div className={`text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>за 30 днів</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card: Топ-партнери у мережі (1:1 with Screenshot 1) */}
+          <div className={`p-5 rounded-3xl border ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold">Топ-партнери у мережі</h3>
+              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline">
+                <span>Всі</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {[
+                { rank: 1, name: 'Марія К.', level: 'L1 • 284 людей', earnings: '₴ 4 230', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80', top: true },
+                { rank: 2, name: 'Ігор С.', level: 'L1 • 192 людини', earnings: '₴ 3 950', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80' },
+                { rank: 3, name: 'Анна В.', level: 'L1 • 176 людей', earnings: '₴ 3 120', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80' },
+                { rank: 4, name: 'Дмитро Л.', level: 'L2 • 148 людей', earnings: '₴ 2 460', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80' },
+                { rank: 5, name: 'Олена П.', level: 'L2 • 132 людини', earnings: '₴ 2 180', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80' },
+              ].map((p) => (
+                <div key={p.rank} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                      p.rank === 1 
+                        ? 'bg-amber-100 text-amber-800' 
+                        : (isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600')
+                    }`}>
+                      {p.rank}
+                    </span>
+                    <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200">
+                      <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    </div>
+                    <div>
+                      <div className="font-bold leading-tight">{p.name}</div>
+                      <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{p.level}</div>
+                    </div>
+                  </div>
+                  <div className="font-black text-slate-900 dark:text-white">
+                    {p.earnings}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* 3. Bottom Row: Останні реферали | Активність партнерів | Розподіл за рівнями | 3D Rocket CTA (1:1 with Screenshot 1) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
+        
+        {/* Card 1: Останні реферали (4 cols) */}
+        <div className={`lg:col-span-4 p-5 rounded-3xl border flex flex-col justify-between ${
+          isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+        }`}>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold">Останні реферали</h3>
+              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline">
+                <span>Всі</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              {[
+                { name: 'Ірина М.', level: 'L1', date: '02.09.2026', status: 'Активний', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80' },
+                { name: 'Сергій Т.', level: 'L2', date: '01.09.2026', status: 'Новий', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80' },
+                { name: 'Катерина В.', level: 'L1', date: '31.08.2026', status: 'Активний', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80' },
+                { name: 'Максим Д.', level: 'L2', date: '30.08.2026', status: 'Неактивний', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80' },
+                { name: 'Олена С.', level: 'L1', date: '28.08.2026', status: 'Активний', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80' },
+              ].map((r, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full overflow-hidden border border-slate-200">
+                      <img src={r.avatar} alt={r.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    </div>
+                    <span className="font-semibold">{r.name}</span>
+                  </div>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                    r.level === 'L1' ? 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600' : 'bg-purple-50 dark:bg-purple-950/60 text-purple-600'
+                  }`}>
+                    {r.level}
+                  </span>
+                  <span className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{r.date}</span>
+                  <span className={`text-[11px] font-semibold flex items-center gap-1 ${
+                    r.status === 'Активний' ? 'text-emerald-500' : r.status === 'Новий' ? 'text-blue-500' : 'text-slate-400'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      r.status === 'Активний' ? 'bg-emerald-500' : r.status === 'Новий' ? 'bg-blue-500' : 'bg-slate-400'
+                    }`} />
+                    {r.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Активність партнерів (3 cols) */}
+        <div className={`lg:col-span-3 p-5 rounded-3xl border flex flex-col justify-between ${
+          isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+        }`}>
+          <div>
+            <h3 className="text-sm font-bold mb-3">Активність партнерів</h3>
+            
+            {/* Donut Chart: 68% */}
+            <div className="flex items-center justify-center my-2 relative">
+              <svg viewBox="0 0 100 100" className="w-28 h-28 transform -rotate-90">
+                <circle cx="50" cy="50" r="38" fill="none" stroke={isDark ? '#1E293B' : '#F1F5F9'} strokeWidth="12" />
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#2563EB" strokeWidth="12" strokeDasharray="162.3 238.7" strokeDashoffset="0" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                <span className="text-lg font-black leading-tight">68%</span>
+                <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>931</span>
+                <span className={`text-[9px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Активних</span>
+              </div>
+            </div>
+
+            <div className="space-y-1 text-xs pt-1">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Активні</span>
+                <span className="font-bold">931</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> Нові</span>
+                <span className="font-bold">84</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-300" /> Неактивні</span>
+                <span className="font-bold">1 916</span>
+              </div>
+            </div>
+          </div>
+
+          <div className={`mt-3 p-2 rounded-xl text-[10px] font-semibold flex items-center gap-1.5 ${
+            isDark ? 'bg-emerald-950/50 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
+          }`}>
+            <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Активність мережі зросла на 28% за останні 30 днів.</span>
+          </div>
+        </div>
+
+        {/* Card 3: Розподіл за рівнями (2 cols) */}
+        <div className={`lg:col-span-2 p-5 rounded-3xl border flex flex-col justify-between ${
+          isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
+        }`}>
+          <div>
+            <h3 className="text-sm font-bold mb-3">Розподіл за рівнями</h3>
+
+            <div className="flex items-center justify-center my-2 relative">
+              <svg viewBox="0 0 100 100" className="w-28 h-28 transform -rotate-90">
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#8B5CF6" strokeWidth="12" strokeDasharray="218 238.7" strokeDashoffset="0" />
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#38BDF8" strokeWidth="12" strokeDasharray="20.7 238.7" strokeDashoffset="-218" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                <span className="text-base font-black leading-tight">2 847</span>
+                <span className={`text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Всього</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs pt-1">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-cyan-400" /> L1</span>
+                <span className="font-bold">247 (8.7%)</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500" /> L2</span>
+                <span className="font-bold">2 600 (91.3%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Більша мережа — більші можливості (3 cols, 3D Rocket CTA 1:1 with Screenshot 1) */}
+        <div className="lg:col-span-3 p-5 rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white shadow-lg flex flex-col justify-between relative overflow-hidden">
+          
+          {/* Top 3D Rocket SVG Illustration */}
+          <div className="absolute -top-4 -right-4 w-32 h-32 opacity-80 pointer-events-none transform rotate-12">
+            <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Rocket Body */}
+              <path d="M50 10 C35 30 35 60 50 85 C65 60 65 30 50 10 Z" fill="#FFFFFF" />
+              <path d="M50 10 C45 30 45 60 50 85 Z" fill="#E2E8F0" />
+              {/* Rocket Nosecone & Window */}
+              <circle cx="50" cy="35" r="7" fill="#38BDF8" stroke="#1E293B" strokeWidth="2" />
+              {/* Fins */}
+              <path d="M35 55 L20 75 L38 72 Z" fill="#38BDF8" />
+              <path d="M65 55 L80 75 L62 72 Z" fill="#38BDF8" />
+              {/* Exhaust Flame */}
+              <path d="M45 85 L50 98 L55 85 Z" fill="#F59E0B" />
+              <path d="M47 85 L50 93 L53 85 Z" fill="#FEF08A" />
+            </svg>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-black leading-tight max-w-[180px]">
+              Більша мережа — більші можливості
+            </h3>
+            <p className="text-xs text-blue-100 mt-2 max-w-[200px] leading-relaxed">
+              Запрошуй, підтримуй, розвивай разом з SIREN UA.
             </p>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-800 font-mono text-slate-400">
-                  <th className="p-3">Параметр / Ранг</th>
-                  {AFFILIATE_RANKS.map((r) => (
-                    <th key={r.id} className="p-3 text-center">
-                      <span className={`px-2 py-0.5 rounded-md border text-[11px] font-bold ${r.badgeColor}`}>
-                        {r.name}
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-900 font-mono">
-                
-                <tr>
-                  <td className="p-3 text-slate-300 font-bold font-sans">Власні платні L1 (Кваліфікація)</td>
-                  {AFFILIATE_RANKS.map((r) => (
-                    <td key={r.id} className="p-3 text-center text-slate-200 font-bold">
-                      {r.minL1}{r.maxL1 ? `–${r.maxL1}` : '+'} L1
-                    </td>
-                  ))}
-                </tr>
+          <div className="pt-4 z-10">
+            <button
+              onClick={() => {
+                setShowInviteModal(true);
+                playWebAudioSound('click');
+              }}
+              className="w-full py-2.5 rounded-2xl bg-white hover:bg-blue-50 text-blue-700 font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <span>Запросити зараз</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
-                <tr>
-                  <td className="p-3 text-slate-300 font-bold font-sans">Комісія з 1-го рівня (L1)</td>
-                  {AFFILIATE_RANKS.map((r) => (
-                    <td key={r.id} className="p-3 text-center text-amber-300 font-black text-sm">
-                      {r.l1Percent}%
-                    </td>
-                  ))}
-                </tr>
+        </div>
 
-                <tr>
-                  <td className="p-3 text-slate-300 font-bold font-sans">Комісія з 2-го рівня (L2)</td>
-                  {AFFILIATE_RANKS.map((r) => (
-                    <td key={r.id} className="p-3 text-center">
-                      {r.isL2Unlocked ? (
-                        <span className="text-emerald-400 font-black text-sm">{r.l2Percent}%</span>
-                      ) : (
-                        <span className="text-slate-600 font-bold flex items-center justify-center gap-1">
-                          <Lock className="w-3 h-3" /> 0%
-                        </span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
+      </div>
 
-                <tr>
-                  <td className="p-3 text-slate-300 font-bold font-sans">Сумарний % виплати (L1 + L2)</td>
-                  {AFFILIATE_RANKS.map((r) => (
-                    <td key={r.id} className="p-3 text-center text-slate-100 font-black">
-                      {r.l1Percent + r.l2Percent}% {r.id === 'PLATINUM' ? '(Max Cap)' : ''}
-                    </td>
-                  ))}
-                </tr>
+      {/* Partner Detail Modal */}
+      {selectedPartner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className={`relative w-full max-w-md rounded-3xl p-6 border shadow-2xl ${
+            isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-100 text-slate-900'
+          }`}>
+            <button
+              onClick={() => setSelectedPartner(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+            >
+              ✕
+            </button>
 
-                <tr>
-                  <td className="p-3 text-slate-300 font-bold font-sans">Частота виплат</td>
-                  <td className="p-3 text-center text-slate-400">Щотижня</td>
-                  <td className="p-3 text-center text-slate-400">Щотижня</td>
-                  <td className="p-3 text-center text-slate-400">Щотижня</td>
-                  <td className="p-3 text-center text-amber-300 font-bold">Щоденно</td>
-                  <td className="p-3 text-center text-cyan-300 font-bold">Миттєво</td>
-                </tr>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500">
+                <img src={selectedPartner.avatar} alt={selectedPartner.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-black">{selectedPartner.name}</h3>
+                  {selectedPartner.status === 'TOP' && <Crown className="w-4 h-4 text-amber-500 fill-amber-500" />}
+                </div>
+                <div className="text-xs text-blue-500 font-bold">
+                  {selectedPartner.level === 'ME' ? 'Ви (Головний партнер)' : `Партнер ${selectedPartner.level}`}
+                </div>
+              </div>
+            </div>
 
-                <tr>
-                  <td className="p-3 text-slate-300 font-bold font-sans">Персональний менеджер</td>
-                  <td className="p-3 text-center text-slate-600">—</td>
-                  <td className="p-3 text-center text-slate-600">—</td>
-                  <td className="p-3 text-center text-emerald-400">Пріоритетний чат</td>
-                  <td className="p-3 text-center text-amber-300">Виділений 1-on-1</td>
-                  <td className="p-3 text-center text-cyan-300">VIP 24/7 + Co-Marketing</td>
-                </tr>
+            <div className="grid grid-cols-2 gap-3 my-5">
+              <div className={`p-3 rounded-2xl border ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                <div className="text-[11px] text-slate-400">Внесок у дохід</div>
+                <div className="text-base font-black mt-0.5">{selectedPartner.earnings}</div>
+              </div>
+              <div className={`p-3 rounded-2xl border ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                <div className="text-[11px] text-slate-400">Мережа партнера</div>
+                <div className="text-base font-black mt-0.5">{selectedPartner.peopleCount} людей</div>
+              </div>
+            </div>
 
-              </tbody>
-            </table>
+            <button
+              onClick={() => setSelectedPartner(null)}
+              className="w-full py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
+            >
+              Закрити
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQRModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className={`relative w-full max-w-sm rounded-3xl p-6 border text-center ${
+            isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-100 text-slate-900'
+          }`}>
+            <button
+              onClick={() => setShowQRModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+            >
+              ✕
+            </button>
+            <h3 className="text-base font-bold mb-1">Ваш персональний QR-код</h3>
+            <p className="text-xs text-slate-400 mb-4">Відскануйте для швидкого приєднання до мережі</p>
+            <div className="w-48 h-48 mx-auto bg-white p-3 rounded-2xl border-2 border-blue-500/30 flex items-center justify-center shadow-lg">
+              <img 
+                src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://siren.ua/r/OLEKSANDR25" 
+                alt="QR" 
+                className="w-full h-full"
+              />
+            </div>
+            <div className="mt-4 text-xs font-mono font-bold text-blue-600">
+              OLEKSANDR25
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className={`relative w-full max-w-md rounded-3xl p-6 border ${
+            isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-100 text-slate-900'
+          }`}>
+            <button
+              onClick={() => setShowInviteModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+            >
+              ✕
+            </button>
+            <h3 className="text-lg font-black mb-1">Запросити партнерів до SirenUA</h3>
+            <p className="text-xs text-slate-400 mb-4">Поділіться вашим реферальним посиланням у соцмережах</p>
+            
+            <div className="space-y-3">
+              <div className={`p-3 rounded-2xl border flex items-center justify-between ${
+                isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <span className="text-xs font-mono truncate mr-2">https://siren.ua/r/OLEKSANDR25</span>
+                <button
+                  onClick={handleCopyLink}
+                  className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center gap-1"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedLink ? 'Ок' : 'Копіювати'}</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 pt-2">
+                <button 
+                  onClick={() => window.open('https://t.me/share/url?url=https://siren.ua/r/OLEKSANDR25', '_blank')}
+                  className="py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                >
+                  Telegram
+                </button>
+                <button 
+                  onClick={() => window.open('https://www.facebook.com/sharer/sharer.php?u=https://siren.ua/r/OLEKSANDR25', '_blank')}
+                  className="py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                >
+                  Facebook
+                </button>
+                <button 
+                  onClick={() => window.open('https://wa.me/?text=https://siren.ua/r/OLEKSANDR25', '_blank')}
+                  className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                >
+                  WhatsApp
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

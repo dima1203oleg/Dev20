@@ -1,38 +1,117 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
+import { RegionData } from '../types';
+import { INITIAL_REGIONS } from '../data/ukraineMapData';
+import { 
+  ZoomIn, 
+  ZoomOut, 
+  RotateCcw, 
+  Layers
+} from 'lucide-react';
 
 interface ThreeMapUkraineProps {
-  variant?: 'hero' | 'workspace';
+  variant?: 'hero' | 'workspace' | 'full';
+  theme?: 'light' | 'dark';
+  regions?: RegionData[];
+  selectedRegionId?: string | null;
+  onSelectRegion?: (region: RegionData) => void;
   activeThreatCount?: number;
-  highlightedCity?: string;
-  onSelectCity?: (city: string) => void;
   className?: string;
+  enableControls?: boolean;
+}
+
+// Convert SVG path command string into THREE.Shape
+function parseSvgPathToShape(pathStr: string, scaleX = 0.042, scaleY = 0.042, offsetX = 500, offsetY = 330): THREE.Shape | null {
+  const shape = new THREE.Shape();
+  const tokens = pathStr.trim().split(/\s+/);
+  
+  let currentX = 0;
+  let currentY = 0;
+  let hasMoved = false;
+
+  let i = 0;
+  while (i < tokens.length) {
+    const cmd = tokens[i];
+    if (cmd === 'M' || cmd === 'm') {
+      const coords = tokens[i + 1]?.split(',').map(Number);
+      if (coords && coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+        const x = (coords[0] - offsetX) * scaleX;
+        const y = -(coords[1] - offsetY) * scaleY;
+        currentX = x;
+        currentY = y;
+        shape.moveTo(x, y);
+        hasMoved = true;
+      }
+      i += 2;
+    } else if (cmd === 'L' || cmd === 'l') {
+      const coords = tokens[i + 1]?.split(',').map(Number);
+      if (coords && coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+        const x = (coords[0] - offsetX) * scaleX;
+        const y = -(coords[1] - offsetY) * scaleY;
+        currentX = x;
+        currentY = y;
+        shape.lineTo(x, y);
+      }
+      i += 2;
+    } else if (cmd === 'Z' || cmd === 'z') {
+      shape.closePath();
+      i += 1;
+    } else if (cmd.includes(',')) {
+      const coords = cmd.split(',').map(Number);
+      if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+        const x = (coords[0] - offsetX) * scaleX;
+        const y = -(coords[1] - offsetY) * scaleY;
+        currentX = x;
+        currentY = y;
+        shape.lineTo(x, y);
+      }
+      i += 1;
+    } else {
+      i += 1;
+    }
+  }
+
+  return hasMoved ? shape : null;
 }
 
 export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
   variant = 'hero',
+  theme = 'light',
+  regions = INITIAL_REGIONS,
+  selectedRegionId = null,
+  onSelectRegion,
   activeThreatCount = 3,
-  highlightedCity = 'kyiv',
-  onSelectCity,
   className = '',
+  enableControls = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
+  const isDark = theme === 'dark';
+
+  // Interactive Hover state
+  const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [viewAngle, setViewAngle] = useState<'3D' | 'TOP'>('3D');
+  const [zoomLevel, setZoomLevel] = useState(1);
+
+  // Region meshes map for raycasting & material updates
+  const regionMeshesRef = useRef<Map<string, { mesh: THREE.Mesh; defaultY: number; regionData: RegionData }>>(new Map());
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const controlsTargetRef = useRef<{ rotX: number; rotY: number; zoom: number }>({ rotX: -0.22, rotY: 0.05, zoom: 1 });
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const width = container.clientWidth || 500;
-    const height = container.clientHeight || (variant === 'hero' ? 360 : 300);
+    const width = container.clientWidth || 600;
+    const height = container.clientHeight || (variant === 'hero' ? 380 : 320);
 
-    // 1. Three.js Scene, Camera & WebGL Renderer
+    // 1. Scene, Camera & WebGL Renderer
     const scene = new THREE.Scene();
     
-    // Isometric-like perspective camera
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
-    camera.position.set(0, 38, 48);
+    const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 1000);
+    camera.position.set(0, 36, 44);
     camera.lookAt(0, 0, 0);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
@@ -40,276 +119,311 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = isDark ? 1.35 : 1.15;
 
     container.appendChild(renderer.domElement);
 
-    // 2. Realistic Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0xf1f5f9, 1.8);
+    // 2. Realistic Lighting adjusted for Light / Dark Mode
+    const ambientLight = new THREE.AmbientLight(
+      isDark ? 0x1e293b : 0xf8fafc, 
+      isDark ? 1.4 : 1.9
+    );
     scene.add(ambientLight);
 
-    const mainLight = new THREE.DirectionalLight(0xffffff, 2.2);
-    mainLight.position.set(25, 45, 30);
-    mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 1024;
-    mainLight.shadow.mapSize.height = 1024;
-    mainLight.shadow.camera.near = 10;
-    mainLight.shadow.camera.far = 100;
-    mainLight.shadow.camera.left = -30;
-    mainLight.shadow.camera.right = 30;
-    mainLight.shadow.camera.top = 30;
-    mainLight.shadow.camera.bottom = -30;
-    mainLight.shadow.bias = -0.001;
-    scene.add(mainLight);
+    const dirLight = new THREE.DirectionalLight(
+      isDark ? 0x93c5fd : 0xffffff, 
+      isDark ? 2.8 : 2.4
+    );
+    dirLight.position.set(24, 42, 28);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.bias = -0.001;
+    scene.add(dirLight);
 
-    const fillLight = new THREE.DirectionalLight(0xdbeafe, 1.2);
+    const fillLight = new THREE.DirectionalLight(
+      isDark ? 0x3b82f6 : 0xdbeafe, 
+      isDark ? 1.6 : 1.1
+    );
     fillLight.position.set(-25, 20, -20);
     scene.add(fillLight);
 
-    const blueAccentLight = new THREE.PointLight(0x3b82f6, 2.5, 40);
-    blueAccentLight.position.set(0, 8, 2);
+    const blueAccentLight = new THREE.PointLight(0x3b82f6, isDark ? 3.5 : 2.2, 50);
+    blueAccentLight.position.set(0, 10, 0);
     scene.add(blueAccentLight);
 
-    const redAlertLight = new THREE.PointLight(0xef4444, variant === 'hero' ? 3.0 : 4.0, 35);
-    redAlertLight.position.set(10, 6, 0);
+    const redAlertLight = new THREE.PointLight(0xef4444, isDark ? 4.5 : 3.5, 45);
+    redAlertLight.position.set(8, 8, 2);
     scene.add(redAlertLight);
 
-    // 3. Main Map 3D Extrusion Group
+    const orangeThreatLight = new THREE.PointLight(0xf97316, isDark ? 3.8 : 2.0, 40);
+    orangeThreatLight.position.set(-4, 6, 4);
+    scene.add(orangeThreatLight);
+
+    // 3. Map Root Group
     const mapGroup = new THREE.Group();
     scene.add(mapGroup);
 
-    // Geographic shape of Ukraine in normalized coordinate space
-    const ukraineShape = new THREE.Shape();
-    
-    // Scale factor to map Ukraine coords into Three.js units (~36x24 units)
-    const pts: [number, number][] = [
-      [-17.0, 4.5],   // Volyn west
-      [-14.5, 6.8],   // Shatsk north
-      [-10.0, 7.2],   // Rivne north
-      [-4.0, 8.0],    // Zhytomyr north
-      [0.5, 8.8],     // Kyiv north / Chornobyl
-      [4.2, 9.5],     // Chernihiv north
-      [11.0, 8.8],    // Sumy north
-      [16.2, 5.5],    // Kharkiv north-east
-      [18.5, 1.5],    // Luhansk east
-      [18.0, -3.0],   // Luhansk south-east
-      [14.5, -5.5],   // Donetsk south / Azov coast
-      [9.5, -6.5],    // Berdiansk / Mariupol
-      [5.5, -6.8],    // Melitopol / Henichesk
-      [5.0, -9.8],    // Crimea Kerch / Feodosia
-      [1.5, -11.5],   // Crimea Yalta / Sevastopol
-      [-1.0, -9.0],   // Crimea Perekop
-      [-1.5, -6.2],   // Kherson Dnieper mouth
-      [-4.5, -5.8],   // Ochakiv / Odesa
-      [-7.5, -7.5],   // Bilhorod-Dnistrovskyi / Danube delta
-      [-10.0, -5.0],  // Odesa north-west / Moldova border
-      [-13.0, -3.5],  // Vinnytsia / Chernivtsi south
-      [-17.5, -4.5],  // Zakarpattia / Uzhhorod
-      [-18.5, -0.5],  // Lviv / Chop
-      [-17.0, 4.5],   // back to Volyn
-    ];
-
-    ukraineShape.moveTo(pts[0][0], pts[0][1]);
-    for (let i = 1; i < pts.length; i++) {
-      ukraineShape.lineTo(pts[i][0], pts[i][1]);
-    }
-    ukraineShape.closePath();
-
-    // 3D Extrusion settings for crisp ceramic clay bevel
-    const extrudeSettings = {
-      depth: 3.2,
-      bevelEnabled: true,
-      bevelSegments: 4,
-      steps: 2,
-      bevelSize: 0.45,
-      bevelThickness: 0.45,
-    };
-
-    const geometry = new THREE.ExtrudeGeometry(ukraineShape, extrudeSettings);
-    geometry.center();
-    geometry.rotateX(-Math.PI / 2); // Lay flat on XZ plane
-
-    // Premium Ceramic White/Light-Blue Material
-    const topMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xf8fafc,
-      roughness: 0.35,
-      metalness: 0.05,
-      clearcoat: 0.3,
-      clearcoatRoughness: 0.2,
-      reflectivity: 0.5,
-    });
-
-    const sideMaterial = new THREE.MeshStandardMaterial({
-      color: 0x94a3b8,
-      roughness: 0.65,
-      metalness: 0.1,
-    });
-
-    const materials = [topMaterial, sideMaterial];
-    const mapMesh = new THREE.Mesh(geometry, materials);
-    mapMesh.castShadow = true;
-    mapMesh.receiveShadow = true;
-    mapMesh.position.y = 0.5;
-    mapGroup.add(mapMesh);
-
-    // Soft Ambient Occlusion Shadow Plane beneath the map
-    const shadowPlaneGeo = new THREE.PlaneGeometry(55, 38);
+    // 4. Soft Ambient Occlusion Shadow Plane beneath map
+    const shadowGeo = new THREE.PlaneGeometry(54, 38);
     const shadowCanvas = document.createElement('canvas');
     shadowCanvas.width = 256;
     shadowCanvas.height = 256;
     const ctx = shadowCanvas.getContext('2d');
     if (ctx) {
-      const grad = ctx.createRadialGradient(128, 128, 20, 128, 128, 120);
-      grad.addColorStop(0, 'rgba(15, 23, 42, 0.25)');
-      grad.addColorStop(0.5, 'rgba(59, 130, 246, 0.08)');
-      grad.addColorStop(1, 'rgba(244, 247, 251, 0)');
+      const grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 120);
+      if (isDark) {
+        grad.addColorStop(0, 'rgba(0, 0, 0, 0.65)');
+        grad.addColorStop(0.5, 'rgba(30, 58, 138, 0.25)');
+        grad.addColorStop(1, 'rgba(11, 17, 30, 0)');
+      } else {
+        grad.addColorStop(0, 'rgba(15, 23, 42, 0.22)');
+        grad.addColorStop(0.5, 'rgba(59, 130, 246, 0.06)');
+        grad.addColorStop(1, 'rgba(244, 247, 251, 0)');
+      }
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 256, 256);
     }
     const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
-    const shadowMat = new THREE.MeshBasicMaterial({
-      map: shadowTexture,
-      transparent: true,
-      depthWrite: false,
-    });
-    const shadowMesh = new THREE.Mesh(shadowPlaneGeo, shadowMat);
+    const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, depthWrite: false });
+    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
     shadowMesh.rotateX(-Math.PI / 2);
-    shadowMesh.position.y = -1.8;
+    shadowMesh.position.y = -0.6;
     mapGroup.add(shadowMesh);
 
-    // 4. Region Boundary Lines on Top Surface
-    const borderPoints: [number, number, number][][] = [
-      [[-4, 2.5, -3], [-4, 2.5, 3]],
-      [[2, 2.5, -4], [2, 2.5, 4]],
-      [[8, 2.5, -4], [8, 2.5, 3]],
-      [[-10, 2.5, -1], [-10, 2.5, 3]],
-      [[-12, 2.5, -2], [14, 2.5, -2]],
-    ];
+    // 5. Build 3D Extruded Meshes for EVERY Region / Oblast
+    const regionMeshes = new Map<string, { mesh: THREE.Mesh; defaultY: number; regionData: RegionData }>();
+    const interactiveMeshesList: THREE.Mesh[] = [];
 
-    borderPoints.forEach((ptsArray) => {
-      const lineGeo = new THREE.BufferGeometry().setFromPoints(
-        ptsArray.map(p => new THREE.Vector3(p[0], p[1], p[2]))
-      );
-      const lineMat = new THREE.LineDashedMaterial({
-        color: 0xcbd5e1,
-        dashSize: 0.8,
-        gapSize: 0.4,
-        linewidth: 1,
+    regions.forEach((region) => {
+      const shape = parseSvgPathToShape(region.path);
+      if (!shape) return;
+
+      const isAlarm = region.isAlarm;
+      const isSelected = selectedRegionId === region.id;
+
+      // 3D Extrusion settings
+      const depth = isAlarm ? 2.4 : 2.0;
+      const extrudeSettings: THREE.ExtrudeGeometryOptions = {
+        depth,
+        bevelEnabled: true,
+        bevelSegments: 3,
+        steps: 1,
+        bevelSize: 0.12,
+        bevelThickness: 0.12,
+      };
+
+      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      geometry.rotateX(-Math.PI / 2); // Lay flat on XZ plane
+
+      // Color palette adjusted for Light vs Dark
+      let topColor = isDark ? 0x1e293b : 0xf8fafc;
+      let sideColor = isDark ? 0x0f172a : 0x94a3b8;
+      let roughness = isDark ? 0.4 : 0.35;
+      let metalness = isDark ? 0.3 : 0.05;
+
+      if (isAlarm) {
+        if (region.threatType === 'ballistic') {
+          topColor = isDark ? 0xdc2626 : 0xef4444;
+          sideColor = isDark ? 0x991b1b : 0xb91c1c;
+        } else if (region.threatType === 'drone') {
+          topColor = isDark ? 0xe11d48 : 0xf87171;
+          sideColor = isDark ? 0x9f1239 : 0xdc2626;
+        } else {
+          topColor = isDark ? 0xf43f5e : 0xfb7185;
+          sideColor = isDark ? 0xbe123c : 0xe11d48;
+        }
+      } else if (isSelected) {
+        topColor = isDark ? 0x2563eb : 0x3b82f6;
+        sideColor = isDark ? 0x1e40af : 0x1d4ed8;
+      }
+
+      const topMaterial = new THREE.MeshPhysicalMaterial({
+        color: topColor,
+        roughness,
+        metalness,
+        clearcoat: isAlarm ? 0.6 : (isDark ? 0.4 : 0.25),
+        clearcoatRoughness: 0.2,
       });
-      const line = new THREE.Line(lineGeo, lineMat);
-      line.computeLineDistances();
-      mapGroup.add(line);
+
+      const sideMaterial = new THREE.MeshStandardMaterial({
+        color: sideColor,
+        roughness: 0.6,
+        metalness: isDark ? 0.4 : 0.1,
+      });
+
+      const mesh = new THREE.Mesh(geometry, [topMaterial, sideMaterial]);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      
+      const defaultY = isAlarm ? 0.3 : 0;
+      mesh.position.y = defaultY;
+      mesh.userData = { regionId: region.id, regionData: region };
+
+      mapGroup.add(mesh);
+      regionMeshes.set(region.id, { mesh, defaultY, regionData: region });
+      interactiveMeshesList.push(mesh);
     });
 
-    // 5. City Coordinates on 3D Map (X, Y=elevation, Z)
-    const cityCoords: { [key: string]: THREE.Vector3 } = {
-      kyiv: new THREE.Vector3(0.5, 2.6, -3.2),
-      kharkiv: new THREE.Vector3(10.8, 2.6, -1.8),
-      dnipro: new THREE.Vector3(8.5, 2.6, 2.4),
-      odesa: new THREE.Vector3(-4.5, 2.6, 5.8),
-      lviv: new THREE.Vector3(-13.5, 2.6, -1.2),
-    };
+    regionMeshesRef.current = regionMeshes;
 
-    // 6. Glowing Radar Beacon Rings (Kyiv & Dnipro)
+    // 6. Dynamic Radar Wave Rings over Alert Regions
     const radarRings: { mesh: THREE.Mesh; speed: number; maxScale: number }[] = [];
 
-    const createRadarRing = (pos: THREE.Vector3, color: number, maxScale: number, speed: number) => {
-      const ringGeo = new THREE.RingGeometry(0.5, 0.8, 32);
+    const createRadarWave = (center: [number, number], color: number, maxScale: number, speed: number) => {
+      const ringGeo = new THREE.RingGeometry(0.4, 0.7, 32);
       const ringMat = new THREE.MeshBasicMaterial({
         color,
         transparent: true,
-        opacity: 0.7,
+        opacity: isDark ? 0.9 : 0.8,
         side: THREE.DoubleSide,
         depthWrite: false,
       });
       const ringMesh = new THREE.Mesh(ringGeo, ringMat);
       ringMesh.rotateX(-Math.PI / 2);
-      ringMesh.position.copy(pos);
-      ringMesh.position.y += 0.05;
+      
+      const x = (center[0] - 500) * 0.042;
+      const z = (center[1] - 330) * 0.042;
+      ringMesh.position.set(x, 2.3, z);
       mapGroup.add(ringMesh);
       radarRings.push({ mesh: ringMesh, speed, maxScale });
-      return ringMesh;
     };
 
-    // Kyiv Blue Beacons
-    createRadarRing(cityCoords.kyiv, 0x3b82f6, 4.0, 0.035);
-    createRadarRing(cityCoords.kyiv, 0x60a5fa, 6.5, 0.025);
+    // Alert wave over Kyiv (threat active)
+    createRadarWave([450, 155], isDark ? 0xf87171 : 0xef4444, 4.5, 0.04);
+    createRadarWave([450, 155], isDark ? 0xfca5a5 : 0xf87171, 7.0, 0.025);
 
-    // Dnipro Red Alert Beacons (pulsing)
-    createRadarRing(cityCoords.dnipro, 0xef4444, 5.0, 0.04);
-    createRadarRing(cityCoords.dnipro, 0xf87171, 7.5, 0.03);
+    // Alert wave over Kharkiv
+    createRadarWave([770, 205], isDark ? 0xf87171 : 0xef4444, 4.0, 0.035);
 
-    // 7. 3D Trajectory Bezier Light Arcs (Kyiv -> Kharkiv, Kharkiv -> Dnipro, Dnipro -> Odesa)
-    const createTrajectoryArc = (p1: THREE.Vector3, p2: THREE.Vector3, color: number) => {
+    // Alert wave over Dnipro
+    createRadarWave([710, 315], isDark ? 0xf87171 : 0xef4444, 5.0, 0.038);
+
+    // 7. 3D Trajectory Curved Light Arcs between key nodes
+    const city3DCoords: { [key: string]: THREE.Vector3 } = {
+      kyiv: new THREE.Vector3((450 - 500) * 0.042, 2.4, (155 - 330) * 0.042),
+      kharkiv: new THREE.Vector3((770 - 500) * 0.042, 2.4, (205 - 330) * 0.042),
+      dnipro: new THREE.Vector3((710 - 500) * 0.042, 2.4, (315 - 330) * 0.042),
+      odesa: new THREE.Vector3((450 - 500) * 0.042, 2.4, (440 - 330) * 0.042),
+      lviv: new THREE.Vector3((95 - 500) * 0.042, 2.4, (205 - 330) * 0.042),
+    };
+
+    const createArc = (p1: THREE.Vector3, p2: THREE.Vector3, color: number) => {
       const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-      mid.y += 5.5; // Arched height in 3D space
-
+      mid.y += 5.5; // Elevated arc
       const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
-      const points = curve.getPoints(50);
+      const points = curve.getPoints(40);
       const arcGeo = new THREE.BufferGeometry().setFromPoints(points);
-
       const arcMat = new THREE.LineDashedMaterial({
         color,
-        dashSize: 0.7,
-        gapSize: 0.35,
+        dashSize: 0.6,
+        gapSize: 0.3,
         linewidth: 2,
         transparent: true,
-        opacity: 0.85,
+        opacity: isDark ? 0.95 : 0.85,
       });
-
       const arcLine = new THREE.Line(arcGeo, arcMat);
       arcLine.computeLineDistances();
       mapGroup.add(arcLine);
-      return arcLine;
     };
 
-    const arc1 = createTrajectoryArc(cityCoords.kyiv, cityCoords.kharkiv, 0x3b82f6);
-    const arc2 = createTrajectoryArc(cityCoords.kharkiv, cityCoords.dnipro, 0xf59e0b);
-    const arc3 = createTrajectoryArc(cityCoords.dnipro, cityCoords.odesa, 0xef4444);
-    const arc4 = createTrajectoryArc(cityCoords.kyiv, cityCoords.odesa, 0x60a5fa);
+    // Neon arcs (orange and cyan in dark mode, matching image IMG_8325.jpeg!)
+    createArc(city3DCoords.kyiv, city3DCoords.kharkiv, isDark ? 0x38bdf8 : 0x3b82f6);
+    createArc(city3DCoords.kharkiv, city3DCoords.dnipro, isDark ? 0xfb923c : 0xf59e0b);
+    createArc(city3DCoords.dnipro, city3DCoords.odesa, isDark ? 0xf87171 : 0xef4444);
+    createArc(city3DCoords.kyiv, city3DCoords.odesa, isDark ? 0x60a5fa : 0x60a5fa);
+    createArc(city3DCoords.lviv, city3DCoords.kyiv, isDark ? 0xfb923c : 0x3b82f6);
 
-    // 8. Interactive Mouse Tilt & Parallax
-    let targetRotX = -0.12;
-    let targetRotY = 0.05;
-    let currentRotX = -0.12;
-    let currentRotY = 0.05;
+    // 8. Raycasting Mouse Interactivity (Hover & Click detection on individual Oblasts)
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let currentHoveredMesh: THREE.Mesh | null = null;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      targetRotY = x * 0.18 + 0.05;
-      targetRotX = -y * 0.12 - 0.12;
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+
+      // Mouse Parallax Rotation
+      controlsTargetRef.current.rotY = mouse.x * 0.18 + 0.05;
+      controlsTargetRef.current.rotX = -mouse.y * 0.12 - 0.22;
+
+      // Raycast to find hovered region
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactiveMeshesList);
+
+      if (intersects.length > 0) {
+        const hitMesh = intersects[0].object as THREE.Mesh;
+        if (hitMesh !== currentHoveredMesh) {
+          if (currentHoveredMesh) {
+            const prevEntry = regionMeshes.get(currentHoveredMesh.userData.regionId);
+            if (prevEntry) {
+              currentHoveredMesh.position.y = prevEntry.defaultY;
+            }
+          }
+          currentHoveredMesh = hitMesh;
+          hitMesh.position.y += 0.35;
+          const regData = hitMesh.userData.regionData as RegionData;
+          setHoveredRegion(regData);
+        }
+        setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      } else {
+        if (currentHoveredMesh) {
+          const prevEntry = regionMeshes.get(currentHoveredMesh.userData.regionId);
+          if (prevEntry) {
+            currentHoveredMesh.position.y = prevEntry.defaultY;
+          }
+          currentHoveredMesh = null;
+        }
+        setHoveredRegion(null);
+        setTooltipPos(null);
+      }
     };
 
-    container.addEventListener('mousemove', handleMouseMove);
+    const handlePointerClick = () => {
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactiveMeshesList);
+      if (intersects.length > 0) {
+        const hitMesh = intersects[0].object as THREE.Mesh;
+        const regData = hitMesh.userData.regionData as RegionData;
+        if (onSelectRegion) {
+          onSelectRegion(regData);
+        }
+      }
+    };
 
-    // 9. Render Animation Loop
+    container.addEventListener('mousemove', handlePointerMove);
+    container.addEventListener('click', handlePointerClick);
+
+    // 9. Animation Render Loop
     let animationFrameId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
+    let currentRotX = -0.22;
+    let currentRotY = 0.05;
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Smooth camera / map tilt
-      currentRotX += (targetRotX - currentRotX) * 0.05;
-      currentRotY += (targetRotY - currentRotY) * 0.05;
+      // Smooth Camera / Group Rotation
+      currentRotX += (controlsTargetRef.current.rotX - currentRotX) * 0.06;
+      currentRotY += (controlsTargetRef.current.rotY - currentRotY) * 0.06;
       mapGroup.rotation.x = currentRotX;
       mapGroup.rotation.y = currentRotY;
 
-      // Animate Radar Wave Rings
+      // Animate Radar Rings
       radarRings.forEach((r, idx) => {
-        const cycle = (elapsedTime * 1.2 + idx * 0.6) % 2.5;
+        const cycle = (elapsedTime * 1.3 + idx * 0.5) % 2.5;
         const progress = cycle / 2.5;
         const scale = 1 + progress * (r.maxScale - 1);
         r.mesh.scale.set(scale, scale, scale);
-        (r.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.7 * (1 - progress));
+        (r.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, (isDark ? 0.9 : 0.8) * (1 - progress));
       });
 
-      // Subtle light oscillation
-      redAlertLight.intensity = 2.8 + Math.sin(elapsedTime * 4.5) * 1.2;
-      blueAccentLight.intensity = 2.2 + Math.cos(elapsedTime * 2.5) * 0.6;
+      // Pulse Alert Light
+      redAlertLight.intensity = (isDark ? 4.5 : 3.0) + Math.sin(elapsedTime * 4.0) * 1.5;
+      blueAccentLight.intensity = (isDark ? 3.5 : 2.0) + Math.cos(elapsedTime * 2.0) * 0.8;
+      orangeThreatLight.intensity = (isDark ? 3.8 : 2.0) + Math.sin(elapsedTime * 3.0) * 1.0;
 
       renderer.render(scene, camera);
     };
@@ -331,93 +445,237 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
-      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mousemove', handlePointerMove);
+      container.removeEventListener('click', handlePointerClick);
       if (renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
       renderer.dispose();
-      geometry.dispose();
-      topMaterial.dispose();
-      sideMaterial.dispose();
-      shadowMat.dispose();
     };
-  }, [variant]);
+  }, [regions, selectedRegionId, variant, isDark]);
+
+  // Adjust Camera Zoom & View Angle
+  const handleZoom = (delta: number) => {
+    if (!cameraRef.current) return;
+    const newZoom = Math.max(0.7, Math.min(1.6, zoomLevel + delta));
+    setZoomLevel(newZoom);
+    cameraRef.current.position.set(0, 36 / newZoom, 44 / newZoom);
+    cameraRef.current.lookAt(0, 0, 0);
+  };
+
+  const handleToggleView = () => {
+    if (!cameraRef.current) return;
+    if (viewAngle === '3D') {
+      setViewAngle('TOP');
+      cameraRef.current.position.set(0, 56, 0.1);
+      cameraRef.current.lookAt(0, 0, 0);
+    } else {
+      setViewAngle('3D');
+      cameraRef.current.position.set(0, 36, 44);
+      cameraRef.current.lookAt(0, 0, 0);
+    }
+  };
+
+  const handleResetView = () => {
+    if (!cameraRef.current) return;
+    setZoomLevel(1);
+    setViewAngle('3D');
+    cameraRef.current.position.set(0, 36, 44);
+    cameraRef.current.lookAt(0, 0, 0);
+    controlsTargetRef.current = { rotX: -0.22, rotY: 0.05, zoom: 1 };
+  };
 
   return (
     <div 
       ref={containerRef} 
-      className={`relative w-full h-full select-none ${className}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`relative w-full h-full select-none cursor-grab active:cursor-grabbing ${className}`}
     >
-      {/* City Labels Overlay on Top of 3D Canvas */}
-      {variant === 'hero' ? (
+      {/* 3D Map Floating Interactive Tooltip */}
+      {hoveredRegion && tooltipPos && (
+        <div 
+          className="absolute z-40 pointer-events-none transform -translate-x-1/2 -translate-y-full mb-3"
+          style={{ left: tooltipPos.x, top: tooltipPos.y }}
+        >
+          <div className={`${
+            isDark 
+              ? 'bg-slate-900/95 text-white border-slate-700/80 shadow-[0_10px_25px_rgba(0,0,0,0.5)]' 
+              : 'bg-white/95 text-slate-900 border-slate-200/90 shadow-[0_10px_25px_rgba(0,0,0,0.12)]'
+          } backdrop-blur-md rounded-2xl p-3 border min-w-[190px] animate-in fade-in zoom-in-95 duration-150`}>
+            <div className={`flex items-center justify-between gap-2 border-b pb-1.5 mb-1.5 ${
+              isDark ? 'border-slate-800' : 'border-slate-100'
+            }`}>
+              <span className="font-bold text-xs">{hoveredRegion.name}</span>
+              {hoveredRegion.isAlarm ? (
+                <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                  isDark 
+                    ? 'text-rose-400 bg-rose-950/60 border-rose-800' 
+                    : 'text-rose-600 bg-rose-50 border-rose-200'
+                }`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                  Тривога
+                </span>
+              ) : (
+                <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  isDark 
+                    ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800' 
+                    : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                }`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Спокійно
+                </span>
+              )}
+            </div>
+
+            {hoveredRegion.isAlarm ? (
+              <div className="space-y-1 text-[11px]">
+                <div className={isDark ? 'text-slate-300' : 'text-slate-500'}>
+                  Загроза: <strong className={isDark ? 'text-rose-300 font-bold' : 'text-slate-800 font-bold'}>{hoveredRegion.threatType.toUpperCase()}</strong>
+                </div>
+                {hoveredRegion.durationMinutes > 0 && (
+                  <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+                    Триває: {hoveredRegion.durationMinutes} хв
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Населення: {(hoveredRegion.population / 1000).toFixed(0)} тис.
+              </div>
+            )}
+            <div className="mt-1.5 pt-1 border-t border-slate-100/10 text-[9px] text-blue-400 font-bold text-right">
+              Натисніть для деталей →
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Map Control Tools (Top Right) */}
+      {enableControls && (
+        <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-30">
+          <button
+            onClick={() => handleZoom(0.15)}
+            className={`p-1.5 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer ${
+              isDark 
+                ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700' 
+                : 'bg-white/90 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+            }`}
+            title="Збільшити"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => handleZoom(-0.15)}
+            className={`p-1.5 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer ${
+              isDark 
+                ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700' 
+                : 'bg-white/90 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+            }`}
+            title="Зменшити"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleToggleView}
+            className={`p-1.5 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer ${
+              viewAngle === 'TOP' 
+                ? 'bg-blue-600 text-white border-blue-500' 
+                : (isDark ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700' : 'bg-white/90 hover:bg-white text-slate-600 border-slate-200/80')
+            }`}
+            title="Змінити ракурс 3D / 2D"
+          >
+            <Layers className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleResetView}
+            className={`p-1.5 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer ${
+              isDark 
+                ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700' 
+                : 'bg-white/90 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+            }`}
+            title="Скинути ракурс"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* City Markers Overlay with Ukrainian Labels */}
+      {variant === 'hero' && (
         <>
-          {/* Kyiv Label */}
+          {/* Kyiv Node */}
           <div 
-            onClick={() => onSelectCity?.('kyiv')}
+            onClick={() => {
+              const reg = regions.find(r => r.id === 'kyiv_obl' || r.id === 'kyiv_city');
+              if (reg && onSelectRegion) onSelectRegion(reg);
+            }}
             className="absolute top-[32%] left-[47%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
           >
             <div className="relative flex items-center justify-center w-5 h-5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-blue-600 border-2 border-white shadow-md" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-cyan-500 border-2 border-white shadow-md" />
             </div>
-            <span className="text-xs font-black text-slate-900 drop-shadow-xs group-hover:text-blue-600 transition-colors">
+            <span className={`text-xs font-black drop-shadow-xs transition-colors ${
+              isDark ? 'text-white group-hover:text-cyan-400' : 'text-slate-900 group-hover:text-blue-600'
+            }`}>
               Київ
             </span>
           </div>
 
-          {/* Kharkiv Label */}
+          {/* Kharkiv Node */}
           <div 
-            onClick={() => onSelectCity?.('kharkiv')}
+            onClick={() => {
+              const reg = regions.find(r => r.id === 'kharkiv');
+              if (reg && onSelectRegion) onSelectRegion(reg);
+            }}
             className="absolute top-[36%] left-[73%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
           >
             <div className="relative flex items-center justify-center w-4 h-4">
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500 border-2 border-white shadow-md" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400 border-2 border-white shadow-md" />
             </div>
-            <span className="text-xs font-bold text-slate-800 drop-shadow-xs group-hover:text-blue-600 transition-colors">
+            <span className={`text-xs font-bold drop-shadow-xs transition-colors ${
+              isDark ? 'text-slate-100 group-hover:text-cyan-400' : 'text-slate-800 group-hover:text-blue-600'
+            }`}>
               Харків
             </span>
           </div>
 
-          {/* Dnipro Label (Active Threat Epicenter) */}
+          {/* Dnipro Node */}
           <div 
-            onClick={() => onSelectCity?.('dnipro')}
+            onClick={() => {
+              const reg = regions.find(r => r.id === 'dnipro');
+              if (reg && onSelectRegion) onSelectRegion(reg);
+            }}
             className="absolute top-[55%] left-[67%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
           >
             <div className="relative flex items-center justify-center w-6 h-6">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
               <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-600 border-2 border-white shadow-lg" />
             </div>
-            <span className="text-xs font-black text-slate-900 drop-shadow-xs group-hover:text-rose-600 transition-colors">
+            <span className={`text-xs font-black drop-shadow-xs transition-colors ${
+              isDark ? 'text-rose-400 group-hover:text-rose-300' : 'text-slate-900 group-hover:text-rose-600'
+            }`}>
               Дніпро
             </span>
           </div>
 
-          {/* Odesa Label */}
+          {/* Odesa Node */}
           <div 
-            onClick={() => onSelectCity?.('odesa')}
+            onClick={() => {
+              const reg = regions.find(r => r.id === 'odesa');
+              if (reg && onSelectRegion) onSelectRegion(reg);
+            }}
             className="absolute top-[68%] left-[44%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
           >
             <div className="relative flex items-center justify-center w-4 h-4">
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600 border-2 border-white shadow-md" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500 border-2 border-white shadow-md" />
             </div>
-            <span className="text-xs font-bold text-slate-800 drop-shadow-xs group-hover:text-blue-600 transition-colors">
+            <span className={`text-xs font-bold drop-shadow-xs transition-colors ${
+              isDark ? 'text-slate-100 group-hover:text-cyan-400' : 'text-slate-800 group-hover:text-blue-600'
+            }`}>
               Одеса
             </span>
           </div>
         </>
-      ) : (
-        /* Workspace variant overlay: Focused alert on Kyiv */
-        <div className="absolute top-[38%] left-[48%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20">
-          <div className="relative flex items-center justify-center w-7 h-7">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-70" />
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-blue-600 border-2 border-white shadow-md" />
-          </div>
-          <span className="text-xs font-black text-slate-900 drop-shadow-xs bg-white/80 px-2 py-0.5 rounded-full border border-slate-200">
-            Київ
-          </span>
-        </div>
       )}
     </div>
   );

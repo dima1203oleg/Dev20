@@ -189,7 +189,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FB] text-slate-900 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className={`min-h-screen flex flex-col font-['Plus_Jakarta_Sans',sans-serif] transition-colors duration-300 ${
+      settings.theme === 'dark' ? 'bg-[#080C14] text-slate-100' : 'bg-[#F4F7FB] text-slate-900'
+    }`}>
       
       {/* 1. Header (Головна, Мережа, Фінанси, Профіль) */}
       <Header
@@ -200,6 +202,11 @@ export default function App() {
         }}
         regions={regions}
         myRegionName={myRegionObj.name}
+        theme={settings.theme || 'light'}
+        onToggleTheme={() => {
+          const nextTheme = settings.theme === 'dark' ? 'light' : 'dark';
+          handleUpdateSettings({ theme: nextTheme });
+        }}
       />
 
       {/* 2. Critical Alert Banner if Active */}
@@ -229,12 +236,16 @@ export default function App() {
         {activeSection === 'HOME' && (
           <div className="space-y-5 animate-in fade-in duration-200">
             
-            {/* Top Hero Section */}
+            {/* Top Hero Section with 3D Map of Ukraine with Oblasts */}
             <HeroSection
+              regions={regions}
+              selectedRegionId={selectedRegion?.id}
+              onSelectRegion={(reg) => setSelectedRegion(reg)}
               onOpenMap={() => setSelectedRegion(regions.find(r => r.id === 'kyiv_obl') || null)}
               onOpenGuide={() => setIsGuideOpen(true)}
               onOpenThreats={() => setIsSimulatorOpen(true)}
               activeThreatsCount={3}
+              theme={settings.theme || 'light'}
             />
 
             {/* 4 Quick Metric Cards: Мій регіон | Стан | Оновлено | Активні події */}
@@ -247,6 +258,7 @@ export default function App() {
               onSelectRegion={() => setSelectedRegion(regions.find(r => r.id === 'odesa') || null)}
               onOpenStatus={() => handleToggleTestSiren()}
               onOpenEvents={() => setIsSimulatorOpen(true)}
+              theme={settings.theme || 'light'}
             />
 
             {/* Middle 2-Panel Grid: Фінансова інформація (Left) & Ситуація Workspace (Right) */}
@@ -254,10 +266,13 @@ export default function App() {
               
               {/* Left Panel: Фінансова інформація (3D Card Stack) */}
               <div className="lg:col-span-5 flex flex-col">
-                <div className="bg-white/60 rounded-3xl p-1 flex-1">
+                <div className={`rounded-3xl p-1 flex-1 ${
+                  settings.theme === 'dark' ? 'bg-slate-900/40' : 'bg-white/60'
+                }`}>
                   <Financial3DCardCarousel
                     onOpenPayout={() => setActiveSection('FINANCE')}
                     onOpenHistory={() => setActiveSection('FINANCE')}
+                    theme={settings.theme || 'light'}
                   />
                 </div>
               </div>
@@ -278,6 +293,7 @@ export default function App() {
                     onNavigateToFinance={() => setActiveSection('FINANCE')}
                     onNavigateToNetwork={() => setActiveSection('NETWORK')}
                     onTestSiren={handleToggleTestSiren}
+                    theme={settings.theme || 'light'}
                   />
                 </div>
               </div>
@@ -293,6 +309,7 @@ export default function App() {
                   if (tabId === 'simulator') setIsSimulatorOpen(true);
                 }}
                 isCriticalAlert={isSirenPlaying}
+                theme={settings.theme || 'light'}
               />
             </div>
 
@@ -307,6 +324,7 @@ export default function App() {
             <AffiliateProgram
               onOpenMap={() => setActiveSection('HOME')}
               onOpenSimulator={() => setIsSimulatorOpen(true)}
+              theme={settings.theme || 'light'}
             />
           </div>
         )}
@@ -317,10 +335,9 @@ export default function App() {
         {activeSection === 'FINANCE' && (
           <div className="py-2 animate-in fade-in duration-200">
             <FinanceSection
-              availableBalance={4230}
-              pendingBalance={1450}
-              lifetimeEarnings={18560}
-              onNavigateToHome={() => setActiveSection('HOME')}
+              onOpenWithdrawModal={() => {}}
+              onOpenHistory={() => {}}
+              theme={settings.theme || 'light'}
             />
           </div>
         )}
@@ -331,15 +348,7 @@ export default function App() {
         {activeSection === 'PROFILE' && (
           <div className="py-2 animate-in fade-in duration-200">
             <ProfileSection
-              settings={settings}
-              onUpdateSettings={handleUpdateSettings}
-              isSirenPlaying={isSirenPlaying}
-              onToggleTestSiren={handleToggleTestSiren}
-              onOpenGuide={() => setIsGuideOpen(true)}
-              isDemoMode={isDemoMode}
-              onToggleDemoMode={() => {
-                setIsDemoMode(!isDemoMode);
-              }}
+              theme={settings.theme || 'light'}
             />
           </div>
         )}
