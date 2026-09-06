@@ -1,24 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
-import { DigitalTwinHero } from './components/DigitalTwinHero';
-import { DigitalTwinCockpit } from './components/DigitalTwinCockpit';
+import { SmartMetricRail } from './components/SmartMetricRail';
+import { CentralWorkspace } from './components/CentralWorkspace';
+import { SmartContextPanel } from './components/SmartContextPanel';
+import { FinanceSection } from './components/FinanceSection';
+import { ProfileSection } from './components/ProfileSection';
+import { AffiliateProgram } from './components/AffiliateProgram';
 import { SirenOrbitalDeviceEcosystem } from './components/orbital/SirenOrbitalDeviceEcosystem';
-import { ThreeDAllGadgetsShowcase } from './components/ThreeDAllGadgetsShowcase';
-import { ThreeDWebGLStudio } from './components/ThreeDWebGLStudio';
-import { ThreeDSpecModal } from './components/ThreeDSpecModal';
-import { UkraineMap } from './components/UkraineMap';
-import { SirenaDashboardStats } from './components/SirenaDashboardStats';
-import { InteractiveThreatSimulator } from './components/InteractiveThreatSimulator';
-import { SheltersSection } from './components/SheltersSection';
-import { AlertsFeed } from './components/AlertsFeed';
 import { RegionInspectorModal } from './components/RegionInspectorModal';
 import { SimulatorModal } from './components/SimulatorModal';
 import { EmergencyGuideModal } from './components/EmergencyGuideModal';
-import { AudioSettingsBar } from './components/AudioSettingsBar';
-import { AffiliateProgram } from './components/AffiliateProgram';
+import { SheltersSection } from './components/SheltersSection';
+
 import { INITIAL_REGIONS, INITIAL_ALERTS_FEED } from './data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from './data/spatialThreatData';
-import { RegionData, AlertEvent, UserSettings, ThreatType, ThreatSceneModel } from './types';
+import { 
+  RegionData, 
+  AlertEvent, 
+  UserSettings, 
+  ThreatType, 
+  ThreatSceneModel,
+  DashboardSection 
+} from './types';
 import { 
   startSirenSound, 
   stopSirenSound, 
@@ -26,26 +29,20 @@ import {
   speakAlertNotification 
 } from './utils/sirenAudio';
 import { 
-  Radio, 
-  ShieldAlert, 
-  Info, 
-  Bell, 
-  Volume2, 
-  Flame, 
+  AlertTriangle, 
   ExternalLink,
-  Zap,
-  CheckCircle2,
-  AlertTriangle,
-  Layers,
-  Box,
-  Compass,
+  ShieldCheck,
+  ShieldAlert,
   Navigation,
   Sparkles,
-  Smartphone,
-  ShieldCheck
+  BookOpen
 } from 'lucide-react';
 
 export default function App() {
+  // Navigation: HOME | NETWORK | FINANCE | PROFILE
+  const [activeSection, setActiveSection] = useState<DashboardSection>('HOME');
+
+  // Regions & Alert Data
   const [regions, setRegions] = useState<RegionData[]>(() => {
     try {
       const saved = localStorage.getItem('sirenua_regions_state');
@@ -68,7 +65,7 @@ export default function App() {
     const defaultSettings: UserSettings = {
       myRegion: 'kyiv_city',
       soundEnabled: true,
-      volume: 75,
+      volume: 0.75,
       voiceChime: true,
       vibrateOnMobile: true,
       theme: 'dark',
@@ -88,15 +85,16 @@ export default function App() {
     }
   });
 
-  const [activeNavTab, setActiveNavTab] = useState<'COCKPIT' | 'WEBGL_3D' | 'MAP' | 'ECOSYSTEM' | 'SIMULATOR' | 'SHELTERS' | 'AFFILIATE'>('COCKPIT');
+  // Active selections & Modals
   const [selectedRegion, setSelectedRegion] = useState<RegionData | null>(null);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
-  const [isSpecModalOpen, setIsSpecModalOpen] = useState(false);
+  const [isSheltersModalOpen, setIsSheltersModalOpen] = useState(false);
   const [isSirenPlaying, setIsSirenPlaying] = useState(false);
   const [bannerAlert, setBannerAlert] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
-  // Sync state to local storage
+  // Sync to LocalStorage
   useEffect(() => {
     try {
       localStorage.setItem('sirenua_regions_state', JSON.stringify(regions));
@@ -125,7 +123,7 @@ export default function App() {
     });
   };
 
-  // Timer to increment duration of active alarms
+  // Timer for active alarms duration
   useEffect(() => {
     const interval = setInterval(() => {
       setRegions((prev) =>
@@ -144,7 +142,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Handle Siren Toggle
+  // Siren Controls
   const handleToggleTestSiren = () => {
     if (isSirenPlaying) {
       stopSirenSound();
@@ -171,7 +169,7 @@ export default function App() {
     setTimeout(() => setBannerAlert(null), 4000);
   };
 
-  // Check if user's region status changes
+  // My Region alarm notification check
   const prevMyRegionAlarmRef = useRef<boolean>(
     regions.find((r) => r.id === settings.myRegion)?.isAlarm || false
   );
@@ -198,22 +196,18 @@ export default function App() {
         if (settings.soundEnabled) {
           playAllClearSound(settings.volume);
         }
-        if (settings.voiceChime) {
-          speakAlertNotification(`Відбій повітряної тривоги у ${currentMyRegion?.name}`);
-        }
-        setBannerAlert(`🟢 Відбій повітряної тривоги: ${currentMyRegion?.name}`);
+        setBannerAlert(`🟢 Відбій тривоги у ${currentMyRegion?.name}. Загроза минула.`);
+        setTimeout(() => setBannerAlert(null), 5000);
       }
       prevMyRegionAlarmRef.current = isNowAlarm;
     }
-  }, [regions, settings.myRegion, settings.soundEnabled, settings.voiceChime, settings.volume, isSirenPlaying]);
+  }, [regions, settings.myRegion, settings.soundEnabled, settings.volume, settings.voiceChime, isSirenPlaying]);
 
-  // Apply predefined simulation scenario
-  const handleApplyScenario = (
-    scenario: 'massive_drone' | 'ballistic_all' | 'eastern_front' | 'all_clear' | 'central_ukraine'
-  ) => {
+  // Apply Simulation Scenarios
+  const handleApplyScenario = (scenario: string) => {
     const nowIso = new Date().toISOString();
 
-    if (scenario === 'all_clear') {
+    if (scenario === 'clear_all') {
       setRegions((prev) =>
         prev.map((r) => ({
           ...r,
@@ -224,18 +218,6 @@ export default function App() {
           threatDetails: undefined,
         }))
       );
-
-      const clearEvent: AlertEvent = {
-        id: `evt-${Date.now()}`,
-        regionId: 'all',
-        regionName: 'Вся Україна',
-        type: 'end',
-        threatType: 'none',
-        timestamp: nowIso,
-        description: '🟢 Повний відбій загрози по всій території України. Небезпека минула.',
-        source: 'Повітряні Сили ЗСУ',
-      };
-      setAlerts((prev) => [clearEvent, ...prev.slice(0, 30)]);
       handlePlayAllClear();
       return;
     }
@@ -317,33 +299,6 @@ export default function App() {
         source: 'Повітряні Сили ЗСУ',
       };
       setAlerts((prev) => [droneEvent, ...prev.slice(0, 30)]);
-      return;
-    }
-
-    if (scenario === 'eastern_front') {
-      const eastIds = ['kharkiv', 'sumy', 'dnipro', 'zaporizhzhia', 'donetsk', 'luhansk', 'kherson'];
-      setRegions((prev) =>
-        prev.map((r) => {
-          if (eastIds.includes(r.id)) {
-            return {
-              ...r,
-              isAlarm: true,
-              threatType: r.id === 'kharkiv' ? 'ballistic' : r.id === 'donetsk' ? 'artillery' : 'aviation',
-              startedAt: nowIso,
-              durationMinutes: 12,
-              threatDetails: 'Загроза тактичної авіації, КАБів та артобстрілів вздовж фронту',
-            };
-          }
-          return {
-            ...r,
-            isAlarm: false,
-            threatType: 'none',
-            startedAt: null,
-            durationMinutes: 0,
-            threatDetails: undefined,
-          };
-        })
-      );
     }
   };
 
@@ -384,18 +339,17 @@ export default function App() {
     );
   };
 
-  // Compute Unified Threat Scene Model for the 3D Ecosystem
-  const activeAlarmsCount = regions.filter((r) => r.isAlarm).length;
+  // Build ThreatSceneModel for components
   const myRegionObj = regions.find((r) => r.id === settings.myRegion);
-  const primaryThreatObj = INITIAL_TRAJECTORIES.find((t) => t.status === 'ACTIVE') || INITIAL_TRAJECTORIES[0] || null;
+  const activeAlarmsCount = regions.filter((r) => r.isAlarm).length;
 
   const threatSceneModel: ThreatSceneModel = {
-    timestamp: new Date().toLocaleTimeString('uk-UA'),
+    timestamp: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     freshness: 'REALTIME',
-    dataMode: 'LIVE',
+    dataMode: isDemoMode ? 'DEMO_DATA' : 'LIVE',
     activeAlarmsCount,
-    criticalRegions: regions.filter((r) => r.isAlarm).map((r) => r.name),
-    primaryThreat: primaryThreatObj,
+    criticalRegions: regions.filter((r) => r.isAlarm && r.threatType === 'ballistic').map((r) => r.id),
+    primaryThreat: INITIAL_TRAJECTORIES[0] || null,
     nearestShelter: {
       id: 'sh-1',
       name: 'Станція метро «Золоті Ворота»',
@@ -422,267 +376,217 @@ export default function App() {
       etaMinutes: 18,
       riskLevel: myRegionObj?.isAlarm ? 'HIGH' : 'LOW',
     },
-    partnerModeActive: activeNavTab === 'AFFILIATE',
+    partnerModeActive: activeSection === 'NETWORK' || activeSection === 'FINANCE',
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-cyan-500/30 font-['Plus_Jakarta_Sans',sans-serif]">
       
-      {/* Header */}
+      {/* 1. Header (Minimal 4 tabs on desktop / bottom nav on mobile) */}
       <Header
+        activeSection={activeSection}
+        onSelectSection={(sec) => {
+          setActiveSection(sec);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
         regions={regions}
-        settings={settings}
-        onUpdateSettings={handleUpdateSettings}
-        onOpenGuide={() => setIsGuideOpen(true)}
-        onOpenSimulator={() => setIsSimulatorOpen(true)}
-        onOpenSpecModal={() => setIsSpecModalOpen(true)}
-        onSelectMyRegion={(id) => handleUpdateSettings({ myRegion: id })}
-        isSirenPlaying={isSirenPlaying}
-        onToggleTestSiren={handleToggleTestSiren}
-        activeNavTab={activeNavTab}
-        onSelectNavTab={setActiveNavTab}
+        myRegionName={myRegionObj?.name}
       />
 
-      {/* Dynamic Alert Banner */}
+      {/* 2. Critical Alert Banner (Appears when active threat or siren) */}
       {bannerAlert && (
-        <div className="bg-gradient-to-r from-red-600 via-amber-600 to-red-600 text-white px-4 py-2.5 shadow-xl text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300">
+        <div className="bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 text-white px-4 py-2.5 shadow-xl text-center text-xs sm:text-sm font-mono font-bold flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-40">
           <AlertTriangle className="w-4 h-4 animate-bounce" />
           <span>{bannerAlert}</span>
           <button
             onClick={() => setBannerAlert(null)}
-            className="ml-3 p-1 rounded hover:bg-black/20 text-xs"
+            className="ml-3 px-2 py-0.5 rounded bg-black/20 hover:bg-black/40 text-xs"
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* Main Content Dashboard */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
+      {/* 3. Main Body */}
+      <main className="flex-1 pb-16 md:pb-8">
         
-        {/* Tab 1: Flagship 3D Digital Twin & Cockpit */}
-        {activeNavTab === 'COCKPIT' && (
-          <div className="space-y-8 animate-in fade-in duration-200">
-            {/* Hero Section with 3D Holographic Layer Stack & Earnings Focus */}
-            <DigitalTwinHero
-              regions={regions}
-              trajectories={INITIAL_TRAJECTORIES}
-              settings={settings}
-              onOpenCockpit={() => {
-                const cockpitElem = document.getElementById('cockpit-view');
-                cockpitElem?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              onOpenMap={() => setActiveNavTab('MAP')}
-              onOpenSimulator={() => setActiveNavTab('SIMULATOR')}
-              onOpenShelters={() => setActiveNavTab('SHELTERS')}
-              onOpenSpecModal={() => setIsSpecModalOpen(true)}
-              onOpenAffiliate={() => setActiveNavTab('AFFILIATE')}
-              onOpenWebGL3D={() => setActiveNavTab('WEBGL_3D')}
+        {/* =========================================================================
+            SECTION 1: HOME (Головна)
+            Layout:
+            - SmartMetricRail (KPI carousel)
+            - CentralWorkspace (СИТУАЦІЯ vs МОЯ МЕРЕЖА)
+            - SmartContextPanel
+            - 3D Device Ecosystem (Single bottom instance with full 3D volumetric models)
+           ========================================================================= */}
+        {activeSection === 'HOME' && (
+          <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
+            
+            {/* Smart KPI Rail Carousel */}
+            <SmartMetricRail
+              threatModel={threatSceneModel}
+              availableBalance={4230}
+              monthlyEarnings={18560}
+              totalL1={154}
+              totalL2={382}
+              currentRankName="GOLD"
+              onNavigateToFinance={() => setActiveSection('FINANCE')}
+              onNavigateToNetwork={() => setActiveSection('NETWORK')}
+              onNavigateToShelters={() => setIsSheltersModalOpen(true)}
             />
 
-            {/* Curved Command Cockpit HUD */}
-            <div id="cockpit-view">
-              <DigitalTwinCockpit
-                regions={regions}
-                trajectories={INITIAL_TRAJECTORIES}
-                settings={settings}
-                onSelectRegion={(reg) => setSelectedRegion(reg)}
-                onNavigateToSimulator={() => setActiveNavTab('SIMULATOR')}
-                onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-                onNavigateToWebGL3D={() => setActiveNavTab('WEBGL_3D')}
-              />
-            </div>
+            {/* Central Workspace (The Core Crown Jewel) */}
+            <CentralWorkspace
+              regions={regions}
+              selectedRegion={selectedRegion}
+              onSelectRegion={(reg) => setSelectedRegion(reg)}
+              myRegionId={settings.myRegion}
+              onSetMyRegion={(id) => handleUpdateSettings({ myRegion: id })}
+              threatModel={threatSceneModel}
+              settings={settings}
+              onUpdateSettings={handleUpdateSettings}
+              onNavigateToShelters={() => setIsSheltersModalOpen(true)}
+              onNavigateToFinance={() => setActiveSection('FINANCE')}
+              onTestSiren={handleToggleTestSiren}
+            />
 
-            {/* Key Live Metrics & Active Feeds below Cockpit */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              <div className="lg:col-span-8">
-                <SirenaDashboardStats
-                  regions={regions}
-                  myRegionId={settings.myRegion}
-                  onSelectRegion={(reg) => setSelectedRegion(reg)}
-                  isSirenPlaying={isSirenPlaying}
-                  onToggleSiren={handleToggleTestSiren}
-                  onOpenSimulator={() => setIsSimulatorOpen(true)}
-                />
-              </div>
-              <div className="lg:col-span-4">
-                <AlertsFeed
-                  alerts={alerts}
-                  onSelectRegionById={(id) => {
-                    const reg = regions.find((r) => r.id === id);
-                    if (reg) setSelectedRegion(reg);
-                  }}
-                />
-              </div>
-            </div>
+            {/* Smart Context Horizontal Strip */}
+            <SmartContextPanel
+              threatModel={threatSceneModel}
+              onNavigateToShelters={() => setIsSheltersModalOpen(true)}
+              onNavigateToFinance={() => setActiveSection('FINANCE')}
+              onNavigateToNetwork={() => setActiveSection('NETWORK')}
+            />
 
-            {/* Signature SIREN 3D Orbital Device Ecosystem */}
-            <div id="all-gadgets-3d-ecosystem">
+            {/* Signature SIREN 3D Orbital Device Ecosystem (Only one instance, positioned at bottom) */}
+            <div id="orbital-device-ecosystem-section" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
               <SirenOrbitalDeviceEcosystem
                 threatModel={threatSceneModel}
                 onNavigateToTab={(tabId) => {
-                  if (tabId === 'map') setActiveNavTab('MAP');
-                  if (tabId === 'simulator') setActiveNavTab('SIMULATOR');
-                  if (tabId === 'shelters') setActiveNavTab('SHELTERS');
+                  if (tabId === 'shelters') setIsSheltersModalOpen(true);
+                  if (tabId === 'simulator') setIsSimulatorOpen(true);
                 }}
                 isCriticalAlert={isSirenPlaying}
               />
             </div>
-          </div>
-        )}
 
-        {/* Tab: Real WebGL 3D Airspace Studio (Three.js) */}
-        {activeNavTab === 'WEBGL_3D' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <ThreeDWebGLStudio
-              regions={regions}
-              onSelectRegion={(reg) => setSelectedRegion(reg)}
-              myRegionId={settings.myRegion}
-              onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-              onNavigateToSimulator={() => setActiveNavTab('SIMULATOR')}
-            />
-
-            {/* Quick Live Stats & Alerts under 3D WebGL Studio */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              <div className="lg:col-span-8">
-                <SirenaDashboardStats
-                  regions={regions}
-                  myRegionId={settings.myRegion}
-                  onSelectRegion={(reg) => setSelectedRegion(reg)}
-                  isSirenPlaying={isSirenPlaying}
-                  onToggleSiren={handleToggleTestSiren}
-                  onOpenSimulator={() => setIsSimulatorOpen(true)}
-                />
-              </div>
-              <div className="lg:col-span-4">
-                <AlertsFeed
-                  alerts={alerts}
-                  onSelectRegionById={(id) => {
-                    const reg = regions.find((r) => r.id === id);
-                    if (reg) setSelectedRegion(reg);
-                  }}
-                />
+            {/* Quick Emergency DSNS Guide Launcher Strip */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2">
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-cyan-950 text-cyan-400 border border-cyan-800">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-white font-bold block">Офіційний довідник правил безпеки ДСНС</span>
+                    <span className="text-slate-400 text-[11px]">Що робити при ракетному обстрілі, атаці БпЛА або загрозі балістики</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsGuideOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs font-mono transition-colors"
+                >
+                  Відкрити пам'ятку дій
+                </button>
               </div>
             </div>
+
           </div>
         )}
 
-        {/* Tab 2: 3D Isometric / 2D Tactical Map View */}
-        {activeNavTab === 'MAP' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              {/* Left / Center: Interactive 3D/2D Map */}
-              <div className="lg:col-span-8 space-y-4">
-                <UkraineMap
-                  regions={regions}
-                  selectedRegionId={selectedRegion?.id || null}
-                  onSelectRegion={(reg) => setSelectedRegion(reg)}
-                  showLabels={settings.showLabels}
-                  onToggleLabels={() => handleUpdateSettings({ showLabels: !settings.showLabels })}
-                  myRegionId={settings.myRegion}
-                  is3DMode={settings.viewMode === '3D'}
-                  onToggle3DMode={() => handleUpdateSettings({ viewMode: settings.viewMode === '3D' ? '2D' : '3D' })}
-                  onNavigateToWebGL3D={() => setActiveNavTab('WEBGL_3D')}
-                />
-
-                {/* Audio Settings Bar below Map */}
-                <AudioSettingsBar
-                  settings={settings}
-                  onUpdateSettings={handleUpdateSettings}
-                  isSirenPlaying={isSirenPlaying}
-                  onToggleTestSiren={handleToggleTestSiren}
-                  onPlayAllClear={handlePlayAllClear}
-                />
-              </div>
-
-              {/* Right: Live Alerts Stream */}
-              <div className="lg:col-span-4">
-                <AlertsFeed
-                  alerts={alerts}
-                  onSelectRegionById={(id) => {
-                    const reg = regions.find((r) => r.id === id);
-                    if (reg) setSelectedRegion(reg);
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: 3D Multi-Device Ecosystem */}
-        {activeNavTab === 'ECOSYSTEM' && (
-          <div className="animate-in fade-in duration-200 space-y-6">
-            <SirenOrbitalDeviceEcosystem
-              threatModel={threatSceneModel}
-              onNavigateToTab={(tabId) => {
-                if (tabId === 'map') setActiveNavTab('MAP');
-                if (tabId === 'simulator') setActiveNavTab('SIMULATOR');
-                if (tabId === 'shelters') setActiveNavTab('SHELTERS');
-              }}
-              isCriticalAlert={isSirenPlaying}
-            />
-
-            <ThreeDAllGadgetsShowcase
-              regions={regions}
-              trajectories={INITIAL_TRAJECTORIES}
-              settings={settings}
-              onNavigateToMap={() => setActiveNavTab('MAP')}
-              onNavigateToSimulator={() => setActiveNavTab('SIMULATOR')}
-              onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-              onNavigateToWebGL={() => setActiveNavTab('WEBGL_3D')}
-            />
-          </div>
-        )}
-
-        {/* Tab 4: 7-Step Interactive Threat Simulator */}
-        {activeNavTab === 'SIMULATOR' && (
-          <div className="animate-in fade-in duration-200 space-y-6">
-            <InteractiveThreatSimulator
-              onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-            />
-          </div>
-        )}
-
-        {/* Tab 5: Shelters & Tactical Routing */}
-        {activeNavTab === 'SHELTERS' && (
-          <div className="animate-in fade-in duration-200 space-y-6">
-            <SheltersSection
-              myRegionId={settings.myRegion}
-              regions={regions}
-            />
-          </div>
-        )}
-
-        {/* Tab 6: 2-Level Partner / Affiliate Program L1 & L2 */}
-        {activeNavTab === 'AFFILIATE' && (
-          <div className="animate-in fade-in duration-200 space-y-6">
+        {/* =========================================================================
+            SECTION 2: NETWORK (Мережа)
+            Full dedicated 2-Level partner system & referral analytics
+           ========================================================================= */}
+        {activeSection === 'NETWORK' && (
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 animate-in fade-in duration-200">
             <AffiliateProgram
-              onOpenMap={() => setActiveNavTab('MAP')}
-              onOpenSimulator={() => setActiveNavTab('SIMULATOR')}
+              onOpenMap={() => setActiveSection('HOME')}
+              onOpenSimulator={() => setIsSimulatorOpen(true)}
             />
-            <ThreeDAllGadgetsShowcase
-              regions={regions}
-              trajectories={INITIAL_TRAJECTORIES}
+          </div>
+        )}
+
+        {/* =========================================================================
+            SECTION 3: FINANCE (Фінанси)
+            Dedicated balance, payouts (min $10 ~ ₴415), transaction ledger
+           ========================================================================= */}
+        {activeSection === 'FINANCE' && (
+          <div className="animate-in fade-in duration-200">
+            <FinanceSection
+              availableBalance={4230}
+              pendingBalance={1450}
+              lifetimeEarnings={18560}
+              onNavigateToHome={() => setActiveSection('HOME')}
+            />
+          </div>
+        )}
+
+        {/* =========================================================================
+            SECTION 4: PROFILE (Профіль)
+            Ambassador ranking (Starter -> Platinum), Top-100, Achievements, Audio test
+           ========================================================================= */}
+        {activeSection === 'PROFILE' && (
+          <div className="animate-in fade-in duration-200">
+            <ProfileSection
               settings={settings}
-              onNavigateToMap={() => setActiveNavTab('MAP')}
-              onNavigateToSimulator={() => setActiveNavTab('SIMULATOR')}
-              onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-              onNavigateToWebGL={() => setActiveNavTab('WEBGL_3D')}
+              onUpdateSettings={handleUpdateSettings}
+              isSirenPlaying={isSirenPlaying}
+              onToggleTestSiren={handleToggleTestSiren}
+              onOpenGuide={() => setIsGuideOpen(true)}
+              isDemoMode={isDemoMode}
+              onToggleDemoMode={() => {
+                setIsDemoMode(!isDemoMode);
+                if (!isDemoMode) {
+                  handleApplyScenario('massive_drone');
+                } else {
+                  handleApplyScenario('clear_all');
+                }
+              }}
             />
           </div>
         )}
 
       </main>
 
-      {/* Region Inspector Drill-down Modal */}
-      <RegionInspectorModal
-        region={selectedRegion}
-        onClose={() => setSelectedRegion(null)}
-        onSetMyRegion={(id) => handleUpdateSettings({ myRegion: id })}
-        isMyRegion={selectedRegion?.id === settings.myRegion}
-        onTestSiren={handleToggleTestSiren}
-        isSirenPlaying={isSirenPlaying}
-      />
+      {/* =========================================================================
+          MODALS & DRAWERS
+         ========================================================================= */}
+      
+      {/* Shelters Modal if opened via quick route */}
+      {isSheltersModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-slate-900 border-2 border-slate-800 shadow-2xl p-4 sm:p-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-lg font-black text-white font-mono">Карта укриттів та безпечні маршрути</h3>
+              </div>
+              <button
+                onClick={() => setIsSheltersModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <SheltersSection
+              myRegionId={settings.myRegion}
+              regions={regions}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Region Inspector Drill-down Modal (if explicitly requested) */}
+      {selectedRegion && (
+        <RegionInspectorModal
+          region={selectedRegion}
+          onClose={() => setSelectedRegion(null)}
+          onSetMyRegion={(id) => handleUpdateSettings({ myRegion: id })}
+          isMyRegion={selectedRegion?.id === settings.myRegion}
+          onTestSiren={handleToggleTestSiren}
+          isSirenPlaying={isSirenPlaying}
+        />
+      )}
 
       {/* Threat Simulator Drawer / Modal */}
       <SimulatorModal
@@ -699,151 +603,56 @@ export default function App() {
         onClose={() => setIsGuideOpen(false)}
       />
 
-      {/* 3D Specification Modal */}
-      <ThreeDSpecModal
-        isOpen={isSpecModalOpen}
-        onClose={() => setIsSpecModalOpen(false)}
-      />
-
-      {/* Mobile Sticky Quick-Dock Bar (For smooth touch navigation on smartphones & tablets) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/90 px-2 py-1.5 flex items-center justify-around shadow-2xl">
-        <button
-          onClick={() => {
-            setActiveNavTab('COCKPIT');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center p-1.5 rounded-xl text-[10px] font-bold transition-all ${
-            activeNavTab === 'COCKPIT' ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-400'
-          }`}
-        >
-          <Radio className="w-4 h-4 mb-0.5" />
-          <span>Головна</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveNavTab('WEBGL_3D');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center p-1.5 rounded-xl text-[10px] font-bold transition-all ${
-            activeNavTab === 'WEBGL_3D' ? 'text-cyan-300 bg-cyan-500/20' : 'text-slate-400'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 mb-0.5 text-cyan-300" />
-          <span>3D Студія</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveNavTab('MAP');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center p-1.5 rounded-xl text-[10px] font-bold transition-all ${
-            activeNavTab === 'MAP' ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-400'
-          }`}
-        >
-          <Box className="w-4 h-4 mb-0.5" />
-          <span>Карта</span>
-        </button>
-
-        <button
-          onClick={() => {
-            const el = document.getElementById('all-gadgets-3d-showcase');
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth' });
-            } else {
-              setActiveNavTab('ECOSYSTEM');
-            }
-          }}
-          className="flex flex-col items-center p-1.5 rounded-xl text-[10px] font-bold text-purple-300 transition-all hover:bg-purple-500/10"
-        >
-          <Smartphone className="w-4 h-4 mb-0.5 text-purple-400 animate-pulse" />
-          <span>3D Гаджети</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveNavTab('SIMULATOR');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center p-1.5 rounded-xl text-[10px] font-bold transition-all ${
-            activeNavTab === 'SIMULATOR' ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400'
-          }`}
-        >
-          <Zap className="w-4 h-4 mb-0.5" />
-          <span>Симулятор</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveNavTab('SHELTERS');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center p-1.5 rounded-xl text-[10px] font-bold transition-all ${
-            activeNavTab === 'SHELTERS' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-400'
-          }`}
-        >
-          <ShieldCheck className="w-4 h-4 mb-0.5" />
-          <span>Укриття</span>
-        </button>
-      </div>
-
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 mt-12 py-6 pb-20 lg:pb-6 text-xs text-slate-500">
+      <footer className="border-t border-slate-900 bg-slate-950 mt-10 py-6 text-xs font-mono text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4">
           
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-slate-300">SirenUA</span>
+            <span className="font-extrabold text-white">SirenUA DEV20 v2</span>
             <span>•</span>
-            <span>Живий Digital Twin та система просторового моніторингу України</span>
+            <span>Digital Twin просторової безпеки та партнерська мережа України</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-slate-400">
             <button
-              onClick={() => setActiveNavTab('COCKPIT')}
+              onClick={() => {
+                setActiveSection('HOME');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className="hover:text-cyan-400 transition-colors"
             >
-              Digital Twin
+              Головна
             </button>
             <button
-              onClick={() => setActiveNavTab('MAP')}
-              className="hover:text-cyan-400 transition-colors"
-            >
-              Карта
-            </button>
-            <button
-              onClick={() => setActiveNavTab('ECOSYSTEM')}
+              onClick={() => {
+                setActiveSection('NETWORK');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className="hover:text-purple-400 transition-colors"
             >
-              Екосистема
+              Мережа
             </button>
             <button
-              onClick={() => setActiveNavTab('SIMULATOR')}
-              className="hover:text-amber-400 transition-colors"
-            >
-              7-Кроковий Симулятор
-            </button>
-            <button
-              onClick={() => setActiveNavTab('SHELTERS')}
+              onClick={() => {
+                setActiveSection('FINANCE');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className="hover:text-emerald-400 transition-colors"
             >
-              Укриття
+              Фінанси
             </button>
             <button
-              onClick={() => setActiveNavTab('AFFILIATE')}
-              className="hover:text-amber-300 font-semibold transition-colors"
+              onClick={() => {
+                setActiveSection('PROFILE');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="hover:text-amber-400 transition-colors"
             >
-              Партнерам (L1/L2)
-            </button>
-            <button
-              onClick={() => setIsSpecModalOpen(true)}
-              className="hover:text-cyan-400 transition-colors"
-            >
-              ТЗ 3D
+              Профіль
             </button>
             <button
               onClick={() => setIsGuideOpen(true)}
-              className="hover:text-amber-400 transition-colors"
+              className="hover:text-amber-300 transition-colors"
             >
               Пам'ятка ДСНС
             </button>

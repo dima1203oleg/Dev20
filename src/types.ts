@@ -232,3 +232,20 @@ export interface OrbitalDeviceConfig {
   keyFeatures: string[];
 }
 
+export type DashboardSection = 'HOME' | 'NETWORK' | 'FINANCE' | 'PROFILE';
+
+export type MainWorkspaceMode = 'SAFETY' | 'NETWORK';
+
+export interface SmartMetric {
+  id: string;
+  label: string;
+  value: string;
+  secondary?: string;
+  trend?: string;
+  status?: 'NORMAL' | 'INFO' | 'WARNING' | 'CRITICAL';
+  tag?: string;
+  category: 'SAFETY' | 'PARTNER';
+  actionLabel?: string;
+  onAction?: () => void;
+}
+
