@@ -1,0 +1,6 @@
+{
+  "name": "SirenUA - Карта повітряних тривог України",
+  "description": "Просторова карта повітряних тривог України, моніторинг траєкторій БпЛА та ракет, інтерактивний симулятор загроз, навігація до укриттів та звукова сирена SirenUA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
