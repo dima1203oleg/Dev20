@@ -2,51 +2,64 @@
 
 :root {
   color-scheme: light;
-  --siren-bg: #f4f7fb;
-  --siren-card: #ffffff;
-  --siren-blue: #2563eb;
-  --siren-blue-light: #eff6ff;
-  --siren-slate-900: #0f172a;
-  --siren-slate-800: #1e293b;
-  --siren-slate-600: #475569;
-  --siren-slate-400: #94a3b8;
+  --siren-bg: #F7F9FC;
+  --siren-bg-alt: #F1F4F9;
+  --siren-card: #FFFFFF;
+  --siren-text-primary: #111827;
+  --siren-text-secondary: #5B6472;
+  --siren-text-helper: #8B95A7;
+  --siren-blue: #2563EB;
+  --siren-blue-light: #4F8CFF;
+  --siren-teal: #14B8A6;
+  --siren-success: #22C55E;
+  --siren-warning: #F59E0B;
+  --siren-danger: #EF4444;
 }
 
 html {
   scroll-behavior: smooth;
-  background: #f4f7fb;
+  background: #F7F9FC;
 }
 
 body {
   margin: 0;
   min-width: 320px;
-  background: #f4f7fb;
-  background-image: 
-    radial-gradient(circle at 60% -10%, rgba(59, 130, 246, 0.08), transparent 40rem),
-    radial-gradient(circle at 10% 30%, rgba(99, 102, 241, 0.05), transparent 35rem),
-    radial-gradient(circle at 80% 60%, rgba(6, 182, 212, 0.04), transparent 30rem);
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #0f172a;
+  background: #F7F9FC;
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #111827;
   overflow-x: hidden;
+}
+
+/* Custom Soft Google-style Shadow Utilities */
+.shadow-google-sm {
+  box-shadow: 0 1px 3px 0 rgba(17, 24, 39, 0.04), 0 1px 2px -1px rgba(17, 24, 39, 0.03);
+}
+
+.shadow-google-card {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.02);
+}
+
+.shadow-google-lg {
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.03);
 }
 
 /* Custom Clean Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #F1F4F9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #CBD5E1;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #94A3B8;
 }
 
 @layer utilities {

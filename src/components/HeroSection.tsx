@@ -11,7 +11,8 @@ import {
   RotateCw,
   MapPin,
   Layers,
-  Sparkles
+  Sparkles,
+  Shield
 } from 'lucide-react';
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { ThreeMapUkraine } from './ThreeMapUkraine';
@@ -42,45 +43,45 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const isDark = theme === 'dark';
 
   return (
-    <section className={`relative w-full rounded-3xl p-5 sm:p-7 lg:p-8 border shadow-xs overflow-hidden transition-colors ${
+    <section className={`relative w-full rounded-3xl p-6 sm:p-8 lg:p-10 border transition-all duration-300 ${
       isDark 
-        ? 'bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-blue-950/40 border-slate-800 text-white' 
-        : 'bg-gradient-to-r from-blue-50/70 via-slate-50/50 to-blue-50/40 border-slate-200/70 text-slate-900'
+        ? 'bg-[#111827] border-slate-800 text-white shadow-google-lg' 
+        : 'bg-[#FFFFFF] border-slate-200/70 text-[#111827] shadow-google-card'
     }`}>
       
-      {/* Background Soft Ambient Light */}
-      <div className={`absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl pointer-events-none -z-10 ${
-        isDark ? 'bg-blue-600/15' : 'bg-blue-200/40'
+      {/* Background Soft Studio Ambient Glow (No aggressive neon) */}
+      <div className={`absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[100px] pointer-events-none -z-10 ${
+        isDark ? 'bg-blue-900/10' : 'bg-blue-50/70'
       }`} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
         
-        {/* Left Column: Headline & Call To Action (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
+        {/* Left Column: Product Presentation & Clear CTAs (5 cols) */}
+        <div className="lg:col-span-5 space-y-5 z-10">
           
-          {/* Top Pill Badge */}
-          <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold shadow-2xs ${
+          {/* Google-style Minimalist Badge */}
+          <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-tight transition-colors ${
             isDark 
-              ? 'bg-slate-900/90 border border-slate-800 text-slate-300' 
-              : 'bg-blue-50/90 border border-blue-100 text-blue-700'
+              ? 'bg-slate-800/80 border border-slate-700/80 text-slate-200' 
+              : 'bg-[#F1F4F9] border border-slate-200/80 text-[#2563EB]'
           }`}>
             <span className="text-sm">🇺🇦</span>
-            <span>Україна сильна, коли ми разом</span>
+            <span>Платформа безпеки та ситуативної обізнаності</span>
           </div>
 
           {/* Main Headline */}
-          <h1 className={`text-2xl sm:text-3xl lg:text-[38px] font-black tracking-tight leading-[1.15] ${
-            isDark ? 'text-white' : 'text-slate-900'
+          <h1 className={`text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight leading-[1.14] ${
+            isDark ? 'text-white' : 'text-[#111827]'
           }`}>
             Розумій ситуацію.<br />
-            <span className="text-blue-600">Не просто отримуй тривогу.</span>
+            <span className="text-[#2563EB]">Не просто отримуй тривогу.</span>
           </h1>
 
-          {/* Subtitle description */}
-          <p className={`text-xs sm:text-sm leading-relaxed max-w-lg ${
-            isDark ? 'text-slate-400' : 'text-slate-600'
+          {/* Subtitle description with comfortable readability */}
+          <p className={`text-sm sm:text-base leading-relaxed max-w-lg ${
+            isDark ? 'text-[#8B95A7]' : 'text-[#5B6472]'
           }`}>
-            Актуальна інформація, реальні загрози, надійна аналітика. SIREN UA — це більше, ніж сповіщення. Це безпека, технології та можливості для кожного українця.
+            Актуальна інформація, реальні загрози та високоточна просторова аналітика. SIREN UA створена для швидких та усвідомлених рішень.
           </p>
 
           {/* Action Buttons Row */}
@@ -90,9 +91,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onOpenMap();
                 playWebAudioSound('click');
               }}
-              className="px-5 sm:px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 flex items-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              className="px-6 py-3.5 rounded-2xl bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-sm transition-all duration-200 flex items-center gap-2.5 cursor-pointer hover:shadow-md"
             >
-              {/* Apple Icon */}
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 1.01-2.87-.96.04-2.12.65-2.8 1.44-.6.69-.99 1.76-.94 2.82 1.07.08 2.12-.55 2.73-1.39z"/>
               </svg>
@@ -105,29 +105,27 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onOpenGuide();
                 playWebAudioSound('click');
               }}
-              className={`px-4 sm:px-5 py-3 rounded-2xl font-semibold text-xs sm:text-sm border shadow-2xs flex items-center gap-2 transition-all cursor-pointer ${
+              className={`px-5 py-3.5 rounded-2xl font-semibold text-sm border transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 isDark 
-                  ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-800 hover:border-slate-700' 
-                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200/80 hover:border-slate-300'
+                  ? 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border-slate-700' 
+                  : 'bg-white hover:bg-[#F7F9FC] text-[#111827] border-slate-200 shadow-google-sm hover:border-slate-300'
               }`}
             >
               <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                isDark ? 'bg-blue-950/80 text-blue-400' : 'bg-blue-50 text-blue-600'
+                isDark ? 'bg-blue-950/80 text-blue-400' : 'bg-blue-50 text-[#2563EB]'
               }`}>
-                <Play className="w-2.5 h-2.5 fill-blue-600 ml-0.5" />
+                <Play className="w-2.5 h-2.5 fill-[#2563EB] ml-0.5" />
               </div>
               <span>Дивитись демо</span>
             </button>
           </div>
 
-          {/* QR Code & Features Row (1:1 with Reference Design) */}
+          {/* Clean App Store Badges & Fast Setup Features */}
           <div className="pt-2 flex flex-wrap items-center gap-4">
             
-            {/* QR box and App Store button */}
-            <div className="flex items-center gap-2">
-              {/* QR Code */}
-              <div className={`w-14 h-14 rounded-xl p-1.5 border flex items-center justify-center ${
-                isDark ? 'bg-white border-slate-700' : 'bg-white border-slate-200 shadow-2xs'
+            <div className="flex items-center gap-2.5">
+              <div className={`w-13 h-13 rounded-xl p-1.5 border flex items-center justify-center ${
+                isDark ? 'bg-white border-slate-700' : 'bg-white border-slate-200 shadow-google-sm'
               }`}>
                 <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900 fill-current">
                   <rect width="30" height="30" rx="3" />
@@ -154,14 +152,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </svg>
               </div>
 
-              {/* App Store button badge */}
               <a
                 href="#download"
                 onClick={(e) => {
                   e.preventDefault();
                   alert('Завантажити SirenUA з App Store');
                 }}
-                className="px-3 py-2 rounded-xl bg-black hover:bg-slate-900 text-white flex items-center gap-2 shadow-xs transition-transform hover:scale-102"
+                className="px-3.5 py-2 rounded-xl bg-[#111827] hover:bg-black text-white flex items-center gap-2 shadow-google-sm transition-transform hover:scale-[1.02] cursor-pointer"
               >
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 1.01-2.87-.96.04-2.12.65-2.8 1.44-.6.69-.99 1.76-.94 2.82 1.07.08 2.12-.55 2.73-1.39z"/>
@@ -173,19 +170,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </a>
             </div>
 
-            {/* Feature bullets */}
-            <div className={`space-y-1 text-[11px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            <div className={`space-y-1 text-xs font-medium ${isDark ? 'text-[#8B95A7]' : 'text-[#5B6472]'}`}>
               <div className="flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-blue-500" />
+                <Zap className="w-3.5 h-3.5 text-[#2563EB]" />
                 <span>Швидке встановлення</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <RotateCw className="w-3.5 h-3.5 text-blue-500" />
-                <span>Безкоштовне оновлення</span>
+                <RotateCw className="w-3.5 h-3.5 text-[#2563EB]" />
+                <span>Безкоштовні оновлення</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                <span>Працює по всій Україні</span>
+                <MapPin className="w-3.5 h-3.5 text-[#2563EB]" />
+                <span>Покриття всієї України</span>
               </div>
             </div>
 
@@ -193,79 +189,79 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         </div>
 
-        {/* Right Column: 3D Holographic Relief Map of Ukraine with City Beacon Nodes & Threat Cards (7 cols) */}
-        <div className="lg:col-span-7 relative flex flex-col items-center justify-center min-h-[380px]">
+        {/* Right Column: High-End Studio 3D Relief of Ukraine (7 cols) */}
+        <div className="lg:col-span-7 relative flex flex-col items-center justify-center min-h-[390px]">
           
-          {/* Top Right Floating Threat Badges Stack */}
-          <div className="absolute top-0 right-0 z-30 space-y-2 max-w-[280px] w-full hidden sm:block">
+          {/* Top Right Floating Threat Status Card */}
+          <div className="absolute top-0 right-0 z-30 space-y-2.5 max-w-[270px] w-full hidden sm:block">
             
-            {/* Card 1: Red Alert Bar */}
+            {/* Alert Card 1: Critical Threat Bar (Uses red only for threats) */}
             <div 
               onClick={onOpenThreats}
-              className={`p-3 rounded-2xl flex items-center justify-between cursor-pointer shadow-lg hover:scale-102 transition-all ${
+              className={`p-3 rounded-2xl flex items-center justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
                 isDark 
-                  ? 'bg-slate-900 border border-rose-900/60 text-white' 
-                  : 'bg-[#1E293B] text-white shadow-xl'
+                  ? 'bg-slate-900/95 border border-rose-900/40 text-white shadow-google-card' 
+                  : 'bg-[#FFFFFF] border border-rose-100 text-[#111827] shadow-google-card'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-4 h-4 text-rose-500 fill-rose-500/20" />
+                <div className="w-7 h-7 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-4 h-4 text-rose-600" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 text-xs font-bold">
                     <span>Активні загрози</span>
-                    <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[11px] font-black flex items-center justify-center">
+                    <span className="w-4.5 h-4.5 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center">
                       {activeThreatsCount}
                     </span>
                   </div>
-                  <div className="text-[11px] font-bold text-slate-300 flex items-center gap-1 mt-0.5">
+                  <div className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-slate-400' : 'text-[#5B6472]'}`}>
                     <span>БпЛА</span>
-                    <span className="text-[10px] text-slate-400 font-normal">· Південно-західний напрямок</span>
+                    <span className="text-[10px] font-normal"> · Південно-західний</span>
                   </div>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </div>
 
-            {/* Card 2: Kyiv Region Detail Box */}
-            <div className={`p-3.5 rounded-2xl border shadow-lg space-y-2 ${
+            {/* Region Detail Box */}
+            <div className={`p-3.5 rounded-2xl border transition-all duration-200 space-y-2 ${
               isDark 
-                ? 'bg-slate-900/95 border-slate-800 text-white' 
-                : 'bg-white/95 backdrop-blur-md border-slate-200/80 text-slate-900'
+                ? 'bg-slate-900/95 border-slate-800 text-white shadow-google-card' 
+                : 'bg-white border-slate-200/80 text-[#111827] shadow-google-card'
             }`}>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold">Київська область</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold flex items-center gap-1">
                   <span>⚠️</span>
                   <span>Підвищена увага</span>
                 </span>
               </div>
 
-              <div className={`space-y-1 text-[11px] border-t pt-1.5 ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-500'}`}>
+              <div className={`space-y-1 text-[11px] border-t pt-1.5 ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-[#5B6472]'}`}>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
-                    <Crosshair className="w-3 h-3 text-blue-500" /> Тип загрози:
+                    <Crosshair className="w-3 h-3 text-[#2563EB]" /> Тип загрози:
                   </span>
-                  <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>БпЛА</span>
+                  <span className={`font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>БпЛА</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
-                    <Compass className="w-3 h-3 text-blue-500" /> Напрямок:
+                    <Compass className="w-3 h-3 text-[#2563EB]" /> Напрямок:
                   </span>
-                  <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Південно-західний</span>
+                  <span className={`font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>Південно-західний</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-blue-500" /> Оновлено:
+                    <Clock className="w-3 h-3 text-[#2563EB]" /> Оновлено:
                   </span>
-                  <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Сьогодні, 22:14</span>
+                  <span className={`font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>Сьогодні, 22:14</span>
                 </div>
               </div>
 
               <button 
                 onClick={onOpenMap}
-                className="w-full text-right text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center justify-end gap-1 pt-1 cursor-pointer"
+                className="w-full text-right text-xs font-bold text-[#2563EB] hover:text-blue-700 flex items-center justify-end gap-1 pt-1 cursor-pointer"
               >
                 <span>Детальніше</span>
                 <ArrowRight className="w-3 h-3" />
@@ -274,101 +270,97 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           </div>
 
-          {/* 3D Volumetric Ukraine Map Canvas or Static High-Res 3D Render */}
-          <div className="relative w-full aspect-[16/10] max-h-[400px] rounded-3xl overflow-hidden flex items-center justify-center group">
+          {/* 3D Studio Holographic Map Visual (Clean transparent cutout floating on white surface) */}
+          <div className="relative w-full aspect-[16/10] max-h-[410px] flex items-center justify-center group">
             
             {mapMode === 'STATIC_RENDER' ? (
               <div className="relative w-full h-full flex items-center justify-center">
-                {/* 3D Static Render Image */}
+                {/* 3D Isolated Relief Map with transparent background & soft organic studio shadow */}
                 <img
-                  src="/src/assets/images/ukraine_3d_map_hero_1788736310705.jpg"
+                  src="/src/assets/images/ukraine_3d_cutout.png"
                   alt="3D Карта України Siren UA"
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover rounded-3xl transition-transform duration-700 group-hover:scale-102"
+                  className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-103 drop-shadow-[0_15px_30px_rgba(37,99,235,0.18)]"
                 />
 
-                {/* Interactive Overlay Nodes for Major Cities matching screenshot */}
-                {/* 1. Львів (Lviv) - Golden node */}
+                {/* Minimalist City Beacon Nodes */}
+                {/* 1. Львів (Lviv) */}
                 <div 
                   onClick={() => {
                     const reg = regions?.find(r => r.id === 'lviv');
                     if (reg && onSelectRegion) onSelectRegion(reg);
                   }}
-                  className="absolute top-[28%] left-[24%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-115 transition-transform"
+                  className="absolute top-[30%] left-[22%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
                 >
-                  <div className="relative flex items-center justify-center w-4 h-4">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400 border-2 border-white shadow-md" />
+                  <div className="relative flex items-center justify-center w-3.5 h-3.5">
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400 border-2 border-white shadow-google-sm" />
                   </div>
-                  <span className="text-xs font-black text-slate-900 bg-white/90 px-1.5 py-0.5 rounded-md shadow-xs drop-shadow-sm">
+                  <span className="text-[11px] font-bold text-[#111827] bg-white/95 px-1.5 py-0.5 rounded-md shadow-google-sm border border-slate-200/50">
                     Львів
                   </span>
                 </div>
 
-                {/* 2. Київ (Kyiv) - Main Cyan/Blue concentric pulse rings */}
+                {/* 2. Київ (Kyiv) */}
                 <div 
                   onClick={() => {
                     const reg = regions?.find(r => r.id === 'kyiv_obl' || r.id === 'kyiv_city');
                     if (reg && onSelectRegion) onSelectRegion(reg);
                   }}
-                  className="absolute top-[30%] left-[54%] flex items-center gap-2 cursor-pointer z-20 group/node hover:scale-115 transition-transform"
+                  className="absolute top-[28%] left-[52%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
                 >
-                  <div className="relative flex items-center justify-center w-7 h-7">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-80" />
-                    <span className="absolute inline-flex h-5 w-5 rounded-full border border-cyan-400/60" />
-                    <span className="relative inline-flex rounded-full h-4 w-4 bg-cyan-500 border-2 border-white shadow-lg" />
+                  <div className="relative flex items-center justify-center w-5 h-5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#2563EB] border-2 border-white shadow-google-sm" />
                   </div>
-                  <span className="text-xs font-black text-slate-900 bg-white/95 px-2 py-0.5 rounded-md shadow-sm drop-shadow-sm">
+                  <span className="text-[11px] font-bold text-[#111827] bg-white/95 px-2 py-0.5 rounded-md shadow-google-sm border border-slate-200/50">
                     Київ
                   </span>
                 </div>
 
-                {/* 3. Харків (Kharkiv) - Red/Orange node */}
+                {/* 3. Харків (Kharkiv) */}
                 <div 
                   onClick={() => {
                     const reg = regions?.find(r => r.id === 'kharkiv');
                     if (reg && onSelectRegion) onSelectRegion(reg);
                   }}
-                  className="absolute top-[36%] left-[78%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-115 transition-transform"
+                  className="absolute top-[35%] left-[76%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
                 >
-                  <div className="relative flex items-center justify-center w-5 h-5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
-                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-600 border-2 border-white shadow-md" />
+                  <div className="relative flex items-center justify-center w-4 h-4">
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 border-2 border-white shadow-google-sm" />
                   </div>
-                  <span className="text-xs font-black text-rose-950 bg-rose-50/95 border border-rose-200 px-1.5 py-0.5 rounded-md shadow-xs">
+                  <span className="text-[11px] font-bold text-rose-900 bg-rose-50/95 border border-rose-200 px-1.5 py-0.5 rounded-md shadow-google-sm">
                     Харків
                   </span>
                 </div>
 
-                {/* 4. Дніпро (Dnipro) - Orange node with drone icon */}
+                {/* 4. Дніпро (Dnipro) */}
                 <div 
                   onClick={() => {
                     const reg = regions?.find(r => r.id === 'dnipro');
                     if (reg && onSelectRegion) onSelectRegion(reg);
                   }}
-                  className="absolute top-[52%] left-[69%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-115 transition-transform"
+                  className="absolute top-[50%] left-[68%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
                 >
-                  <div className="relative flex items-center justify-center w-5 h-5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-80" />
-                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500 border-2 border-white shadow-md" />
+                  <div className="relative flex items-center justify-center w-3.5 h-3.5">
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 border-2 border-white shadow-google-sm" />
                   </div>
-                  <span className="text-xs font-black text-slate-900 bg-white/90 px-1.5 py-0.5 rounded-md shadow-xs">
+                  <span className="text-[11px] font-bold text-[#111827] bg-white/95 px-1.5 py-0.5 rounded-md shadow-google-sm border border-slate-200/50">
                     Дніпро
                   </span>
                 </div>
 
-                {/* 5. Одеса (Odesa) - Blue node */}
+                {/* 5. Одеса (Odesa) */}
                 <div 
                   onClick={() => {
                     const reg = regions?.find(r => r.id === 'odesa');
                     if (reg && onSelectRegion) onSelectRegion(reg);
                   }}
-                  className="absolute top-[68%] left-[48%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-115 transition-transform"
+                  className="absolute top-[66%] left-[46%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
                 >
-                  <div className="relative flex items-center justify-center w-4 h-4">
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600 border-2 border-white shadow-md" />
+                  <div className="relative flex items-center justify-center w-3.5 h-3.5">
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#2563EB] border-2 border-white shadow-google-sm" />
                   </div>
-                  <span className="text-xs font-bold text-slate-900 bg-white/90 px-1.5 py-0.5 rounded-md shadow-xs">
+                  <span className="text-[11px] font-bold text-[#111827] bg-white/95 px-1.5 py-0.5 rounded-md shadow-google-sm border border-slate-200/50">
                     Одеса
                   </span>
                 </div>
@@ -386,36 +378,36 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               />
             )}
 
-            {/* Mode Toggle button at top left of map */}
-            <div className="absolute top-2.5 left-2.5 z-30">
+            {/* Mode Switcher pill at top left */}
+            <div className="absolute top-1 left-1 z-30">
               <button
                 onClick={() => {
                   setMapMode(mapMode === 'STATIC_RENDER' ? 'WEBGL_INTERACTIVE' : 'STATIC_RENDER');
                   playWebAudioSound('click');
                 }}
-                className="px-2.5 py-1 rounded-xl bg-white/90 hover:bg-white backdrop-blur-md border border-slate-200/80 text-[10px] font-bold text-slate-700 hover:text-blue-600 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                className="px-3 py-1.5 rounded-full bg-white/95 hover:bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:text-[#2563EB] flex items-center gap-1.5 shadow-google-sm transition-all cursor-pointer"
                 title="Перемкнути між 3D-рендером та інтерактивною 3D-моделлю"
               >
                 {mapMode === 'STATIC_RENDER' ? (
                   <>
-                    <Sparkles className="w-3 h-3 text-amber-500" />
-                    <span>3D HD Render</span>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>3D Studio Render</span>
                   </>
                 ) : (
                   <>
-                    <Layers className="w-3 h-3 text-blue-500" />
-                    <span>WebGL 3D Mode</span>
+                    <Layers className="w-3.5 h-3.5 text-[#2563EB]" />
+                    <span>WebGL Interactive</span>
                   </>
                 )}
               </button>
             </div>
 
-            {/* Bottom Right Slogan (1:1 with Reference Design) */}
-            <div className="absolute bottom-2 right-3 text-right pointer-events-none z-20 bg-white/70 backdrop-blur-xs px-2.5 py-1 rounded-xl border border-slate-200/50">
-              <div className={`text-[10px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            {/* Bottom Right Subtle Slogan */}
+            <div className="absolute bottom-1 right-2 text-right pointer-events-none z-20 bg-white/80 backdrop-blur-xs px-3 py-1 rounded-xl border border-slate-200/60">
+              <div className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-[#5B6472]'}`}>
                 Технології. Люди.
               </div>
-              <div className={`text-[10px] font-bold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
+              <div className={`text-[11px] font-bold ${isDark ? 'text-slate-200' : 'text-[#111827]'}`}>
                 Безпечніше завтра.
               </div>
             </div>

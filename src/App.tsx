@@ -190,8 +190,8 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col font-['Plus_Jakarta_Sans',sans-serif] transition-colors duration-300 ${
-      settings.theme === 'dark' ? 'bg-[#080C14] text-slate-100' : 'bg-[#F4F7FB] text-slate-900'
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
+      settings.theme === 'dark' ? 'bg-[#0B0F17] text-slate-100' : 'bg-[#F7F9FC] text-[#111827]'
     }`}>
       
       {/* 1. Header with Global Navigation & User Capsule */}
