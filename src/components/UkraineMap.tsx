@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { RegionData, ThreatType, ThreatTrajectory } from '../types';
 import { INITIAL_TRAJECTORIES } from '../data/spatialThreatData';
+import { GeminiSparkle } from './common/GeminiSparkle';
 
 interface UkraineMapProps {
   regions: RegionData[];
@@ -124,17 +125,17 @@ export const UkraineMap: React.FC<UkraineMapProps> = ({
     <div className="bg-slate-950/90 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl relative flex flex-col overflow-hidden">
       
       {/* 3D Map Header Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800/80">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-white/10">
         
         {/* Left: Mode Title */}
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
-            <Box className="w-4 h-4" />
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-blue-500/15 border border-blue-500/20 text-blue-400">
+            <GeminiSparkle className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-slate-100 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <span>{is3DIsometric ? 'Ізометрична Карта Загроз' : 'Тактична Карта України'}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/5 text-blue-300 border border-white/10 font-mono">
                 GPU ACCELERATED
               </span>
             </h3>
@@ -150,9 +151,9 @@ export const UkraineMap: React.FC<UkraineMapProps> = ({
           {onNavigateToWebGL3D && (
             <button
               onClick={onNavigateToWebGL3D}
-              className="px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 bg-gradient-to-r from-cyan-500 to-sky-500 text-slate-950 shadow-md shadow-cyan-500/30 hover:scale-105"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.4)] hover:opacity-90 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+              <GeminiSparkle className="w-3.5 h-3.5 text-white" />
               <span>Three.js Студія</span>
             </button>
           )}
@@ -160,10 +161,10 @@ export const UkraineMap: React.FC<UkraineMapProps> = ({
           {/* Isometric / Flat Toggle */}
           <button
             onClick={() => setIs3DIsometric(!is3DIsometric)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
               is3DIsometric
-                ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/50 shadow-sm shadow-cyan-950'
-                : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                ? 'bg-blue-600/20 text-blue-300 border-blue-500/40 shadow-[0_0_10px_rgba(59,130,246,0.25)]'
+                : 'bg-white/5 text-slate-400 hover:text-white border-white/10'
             }`}
           >
             <Box className="w-3.5 h-3.5" />
@@ -173,10 +174,10 @@ export const UkraineMap: React.FC<UkraineMapProps> = ({
           {/* Trajectories Layer Toggle */}
           <button
             onClick={() => setShowTrajectories(!showTrajectories)}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
               showTrajectories
-                ? 'bg-amber-500/20 text-amber-200 border border-amber-500/40'
-                : 'bg-slate-900 text-slate-400 border border-slate-800'
+                ? 'bg-purple-600/20 text-purple-300 border-purple-500/40 shadow-[0_0_10px_rgba(168,85,247,0.25)]'
+                : 'bg-white/5 text-slate-400 border-white/10 hover:text-white'
             }`}
             title="Вектори польоту загроз"
           >
@@ -187,10 +188,10 @@ export const UkraineMap: React.FC<UkraineMapProps> = ({
           {/* Radar Sweep Toggle */}
           <button
             onClick={() => setShowRadarSweep(!showRadarSweep)}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
               showRadarSweep
-                ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/40'
-                : 'bg-slate-900 text-slate-400 border border-slate-800'
+                ? 'bg-emerald-600/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.25)]'
+                : 'bg-white/5 text-slate-400 border-white/10 hover:text-white'
             }`}
             title="РЛС Радар"
           >
@@ -201,10 +202,10 @@ export const UkraineMap: React.FC<UkraineMapProps> = ({
           {/* Labels Toggle */}
           <button
             onClick={onToggleLabels}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
               showLabels
-                ? 'bg-slate-800 text-slate-200 border border-slate-700'
-                : 'bg-slate-900 text-slate-500 border border-slate-800'
+                ? 'bg-white/10 text-white border-white/20'
+                : 'bg-white/5 text-slate-400 border-white/10 hover:text-white'
             }`}
             title="Підписи областей"
           >
@@ -212,24 +213,24 @@ export const UkraineMap: React.FC<UkraineMapProps> = ({
           </button>
 
           {/* Zoom controls */}
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5">
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-full p-0.5">
             <button
               onClick={handleZoomIn}
-              className="p-1.5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs"
+              className="p-1.5 hover:bg-white/10 text-slate-300 rounded-full text-xs cursor-pointer"
               title="Наблизити"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleZoomOut}
-              className="p-1.5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs"
+              className="p-1.5 hover:bg-white/10 text-slate-300 rounded-full text-xs cursor-pointer"
               title="Віддалити"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleReset}
-              className="p-1.5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs"
+              className="p-1.5 hover:bg-white/10 text-slate-300 rounded-full text-xs cursor-pointer"
               title="Скинути ракурс"
             >
               <RotateCcw className="w-3.5 h-3.5" />

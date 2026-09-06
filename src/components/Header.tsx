@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
+  Search, 
+  Bell, 
+  ChevronDown, 
   ShieldAlert, 
   Home, 
   Users, 
   Wallet, 
   User, 
-  Bell, 
-  Sparkles,
-  Award,
-  Radio,
-  Clock
+  Radio, 
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { DashboardSection, RegionData } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
@@ -17,36 +18,20 @@ import { playWebAudioSound } from '../utils/sirenAudio';
 interface HeaderProps {
   activeSection: DashboardSection;
   onSelectSection: (section: DashboardSection) => void;
-  regions: RegionData[];
+  regions?: RegionData[];
   myRegionName?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeSection,
   onSelectSection,
-  regions,
-  myRegionName = 'Київська обл.',
+  regions = [],
+  myRegionName = 'Одеська область',
 }) => {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState<string>('');
-  const activeAlarmsCount = regions.filter((r) => r.isAlarm).length;
 
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      const timeString = now.toLocaleTimeString('uk-UA', {
-        timeZone: 'Europe/Kyiv',
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-      setCurrentTime(timeString);
-    };
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const activeAlarmsCount = regions.filter((r) => r.isAlarm).length;
 
   const handleNavClick = (sec: DashboardSection) => {
     onSelectSection(sec);
@@ -54,221 +39,224 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <>
-      {/* Top Fixed Header */}
-      <header className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-3">
-            
-            {/* Brand / Logo */}
-            <div 
-              onClick={() => handleNavClick('HOME')}
-              className="flex items-center gap-3 cursor-pointer group select-none"
-            >
-              <div className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 via-sky-600 to-rose-600 shadow-lg shadow-cyan-950/50 p-2 group-hover:scale-105 transition-transform">
-                <ShieldAlert className="w-5 h-5 text-white" />
-                {activeAlarmsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-slate-950" />
-                  </span>
-                )}
-              </div>
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 transition-all">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+        
+        {/* Left: Brand Logo & Slogan */}
+        <div 
+          onClick={() => handleNavClick('HOME')}
+          className="flex items-center gap-3 cursor-pointer select-none group"
+        >
+          {/* Siren Circular Signal Icon */}
+          <div className="relative w-10 h-10 flex items-center justify-center">
+            <svg viewBox="0 0 40 40" className="w-10 h-10 fill-none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="19" className="fill-blue-50/50 stroke-blue-100" strokeWidth="1" />
+              {/* Concentric Signal Arcs */}
+              <path d="M12 28C10 24 10 16 12 12" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M16 25C14.5 22 14.5 18 16 15" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M28 28C30 24 30 16 28 12" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M24 25C25.5 22 25.5 18 24 15" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="20" cy="20" r="3.5" fill="#2563EB" />
+            </svg>
+            {activeAlarmsCount > 0 && (
+              <span className="absolute top-0 right-0 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+              </span>
+            )}
+          </div>
 
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-base sm:text-lg font-black tracking-tight text-white font-mono group-hover:text-cyan-300 transition-colors">
-                    SIREN UA
-                  </span>
-                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono shadow-[0_0_10px_rgba(6,182,212,0.2)]">
-                    DEV20 3D
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono hidden sm:flex">
-                  <span className="flex items-center gap-1 text-emerald-400">
-                    <Radio className="w-2.5 h-2.5 animate-pulse" />
-                    РЛС 12ms
-                  </span>
-                  <span className="text-slate-600">·</span>
-                  <span className="text-slate-300 flex items-center gap-1">
-                    <Clock className="w-2.5 h-2.5 text-cyan-400" />
-                    {currentTime || 'КИЇВ'}
-                  </span>
-                </div>
-              </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl font-black tracking-tight text-slate-900 font-sans">
+                SIREN
+              </span>
+              <span className="text-xl font-black text-blue-600 font-sans tracking-tight">
+                UA
+              </span>
             </div>
-
-            {/* Desktop Navigation: Exactly 4 Items (Home, Network, Finance, Profile) */}
-            <nav className="hidden md:flex items-center gap-1 p-1 rounded-2xl bg-slate-900 border border-slate-800">
-              <button
-                onClick={() => handleNavClick('HOME')}
-                className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 ${
-                  activeSection === 'HOME'
-                    ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-950'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Home className="w-3.5 h-3.5" />
-                <span>Головна</span>
-              </button>
-
-              <button
-                onClick={() => handleNavClick('NETWORK')}
-                className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 ${
-                  activeSection === 'NETWORK'
-                    ? 'bg-purple-600 text-white font-black shadow-md shadow-purple-950'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Мережа</span>
-              </button>
-
-              <button
-                onClick={() => handleNavClick('FINANCE')}
-                className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 ${
-                  activeSection === 'FINANCE'
-                    ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-950'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Wallet className="w-3.5 h-3.5" />
-                <span>Фінанси</span>
-              </button>
-
-              <button
-                onClick={() => handleNavClick('PROFILE')}
-                className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 ${
-                  activeSection === 'PROFILE'
-                    ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-950'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>Профіль</span>
-              </button>
-            </nav>
-
-            {/* Right Controls: Notification Bell + Avatar */}
-            <div className="flex items-center gap-2">
-              
-              {/* Notifications Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
-                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors relative"
-                  aria-label="Сповіщення"
-                >
-                  <Bell className="w-4 h-4" />
-                  {activeAlarmsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white font-mono">
-                      {activeAlarmsCount}
-                    </span>
-                  )}
-                </button>
-
-                {/* Notifications Dropdown */}
-                {notificationsOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-xs font-mono font-bold text-slate-300">
-                      <span>ОПЕРАТИВНІ СПОВІЩЕННЯ</span>
-                      <span className="text-[10px] text-cyan-400">{activeAlarmsCount} активні</span>
-                    </div>
-                    <div className="mt-2 space-y-2 max-h-56 overflow-y-auto text-xs font-mono">
-                      <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
-                        <div className="font-bold text-rose-400">🔴 {myRegionName}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          Повітряна тривога. Зафіксовано рух БпЛА.
-                        </div>
-                      </div>
-                      <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
-                        <div className="font-bold text-emerald-400">💰 Партнерська виплата</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          Зараховано +₴320 від L1 реферала.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Profile Avatar Button */}
-              <button
-                onClick={() => handleNavClick('PROFILE')}
-                className="flex items-center gap-2 p-1.5 pr-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all select-none group"
-              >
-                <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-mono font-black text-xs">
-                  UA
-                </div>
-                <div className="hidden sm:block text-left">
-                  <div className="text-[10px] font-mono font-bold text-white leading-tight">
-                    Олександр
-                  </div>
-                  <div className="text-[9px] font-mono text-amber-400 font-bold">
-                    GOLD (20%)
-                  </div>
-                </div>
-              </button>
-
+            <div className="text-[9px] font-bold tracking-[0.2em] text-slate-400 uppercase font-sans -mt-0.5">
+              БЕЗПЕКА ОБ'ЄДНУЄ
             </div>
-
           </div>
         </div>
-      </header>
 
-      {/* Mobile Bottom Navigation Bar (Fixed 4 Items) */}
-      <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800 px-3 py-2 flex items-center justify-around shadow-2xl"
-        aria-label="Mobile Navigation"
-      >
+        {/* Center: Desktop Navigation Tabs (Головна, Мережа, Фінанси, Профіль) */}
+        <nav className="hidden md:flex items-center gap-8">
+          <button
+            onClick={() => handleNavClick('HOME')}
+            className={`relative py-5 text-sm font-semibold transition-colors cursor-pointer ${
+              activeSection === 'HOME'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span>Головна</span>
+            {activeSection === 'HOME' && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
+            )}
+          </button>
+
+          <button
+            onClick={() => handleNavClick('NETWORK')}
+            className={`relative py-5 text-sm font-semibold transition-colors cursor-pointer ${
+              activeSection === 'NETWORK'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span>Мережа</span>
+            {activeSection === 'NETWORK' && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
+            )}
+          </button>
+
+          <button
+            onClick={() => handleNavClick('FINANCE')}
+            className={`relative py-5 text-sm font-semibold transition-colors cursor-pointer ${
+              activeSection === 'FINANCE'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span>Фінанси</span>
+            {activeSection === 'FINANCE' && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
+            )}
+          </button>
+
+          <button
+            onClick={() => handleNavClick('PROFILE')}
+            className={`relative py-5 text-sm font-semibold transition-colors cursor-pointer ${
+              activeSection === 'PROFILE'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span>Профіль</span>
+            {activeSection === 'PROFILE' && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
+            )}
+          </button>
+        </nav>
+
+        {/* Right: Actions (Search, Notifications, Profile Capsule) */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          
+          {/* Search Button */}
+          <button
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-colors cursor-pointer"
+            title="Пошук по системі"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+
+          {/* Notifications with red counter badge */}
+          <div className="relative">
+            <button
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-colors relative cursor-pointer"
+              title="Сповіщення безпеки"
+            >
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center shadow-sm">
+                1
+              </span>
+            </button>
+
+            {/* Notifications Dropdown */}
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                  <span className="font-bold text-xs text-slate-900">Останні сповіщення</span>
+                  <span className="text-[10px] text-blue-600 font-semibold cursor-pointer">Прочитано</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100 flex items-start gap-2.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-600 mt-1 flex-shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">БпЛА в напрямку Київської обл.</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">Черговий ПС ЗСУ оновив дані 2 хв тому</div>
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-2.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">+₴850 реферальної винагороди L1</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">Користувач #UA-9042 активував тариф</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* User Profile Pill Capsule */}
+          <div 
+            onClick={() => handleNavClick('PROFILE')}
+            className="flex items-center gap-2.5 pl-2 pr-1 py-1 rounded-full hover:bg-slate-50 border border-slate-100 cursor-pointer transition-all select-none"
+          >
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-tr from-blue-500 to-indigo-600 p-0.5 flex-shrink-0">
+              <img 
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" 
+                alt="Олександр"
+                className="w-full h-full object-cover rounded-full"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <div className="hidden sm:block text-left">
+              <div className="text-xs font-bold text-slate-900 leading-tight">Олександр</div>
+              <div className="text-[10px] text-slate-400 font-medium leading-tight">Gold Partner</div>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5 mr-1" />
+          </div>
+
+        </div>
+      </div>
+
+      {/* Mobile Bottom Navigation Bar for Small Screens */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-100 px-6 py-2 flex items-center justify-around z-50">
         <button
           onClick={() => handleNavClick('HOME')}
-          className={`flex flex-col items-center gap-0.5 p-1.5 rounded-xl transition-all ${
-            activeSection === 'HOME'
-              ? 'text-cyan-400 font-bold scale-105'
-              : 'text-slate-400 hover:text-slate-200'
+          className={`flex flex-col items-center gap-1 ${
+            activeSection === 'HOME' ? 'text-blue-600 font-bold' : 'text-slate-400'
           }`}
         >
-          <Home className="w-4 h-4" />
-          <span className="text-[10px] font-mono">Головна</span>
+          <Home className="w-5 h-5" />
+          <span className="text-[10px]">Головна</span>
         </button>
 
         <button
           onClick={() => handleNavClick('NETWORK')}
-          className={`flex flex-col items-center gap-0.5 p-1.5 rounded-xl transition-all ${
-            activeSection === 'NETWORK'
-              ? 'text-purple-400 font-bold scale-105'
-              : 'text-slate-400 hover:text-slate-200'
+          className={`flex flex-col items-center gap-1 ${
+            activeSection === 'NETWORK' ? 'text-blue-600 font-bold' : 'text-slate-400'
           }`}
         >
-          <Users className="w-4 h-4" />
-          <span className="text-[10px] font-mono">Мережа</span>
+          <Users className="w-5 h-5" />
+          <span className="text-[10px]">Мережа</span>
         </button>
 
         <button
           onClick={() => handleNavClick('FINANCE')}
-          className={`flex flex-col items-center gap-0.5 p-1.5 rounded-xl transition-all ${
-            activeSection === 'FINANCE'
-              ? 'text-emerald-400 font-bold scale-105'
-              : 'text-slate-400 hover:text-slate-200'
+          className={`flex flex-col items-center gap-1 ${
+            activeSection === 'FINANCE' ? 'text-blue-600 font-bold' : 'text-slate-400'
           }`}
         >
-          <Wallet className="w-4 h-4" />
-          <span className="text-[10px] font-mono">Фінанси</span>
+          <Wallet className="w-5 h-5" />
+          <span className="text-[10px]">Фінанси</span>
         </button>
 
         <button
           onClick={() => handleNavClick('PROFILE')}
-          className={`flex flex-col items-center gap-0.5 p-1.5 rounded-xl transition-all ${
-            activeSection === 'PROFILE'
-              ? 'text-amber-400 font-bold scale-105'
-              : 'text-slate-400 hover:text-slate-200'
+          className={`flex flex-col items-center gap-1 ${
+            activeSection === 'PROFILE' ? 'text-blue-600 font-bold' : 'text-slate-400'
           }`}
         >
-          <User className="w-4 h-4" />
-          <span className="text-[10px] font-mono">Профіль</span>
+          <User className="w-5 h-5" />
+          <span className="text-[10px]">Профіль</span>
         </button>
-      </nav>
-    </>
+      </div>
+    </header>
   );
 };

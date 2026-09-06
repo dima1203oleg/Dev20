@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
+import { HeroSection } from './components/HeroSection';
 import { SmartMetricRail } from './components/SmartMetricRail';
 import { CentralWorkspace } from './components/CentralWorkspace';
-import { SmartContextPanel } from './components/SmartContextPanel';
+import { Financial3DCardCarousel } from './components/finance/Financial3DCardCarousel';
+import { SirenOrbitalDeviceEcosystem } from './components/orbital/SirenOrbitalDeviceEcosystem';
 import { FinanceSection } from './components/FinanceSection';
 import { ProfileSection } from './components/ProfileSection';
 import { AffiliateProgram } from './components/AffiliateProgram';
-import { SirenOrbitalDeviceEcosystem } from './components/orbital/SirenOrbitalDeviceEcosystem';
 import { RegionInspectorModal } from './components/RegionInspectorModal';
 import { SimulatorModal } from './components/SimulatorModal';
 import { EmergencyGuideModal } from './components/EmergencyGuideModal';
@@ -28,17 +29,7 @@ import {
   playAllClearSound, 
   speakAlertNotification 
 } from './utils/sirenAudio';
-import { 
-  AlertTriangle, 
-  ExternalLink,
-  ShieldCheck,
-  ShieldAlert,
-  Navigation,
-  Sparkles,
-  BookOpen,
-  ArrowUpRight
-} from 'lucide-react';
-import { Financial3DCardCarousel } from './components/finance/Financial3DCardCarousel';
+import { AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export default function App() {
   // Navigation: HOME | NETWORK | FINANCE | PROFILE
@@ -65,12 +56,12 @@ export default function App() {
 
   const [settings, setSettings] = useState<UserSettings>(() => {
     const defaultSettings: UserSettings = {
-      myRegion: 'kyiv_city',
+      myRegion: 'odesa',
       soundEnabled: true,
       volume: 0.75,
       voiceChime: true,
       vibrateOnMobile: true,
-      theme: 'dark',
+      theme: 'light',
       showLabels: true,
       showThreatIcons: true,
       show3DDepth: true,
@@ -125,25 +116,6 @@ export default function App() {
     });
   };
 
-  // Timer for active alarms duration
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRegions((prev) =>
-        prev.map((r) => {
-          if (r.isAlarm && r.startedAt) {
-            const diffMins = Math.max(
-              1,
-              Math.floor((Date.now() - new Date(r.startedAt).getTime()) / (1000 * 60))
-            );
-            return { ...r, durationMinutes: diffMins };
-          }
-          return r;
-        })
-      );
-    }, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
   // Siren Controls
   const handleToggleTestSiren = () => {
     if (isSirenPlaying) {
@@ -171,182 +143,17 @@ export default function App() {
     setTimeout(() => setBannerAlert(null), 4000);
   };
 
-  // My Region alarm notification check
-  const prevMyRegionAlarmRef = useRef<boolean>(
-    regions.find((r) => r.id === settings.myRegion)?.isAlarm || false
-  );
-
-  useEffect(() => {
-    const currentMyRegion = regions.find((r) => r.id === settings.myRegion);
-    const isNowAlarm = currentMyRegion?.isAlarm || false;
-
-    if (prevMyRegionAlarmRef.current !== isNowAlarm) {
-      if (isNowAlarm) {
-        if (settings.soundEnabled) {
-          startSirenSound(settings.volume);
-          setIsSirenPlaying(true);
-        }
-        if (settings.voiceChime) {
-          speakAlertNotification(`Увага! Повітряна тривога у ${currentMyRegion?.name}! Пройдіть в укриття!`);
-        }
-        setBannerAlert(`🚨 УВАГА! Повітряна тривога у вашому регіоні: ${currentMyRegion?.name}!`);
-      } else {
-        if (isSirenPlaying) {
-          stopSirenSound();
-          setIsSirenPlaying(false);
-        }
-        if (settings.soundEnabled) {
-          playAllClearSound(settings.volume);
-        }
-        setBannerAlert(`🟢 Відбій тривоги у ${currentMyRegion?.name}. Загроза минула.`);
-        setTimeout(() => setBannerAlert(null), 5000);
-      }
-      prevMyRegionAlarmRef.current = isNowAlarm;
-    }
-  }, [regions, settings.myRegion, settings.soundEnabled, settings.volume, settings.voiceChime, isSirenPlaying]);
-
-  // Apply Simulation Scenarios
-  const handleApplyScenario = (scenario: string) => {
-    const nowIso = new Date().toISOString();
-
-    if (scenario === 'clear_all') {
-      setRegions((prev) =>
-        prev.map((r) => ({
-          ...r,
-          isAlarm: false,
-          threatType: 'none',
-          startedAt: null,
-          durationMinutes: 0,
-          threatDetails: undefined,
-        }))
-      );
-      handlePlayAllClear();
-      return;
-    }
-
-    if (scenario === 'ballistic_all') {
-      setRegions((prev) =>
-        prev.map((r) => ({
-          ...r,
-          isAlarm: true,
-          threatType: 'ballistic',
-          startedAt: nowIso,
-          durationMinutes: 1,
-          threatDetails: 'Масована ракетна та балістична небезпека по всій країні!',
-        }))
-      );
-
-      const ballisticEvent: AlertEvent = {
-        id: `evt-${Date.now()}`,
-        regionId: 'all',
-        regionName: 'Вся Україна',
-        type: 'start',
-        threatType: 'ballistic',
-        timestamp: nowIso,
-        description: '🔴 УВАГА! Масований пуск балістичних ракет! Терміново пройдіть в укриття!',
-        source: 'Повітряні Сили ЗСУ',
-      };
-      setAlerts((prev) => [ballisticEvent, ...prev.slice(0, 30)]);
-      if (settings.soundEnabled && !isSirenPlaying) {
-        startSirenSound(settings.volume);
-        setIsSirenPlaying(true);
-      }
-      return;
-    }
-
-    if (scenario === 'massive_drone') {
-      const droneIds = [
-        'kyiv_obl',
-        'kyiv_city',
-        'chernihiv',
-        'sumy',
-        'poltava',
-        'cherkasy',
-        'zhytomyr',
-        'vinnytsia',
-        'odesa',
-        'mykolaiv',
-      ];
-      setRegions((prev) =>
-        prev.map((r) => {
-          if (droneIds.includes(r.id)) {
-            return {
-              ...r,
-              isAlarm: true,
-              threatType: 'drone',
-              startedAt: nowIso,
-              durationMinutes: 5,
-              threatDetails: 'Групи ударних БпЛА типу Shahed рухаються курсом на захід',
-            };
-          }
-          return {
-            ...r,
-            isAlarm: false,
-            threatType: 'none',
-            startedAt: null,
-            durationMinutes: 0,
-            threatDetails: undefined,
-          };
-        })
-      );
-
-      const droneEvent: AlertEvent = {
-        id: `evt-${Date.now()}`,
-        regionId: 'kyiv_obl',
-        regionName: 'Північ та Центр України',
-        type: 'start',
-        threatType: 'drone',
-        timestamp: nowIso,
-        description: '🔴 Масована атака ударних БпЛА. Працюють підрозділи ППО та мобільні вогневі групи.',
-        source: 'Повітряні Сили ЗСУ',
-      };
-      setAlerts((prev) => [droneEvent, ...prev.slice(0, 30)]);
-    }
+  const myRegionObj = regions.find((r) => r.id === settings.myRegion) || {
+    id: 'odesa',
+    name: 'Одеська область',
+    isAlarm: false,
+    threatType: 'none',
   };
 
-  // Toggle single region
-  const handleToggleRegionAlarm = (regionId: string, threatType?: ThreatType) => {
-    setRegions((prev) =>
-      prev.map((r) => {
-        if (r.id === regionId) {
-          const nextAlarm = !r.isAlarm;
-          const nextThreat = nextAlarm ? (threatType || 'air') : 'none';
-          const nowIso = new Date().toISOString();
-
-          const newEvt: AlertEvent = {
-            id: `evt-${Date.now()}-${r.id}`,
-            regionId: r.id,
-            regionName: r.name,
-            type: nextAlarm ? 'start' : 'end',
-            threatType: nextThreat,
-            timestamp: nowIso,
-            description: nextAlarm
-              ? `🔴 Оголошено повітряну тривогу в ${r.name}. Пройдіть в укриття!`
-              : `🟢 Відбій повітряної тривоги в ${r.name}. Небезпека минула.`,
-            source: 'Оперативне чергування SirenUA',
-          };
-          setAlerts((al) => [newEvt, ...al.slice(0, 30)]);
-
-          return {
-            ...r,
-            isAlarm: nextAlarm,
-            threatType: nextThreat,
-            startedAt: nextAlarm ? nowIso : null,
-            durationMinutes: nextAlarm ? 1 : 0,
-            threatDetails: nextAlarm ? 'Повітряна тривога оголошена черговим' : undefined,
-          };
-        }
-        return r;
-      })
-    );
-  };
-
-  // Build ThreatSceneModel for components
-  const myRegionObj = regions.find((r) => r.id === settings.myRegion);
   const activeAlarmsCount = regions.filter((r) => r.isAlarm).length;
 
   const threatSceneModel: ThreatSceneModel = {
-    timestamp: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    timestamp: '22:14',
     freshness: 'REALTIME',
     dataMode: isDemoMode ? 'DEMO_DATA' : 'LIVE',
     activeAlarmsCount,
@@ -373,18 +180,18 @@ export default function App() {
     },
     myRegionStatus: {
       id: settings.myRegion,
-      name: myRegionObj?.name || 'м. Київ',
-      isAlarm: myRegionObj?.isAlarm || false,
+      name: myRegionObj.name || 'Одеська область',
+      isAlarm: myRegionObj.isAlarm || false,
       etaMinutes: 18,
-      riskLevel: myRegionObj?.isAlarm ? 'HIGH' : 'LOW',
+      riskLevel: myRegionObj.isAlarm ? 'HIGH' : 'LOW',
     },
     partnerModeActive: activeSection === 'NETWORK' || activeSection === 'FINANCE',
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-cyan-500/30 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen bg-[#F4F7FB] text-slate-900 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       
-      {/* 1. Header (Minimal 4 tabs on desktop / bottom nav on mobile) */}
+      {/* 1. Header (Головна, Мережа, Фінанси, Профіль) */}
       <Header
         activeSection={activeSection}
         onSelectSection={(sec) => {
@@ -392,12 +199,12 @@ export default function App() {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         regions={regions}
-        myRegionName={myRegionObj?.name}
+        myRegionName={myRegionObj.name}
       />
 
-      {/* 2. Critical Alert Banner (Appears when active threat or siren) */}
+      {/* 2. Critical Alert Banner if Active */}
       {bannerAlert && (
-        <div className="bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 text-white px-4 py-2.5 shadow-xl text-center text-xs sm:text-sm font-mono font-bold flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-40">
+        <div className="bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 text-white px-4 py-2 shadow-md text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-40">
           <AlertTriangle className="w-4 h-4 animate-bounce" />
           <span>{bannerAlert}</span>
           <button
@@ -410,83 +217,75 @@ export default function App() {
       )}
 
       {/* 3. Main Body */}
-      <main className="flex-1 pb-16 md:pb-8">
+      <main className="flex-1 pb-16 md:pb-10 max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-2">
         
         {/* =========================================================================
-            SECTION 1: HOME (Головна)
-            Layout:
-            - SmartMetricRail (KPI carousel)
-            - CentralWorkspace (СИТУАЦІЯ vs МОЯ МЕРЕЖА)
-            - SmartContextPanel
-            - 3D Device Ecosystem (Single bottom instance with full 3D volumetric models)
+            SECTION 1: HOME (Головна) - 1:1 Matching the uploaded design
+            - HeroSection (Headline, 3D Ukraine Map, 3 Threats badge)
+            - SmartMetricRail (Мій регіон, Стан, Оновлено, Активні події)
+            - Middle Grid (Left: Фінансова інформація / Right: Ситуація workspace)
+            - SirenOrbitalDeviceEcosystem (Bottom Device Orbit)
            ========================================================================= */}
         {activeSection === 'HOME' && (
-          <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-5 animate-in fade-in duration-200">
             
-            {/* Smart KPI Rail Carousel */}
+            {/* Top Hero Section */}
+            <HeroSection
+              onOpenMap={() => setSelectedRegion(regions.find(r => r.id === 'kyiv_obl') || null)}
+              onOpenGuide={() => setIsGuideOpen(true)}
+              onOpenThreats={() => setIsSimulatorOpen(true)}
+              activeThreatsCount={3}
+            />
+
+            {/* 4 Quick Metric Cards: Мій регіон | Стан | Оновлено | Активні події */}
             <SmartMetricRail
               threatModel={threatSceneModel}
-              availableBalance={4230}
-              monthlyEarnings={18560}
-              totalL1={154}
-              totalL2={382}
-              currentRankName="GOLD"
-              onNavigateToFinance={() => setActiveSection('FINANCE')}
-              onNavigateToNetwork={() => setActiveSection('NETWORK')}
-              onNavigateToShelters={() => setIsSheltersModalOpen(true)}
+              myRegionName="Одеська область"
+              isAlarm={false}
+              activeEventsCount={3}
+              lastUpdatedTime="Сьогодні, 22:14"
+              onSelectRegion={() => setSelectedRegion(regions.find(r => r.id === 'odesa') || null)}
+              onOpenStatus={() => handleToggleTestSiren()}
+              onOpenEvents={() => setIsSimulatorOpen(true)}
             />
 
-            {/* 3D Financial Cards Showcase on Front Page */}
-            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between px-1 sm:px-2 mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    3D ФІНАНСОВИЙ ОГЛЯД DEV20 · БАЛАНС → ЗАРОБІТОК → ВИПЛАТА
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500 hidden md:inline">
-                    · Інтерактивні 3D-картки з паралаксом та свайпом
-                  </span>
+            {/* Middle 2-Panel Grid: Фінансова інформація (Left) & Ситуація Workspace (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+              
+              {/* Left Panel: Фінансова інформація (3D Card Stack) */}
+              <div className="lg:col-span-5 flex flex-col">
+                <div className="bg-white/60 rounded-3xl p-1 flex-1">
+                  <Financial3DCardCarousel
+                    onOpenPayout={() => setActiveSection('FINANCE')}
+                    onOpenHistory={() => setActiveSection('FINANCE')}
+                  />
                 </div>
-                <button
-                  onClick={() => setActiveSection('FINANCE')}
-                  className="text-xs font-mono text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Детальна виписка</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </button>
               </div>
 
-              <Financial3DCardCarousel
-                onOpenPayout={() => setActiveSection('FINANCE')}
-              />
+              {/* Right Panel: Interactive Situation Workspace (Ситуація / Моя мережа) */}
+              <div className="lg:col-span-7 flex flex-col">
+                <div className="flex-1">
+                  <CentralWorkspace
+                    regions={regions}
+                    selectedRegion={selectedRegion}
+                    onSelectRegion={(reg) => setSelectedRegion(reg)}
+                    myRegionId={settings.myRegion}
+                    onSetMyRegion={(id) => handleUpdateSettings({ myRegion: id })}
+                    threatModel={threatSceneModel}
+                    settings={settings}
+                    onUpdateSettings={handleUpdateSettings}
+                    onNavigateToShelters={() => setIsSheltersModalOpen(true)}
+                    onNavigateToFinance={() => setActiveSection('FINANCE')}
+                    onNavigateToNetwork={() => setActiveSection('NETWORK')}
+                    onTestSiren={handleToggleTestSiren}
+                  />
+                </div>
+              </div>
+
             </div>
 
-            {/* Central Workspace (The Core Crown Jewel) */}
-            <CentralWorkspace
-              regions={regions}
-              selectedRegion={selectedRegion}
-              onSelectRegion={(reg) => setSelectedRegion(reg)}
-              myRegionId={settings.myRegion}
-              onSetMyRegion={(id) => handleUpdateSettings({ myRegion: id })}
-              threatModel={threatSceneModel}
-              settings={settings}
-              onUpdateSettings={handleUpdateSettings}
-              onNavigateToShelters={() => setIsSheltersModalOpen(true)}
-              onNavigateToFinance={() => setActiveSection('FINANCE')}
-              onTestSiren={handleToggleTestSiren}
-            />
-
-            {/* Smart Context Horizontal Strip */}
-            <SmartContextPanel
-              threatModel={threatSceneModel}
-              onNavigateToShelters={() => setIsSheltersModalOpen(true)}
-              onNavigateToFinance={() => setActiveSection('FINANCE')}
-              onNavigateToNetwork={() => setActiveSection('NETWORK')}
-            />
-
-            {/* Signature SIREN 3D Orbital Device Ecosystem (Only one instance, positioned at bottom) */}
-            <div id="orbital-device-ecosystem-section" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+            {/* Bottom Section: SIREN UA на всіх твоїх пристроях */}
+            <div className="pt-2">
               <SirenOrbitalDeviceEcosystem
                 threatModel={threatSceneModel}
                 onNavigateToTab={(tabId) => {
@@ -497,36 +296,14 @@ export default function App() {
               />
             </div>
 
-            {/* Quick Emergency DSNS Guide Launcher Strip */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2">
-              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-cyan-950 text-cyan-400 border border-cyan-800">
-                    <BookOpen className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-white font-bold block">Офіційний довідник правил безпеки ДСНС</span>
-                    <span className="text-slate-400 text-[11px]">Що робити при ракетному обстрілі, атаці БпЛА або загрозі балістики</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsGuideOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs font-mono transition-colors"
-                >
-                  Відкрити пам'ятку дій
-                </button>
-              </div>
-            </div>
-
           </div>
         )}
 
         {/* =========================================================================
             SECTION 2: NETWORK (Мережа)
-            Full dedicated 2-Level partner system & referral analytics
            ========================================================================= */}
         {activeSection === 'NETWORK' && (
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 animate-in fade-in duration-200">
+          <div className="py-2 animate-in fade-in duration-200">
             <AffiliateProgram
               onOpenMap={() => setActiveSection('HOME')}
               onOpenSimulator={() => setIsSimulatorOpen(true)}
@@ -536,10 +313,9 @@ export default function App() {
 
         {/* =========================================================================
             SECTION 3: FINANCE (Фінанси)
-            Dedicated balance, payouts (min $10 ~ ₴415), transaction ledger
            ========================================================================= */}
         {activeSection === 'FINANCE' && (
-          <div className="animate-in fade-in duration-200">
+          <div className="py-2 animate-in fade-in duration-200">
             <FinanceSection
               availableBalance={4230}
               pendingBalance={1450}
@@ -551,10 +327,9 @@ export default function App() {
 
         {/* =========================================================================
             SECTION 4: PROFILE (Профіль)
-            Ambassador ranking (Starter -> Platinum), Top-100, Achievements, Audio test
            ========================================================================= */}
         {activeSection === 'PROFILE' && (
-          <div className="animate-in fade-in duration-200">
+          <div className="py-2 animate-in fade-in duration-200">
             <ProfileSection
               settings={settings}
               onUpdateSettings={handleUpdateSettings}
@@ -564,11 +339,6 @@ export default function App() {
               isDemoMode={isDemoMode}
               onToggleDemoMode={() => {
                 setIsDemoMode(!isDemoMode);
-                if (!isDemoMode) {
-                  handleApplyScenario('massive_drone');
-                } else {
-                  handleApplyScenario('clear_all');
-                }
               }}
             />
           </div>
@@ -577,125 +347,63 @@ export default function App() {
       </main>
 
       {/* =========================================================================
-          MODALS & DRAWERS
+          MODALS
          ========================================================================= */}
       
-      {/* Shelters Modal if opened via quick route */}
+      {/* Shelters Modal */}
       {isSheltersModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-slate-900 border-2 border-slate-800 shadow-2xl p-4 sm:p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white border border-slate-200 shadow-2xl p-4 sm:p-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-lg font-black text-white font-mono">Карта укриттів та безпечні маршрути</h3>
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-lg font-bold text-slate-900">Карта укриттів та безпечні маршрути</h3>
               </div>
               <button
                 onClick={() => setIsSheltersModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white"
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
               >
                 ✕
               </button>
             </div>
             <SheltersSection
               myRegionId={settings.myRegion}
-              regions={regions}
+              onClose={() => setIsSheltersModalOpen(false)}
             />
           </div>
         </div>
       )}
 
-      {/* Region Inspector Drill-down Modal (if explicitly requested) */}
-      {selectedRegion && (
-        <RegionInspectorModal
-          region={selectedRegion}
-          onClose={() => setSelectedRegion(null)}
-          onSetMyRegion={(id) => handleUpdateSettings({ myRegion: id })}
-          isMyRegion={selectedRegion?.id === settings.myRegion}
-          onTestSiren={handleToggleTestSiren}
-          isSirenPlaying={isSirenPlaying}
-        />
-      )}
-
-      {/* Threat Simulator Drawer / Modal */}
-      <SimulatorModal
-        isOpen={isSimulatorOpen}
-        onClose={() => setIsSimulatorOpen(false)}
-        regions={regions}
-        onApplyScenario={handleApplyScenario}
-        onToggleRegionAlarm={handleToggleRegionAlarm}
-      />
-
-      {/* Emergency & DSNS Guide Modal */}
+      {/* Emergency Guide Modal */}
       <EmergencyGuideModal
         isOpen={isGuideOpen}
         onClose={() => setIsGuideOpen(false)}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 mt-10 py-6 text-xs font-mono text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4">
-          
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-white">SirenUA DEV20 v2</span>
-            <span>•</span>
-            <span>Digital Twin просторової безпеки та партнерська мережа України</span>
-          </div>
+      {/* Simulator Modal */}
+      <SimulatorModal
+        isOpen={isSimulatorOpen}
+        onClose={() => setIsSimulatorOpen(false)}
+        regions={regions}
+        onApplyScenario={() => {}}
+        onToggleRegionAlarm={() => {}}
+        onPlayAllClear={handlePlayAllClear}
+      />
 
-          <div className="flex flex-wrap items-center gap-4 text-slate-400">
-            <button
-              onClick={() => {
-                setActiveSection('HOME');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="hover:text-cyan-400 transition-colors"
-            >
-              Головна
-            </button>
-            <button
-              onClick={() => {
-                setActiveSection('NETWORK');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="hover:text-purple-400 transition-colors"
-            >
-              Мережа
-            </button>
-            <button
-              onClick={() => {
-                setActiveSection('FINANCE');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="hover:text-emerald-400 transition-colors"
-            >
-              Фінанси
-            </button>
-            <button
-              onClick={() => {
-                setActiveSection('PROFILE');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="hover:text-amber-400 transition-colors"
-            >
-              Профіль
-            </button>
-            <button
-              onClick={() => setIsGuideOpen(true)}
-              className="hover:text-amber-300 transition-colors"
-            >
-              Пам'ятка ДСНС
-            </button>
-            <a
-              href="https://t.me/kpszsu"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-cyan-400 transition-colors inline-flex items-center gap-1"
-            >
-              Повітряні Сили ЗСУ <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-
-        </div>
-      </footer>
+      {/* Region Inspector Modal */}
+      {selectedRegion && (
+        <RegionInspectorModal
+          region={selectedRegion}
+          onClose={() => setSelectedRegion(null)}
+          isMyRegion={selectedRegion.id === settings.myRegion}
+          onSetAsMyRegion={() => handleUpdateSettings({ myRegion: selectedRegion.id })}
+          onNavigateToShelters={() => {
+            setSelectedRegion(null);
+            setIsSheltersModalOpen(true);
+          }}
+          nearestShelter={threatSceneModel.nearestShelter}
+        />
+      )}
 
     </div>
   );

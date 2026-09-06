@@ -1,9 +1,10 @@
 import React from 'react';
-import { Wallet, ArrowUpRight, ShieldCheck, CheckCircle2, Cpu } from 'lucide-react';
+import { Wallet, ArrowUpRight, ShieldCheck, CheckCircle2, Cpu, Sparkles } from 'lucide-react';
 import { FinancialCardViewModel } from '../../../types/finance';
 import { RankBadge } from '../RankBadge';
 import { EmvChip, ContactlessNfcIcon, HologramWatermark } from './EmvChip';
 import { playWebAudioSound } from '../../../utils/sirenAudio';
+import { GeminiSparkle } from '../../common/GeminiSparkle';
 
 interface BalanceCardProps {
   data: FinancialCardViewModel;
@@ -21,42 +22,36 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   return (
     <div className="relative w-full h-full rounded-3xl p-5 sm:p-6 flex flex-col justify-between overflow-hidden select-none shadow-2xl">
       
-      {/* 1. Tactical Titanium Glass Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-950/98 to-slate-900/95 rounded-3xl pointer-events-none" />
+      {/* 1. Deep Space Obsidian Glass Surface */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900/95 to-[#080b18] rounded-3xl pointer-events-none" />
       
-      {/* Subtle Micro-Grid Texture */}
-      <div 
-        className="absolute inset-0 opacity-[0.06] pointer-events-none rounded-3xl"
-        style={{
-          backgroundImage: 'radial-gradient(#38bdf8 1px, transparent 1px)',
-          backgroundSize: '16px 16px',
-        }}
-      />
+      {/* Google Gemini Cosmic Blue & Violet Aurora Glow */}
+      <div className="absolute -top-24 -right-20 w-64 h-64 bg-gradient-to-br from-blue-500/25 via-indigo-500/20 to-purple-500/15 rounded-full blur-3xl pointer-events-none animate-gemini-aura" />
+      <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-gradient-to-tr from-cyan-500/20 via-blue-600/15 to-transparent rounded-full blur-3xl pointer-events-none" />
+      
+      {/* Gemini Signature Iridescent Edge Rim */}
+      <div className="absolute inset-0 rounded-3xl border border-white/15 pointer-events-none shadow-[inset_0_1px_2px_rgba(255,255,255,0.4),0_0_24px_rgba(99,102,241,0.2)]" />
+      
+      {/* Diagonal Iridescent Light Sweep */}
+      <div className="absolute -inset-full bg-gradient-to-tr from-transparent via-purple-400/[0.05] via-blue-400/[0.04] to-transparent pointer-events-none rotate-12" />
 
-      {/* Cyan / Electric Blue Semantic Accent Glow */}
-      <div className="absolute -top-20 -right-20 w-60 h-60 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-20 -left-20 w-56 h-56 bg-sky-600/15 rounded-full blur-3xl pointer-events-none" />
-      
-      {/* Edge Illumination Rim with metallic bezel */}
-      <div className="absolute inset-0 rounded-3xl border border-cyan-400/40 pointer-events-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),inset_0_0_24px_rgba(6,182,212,0.2)]" />
-      
-      {/* Dynamic diagonal glass light reflection */}
-      <div className="absolute -inset-full bg-gradient-to-tr from-transparent via-white/[0.04] to-transparent pointer-events-none rotate-12" />
-
-      {/* Hologram Protocol Watermark */}
+      {/* Hologram Protocol Watermark with Gemini Sparkle */}
       <HologramWatermark variant="cyan" />
 
-      {/* 2. Top Header Row: EMV Chip + Card Brand + Rank Badge */}
+      {/* 2. Top Header Row: EMV Chip + Google Gemini Brand + Rank Badge */}
       <div className="relative z-10 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <EmvChip variant="gold" />
           <ContactlessNfcIcon className="w-4 h-4 text-cyan-400/80" />
-          <div className="border-l border-slate-800 pl-2">
-            <span className="text-[9px] font-mono uppercase tracking-widest text-cyan-400 font-bold block">
-              DEV20 FINTECH · CARD 01
-            </span>
-            <h3 className="text-xs font-mono font-black text-slate-200 tracking-wider uppercase">
-              БАЛАНС ОБЛІКУ
+          <div className="border-l border-white/10 pl-2">
+            <div className="flex items-center gap-1.5">
+              <GeminiSparkle className="w-3 h-3" animated />
+              <span className="text-[9px] font-mono uppercase tracking-widest gemini-gradient-text font-bold block">
+                GEMINI SMART LEDGER · 01
+              </span>
+            </div>
+            <h3 className="text-xs font-sans font-black text-white tracking-wider uppercase">
+              ЗАГАЛЬНИЙ БАЛАНС
             </h3>
           </div>
         </div>
@@ -69,18 +64,21 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         <div className="flex items-baseline justify-between flex-wrap gap-2">
           <div>
             <div className="flex items-baseline gap-1.5 font-mono">
-              <span className="text-2xl sm:text-3xl font-extrabold text-cyan-400 drop-shadow-[0_0_12px_rgba(6,182,212,0.5)]">₴</span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-cyan-300 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]">₴</span>
               <span className="text-3xl sm:text-4xl md:text-[42px] font-black tracking-tight text-white font-mono drop-shadow-md">
                 {balance.total.toLocaleString('uk-UA')}
               </span>
             </div>
             {/* Tactile Virtual Card ID */}
-            <div className="text-[10px] font-mono tracking-widest text-slate-500 mt-0.5 flex items-center gap-2">
-              <span>DEV20</span>
+            <div className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 flex items-center gap-2">
+              <span className="text-slate-500">DEV20</span>
               <span>••••</span>
               <span>8492</span>
               <span>4230</span>
-              <span className="text-cyan-500/80 text-[9px] px-1 rounded bg-cyan-950/60 border border-cyan-800/40">SMART LEDGER</span>
+              <span className="text-purple-300 text-[9px] px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-800/50 flex items-center gap-1">
+                <GeminiSparkle className="w-2.5 h-2.5" />
+                AI VERIFIED
+              </span>
             </div>
           </div>
 
@@ -94,9 +92,9 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
               }
             }}
             disabled={!payout.eligible}
-            className={`px-4 py-2 rounded-xl font-mono text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg ${
+            className={`px-4 py-2 rounded-full font-mono text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg ${
               payout.eligible
-                ? 'bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 hover:to-sky-300 text-slate-950 font-black shadow-cyan-950/60 active:scale-95 cursor-pointer hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]'
+                ? 'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-black shadow-purple-950/60 active:scale-95 cursor-pointer hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] border border-purple-300/40'
                 : 'bg-slate-800/80 text-slate-500 border border-slate-700/50 cursor-not-allowed'
             }`}
           >
@@ -106,8 +104,8 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         </div>
       </div>
 
-      {/* 4. Financial Breakdown Row (Доступно | Очікує | Утримано) */}
-      <div className="relative z-10 grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-slate-950/80 border border-slate-800/90 backdrop-blur-md shadow-inner">
+      {/* 4. Financial Breakdown Row (Доступно | Очікує | Утримано) with Frosted Pill Effect */}
+      <div className="relative z-10 grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-slate-950/70 border border-white/10 backdrop-blur-xl shadow-inner">
         
         {/* Доступно */}
         <div className="text-left font-mono">
@@ -121,7 +119,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         </div>
 
         {/* Очікує */}
-        <div className="text-left font-mono border-l border-slate-800 pl-2">
+        <div className="text-left font-mono border-l border-white/10 pl-2">
           <div className="text-[9px] text-slate-400 uppercase font-bold tracking-wider flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
             Очікує
@@ -132,7 +130,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         </div>
 
         {/* Утримано */}
-        <div className="text-left font-mono border-l border-slate-800 pl-2">
+        <div className="text-left font-mono border-l border-white/10 pl-2">
           <div className="text-[9px] text-slate-400 uppercase font-bold tracking-wider flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block" />
             Утримано
@@ -144,15 +142,15 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 
       </div>
 
-      {/* 5. Footer: Timestamp & Security Guarantee */}
-      <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-slate-500 pt-0.5">
+      {/* 5. Footer: Timestamp & Gemini Smart Ledger Protocol */}
+      <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-slate-400 pt-0.5">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-slate-400">Оновлено {updatedAt}</span>
         </div>
-        <div className="flex items-center gap-1 text-cyan-400/90">
-          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-          <span>L1/L2 Smart Ledger · SHA256</span>
+        <div className="flex items-center gap-1.5 text-purple-300/90">
+          <GeminiSparkle className="w-3 h-3" />
+          <span>Gemini Smart Ledger · L1/L2</span>
         </div>
       </div>
 

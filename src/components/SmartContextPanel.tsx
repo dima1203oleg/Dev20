@@ -11,6 +11,7 @@ import {
   ExternalLink 
 } from 'lucide-react';
 import { ThreatSceneModel } from '../types';
+import { GeminiSparkle } from './common/GeminiSparkle';
 
 interface SmartContextPanelProps {
   threatModel: ThreatSceneModel;
@@ -29,23 +30,24 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         
         {/* Card 1: Оперативний статус */}
-        <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-md backdrop-blur-md flex items-center gap-3">
-          <div className={`p-2.5 rounded-xl ${
-            isAlarm ? 'bg-rose-950 text-rose-400 border border-rose-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+        <div className="p-4 rounded-3xl bg-slate-950/60 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl flex items-center gap-3.5">
+          <div className={`p-2.5 rounded-full border ${
+            isAlarm ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
           }`}>
             <Radio className="w-4 h-4 animate-pulse" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-mono font-bold text-slate-400 uppercase">
+            <div className="text-[10px] font-mono font-bold text-slate-400 uppercase flex items-center gap-1.5">
+              <GeminiSparkle className="w-2 h-2 text-blue-400" />
               ОПЕРАТИВНИЙ СТАН КАНАЛІВ
             </div>
-            <div className="text-xs font-mono font-bold text-white truncate">
+            <div className="text-xs font-mono font-bold text-white truncate mt-0.5">
               {isAlarm ? '🔴 Активна тривога в секторі' : '🟢 Усі сенсори в нормі'}
             </div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-slate-400 mt-0.5">
               Синхронізація: ДСНС + ПС ЗСУ + РЛС
             </div>
           </div>
@@ -54,20 +56,20 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
         {/* Card 2: Найближче укриття */}
         <div 
           onClick={onNavigateToShelters}
-          className="p-3.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/40 shadow-md backdrop-blur-md flex items-center gap-3 cursor-pointer transition-all group"
+          className="p-4 rounded-3xl bg-slate-950/60 hover:bg-slate-900/80 border border-white/10 hover:border-cyan-500/40 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl flex items-center gap-3.5 cursor-pointer transition-all group"
         >
-          <div className="p-2.5 rounded-xl bg-cyan-950 text-cyan-400 border border-cyan-800 group-hover:scale-105 transition-transform">
+          <div className="p-2.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 group-hover:scale-105 transition-transform">
             <MapPin className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between text-[10px] font-mono font-bold">
               <span className="text-slate-400 uppercase">НАЙБЛИЖЧЕ УКРИТТЯ</span>
-              <span className="text-cyan-400">Маршрут →</span>
+              <span className="text-cyan-300 font-bold">Маршрут →</span>
             </div>
-            <div className="text-xs font-mono font-bold text-white truncate">
+            <div className="text-xs font-mono font-bold text-white truncate mt-0.5">
               {threatModel.nearestShelter?.name || 'Станція метро «Золоті Ворота»'}
             </div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-slate-400 mt-0.5">
               340 м · ~4 хв пішки · Генератор / Wi-Fi
             </div>
           </div>
@@ -76,20 +78,20 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
         {/* Card 3: Партнерський баланс & статус */}
         <div 
           onClick={onNavigateToFinance}
-          className="p-3.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 hover:border-purple-500/40 shadow-md backdrop-blur-md flex items-center gap-3 cursor-pointer transition-all group"
+          className="p-4 rounded-3xl bg-slate-950/60 hover:bg-slate-900/80 border border-white/10 hover:border-purple-500/40 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl flex items-center gap-3.5 cursor-pointer transition-all group"
         >
-          <div className="p-2.5 rounded-xl bg-purple-950 text-purple-400 border border-purple-800 group-hover:scale-105 transition-transform">
+          <div className="p-2.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 group-hover:scale-105 transition-transform">
             <Award className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between text-[10px] font-mono font-bold">
               <span className="text-slate-400 uppercase">ПАРТНЕРСЬКИЙ БАЛАНС</span>
-              <span className="text-purple-400">Вивід →</span>
+              <span className="text-purple-300 font-bold">Вивід →</span>
             </div>
-            <div className="text-xs font-mono font-bold text-white truncate">
+            <div className="text-xs font-mono font-bold text-white truncate mt-0.5">
               ₴ 4,230 доступно · Ранг GOLD (20%)
             </div>
-            <div className="text-[10px] text-emerald-400 font-mono">
+            <div className="text-[10px] text-emerald-400 font-mono mt-0.5">
               +₴18,560 зароблено цього місяця
             </div>
           </div>

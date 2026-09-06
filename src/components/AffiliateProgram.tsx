@@ -53,6 +53,7 @@ import {
   AffiliatePromoTemplate 
 } from '../types';
 import { Financial3DCardCarousel } from './finance/Financial3DCardCarousel';
+import { GeminiSparkle } from './common/GeminiSparkle';
 
 interface AffiliateProgramProps {
   onOpenMap?: () => void;
@@ -159,58 +160,58 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
     <div className="space-y-8 animate-in fade-in duration-300 pb-16">
       
       {/* Top Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-amber-500/30 p-6 sm:p-10 shadow-2xl">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl bg-slate-950/60 backdrop-blur-2xl border border-white/10 p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 max-w-5xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-blue-300 text-xs font-mono font-bold tracking-wider backdrop-blur-md">
+            <GeminiSparkle className="w-3.5 h-3.5 text-blue-400" />
             <span>ПАРТНЕРСЬКА ПРОГРАМА SIRENUA PRO · ДВОРІВНЕВА СИСТЕМА</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black text-slate-100 tracking-tight">
-            Оновлена дворівнева модель винагород <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-cyan-300">L1 & L2</span>
+          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+            Оновлена дворівнева модель винагород <span className="gemini-gradient-text">L1 & L2</span>
           </h1>
 
           <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
             Прозора, математично збалансована партнерська програма. Отримуйте винагороду з особистих платних передплат (L1), 
-            а від 10 активних L1 переходьте у <strong className="text-amber-400 font-bold">Bronze</strong> та відкривайте другий рівень (L2) 
+            а від 10 активних L1 переходьте у <strong className="text-white font-bold">Bronze</strong> та відкривайте другий рівень (L2) 
             для зростання вашого пасивного доходу.
           </p>
 
           {/* Key Business Rules Pill Matrix */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3">
-            <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 mt-0.5 shrink-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+            <div className="bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all rounded-2xl p-3.5 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-blue-500/15 text-blue-400 mt-0.5 shrink-0 border border-blue-500/20">
                 <Users className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-slate-200 text-xs">Ранг = тільки L1</div>
+                <div className="font-bold text-white text-xs">Ранг = тільки L1</div>
                 <div className="text-[11px] text-slate-400 mt-0.5">
                   Ранг визначається виключно кількістю власних активних платних L1. L2 не підвищує ранг.
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 mt-0.5 shrink-0">
+            <div className="bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all rounded-2xl p-3.5 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-purple-500/15 text-purple-400 mt-0.5 shrink-0 border border-purple-500/20">
                 <Lock className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-slate-200 text-xs">Розблокування L2</div>
+                <div className="font-bold text-white text-xs">Розблокування L2</div>
                 <div className="text-[11px] text-slate-400 mt-0.5">
                   Starter має 0% з L2. Починаючи з Bronze (10+ L1) автоматично відкривається 10% L2.
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 mt-0.5 shrink-0">
+            <div className="bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all rounded-2xl p-3.5 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 mt-0.5 shrink-0 border border-emerald-500/20">
                 <Percent className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-slate-200 text-xs">50% Max Cap</div>
+                <div className="font-bold text-white text-xs">50% Max Cap</div>
                 <div className="text-[11px] text-slate-400 mt-0.5">
                   Максимальна сумарна виплата з 1 транзакції: 25% L1 + 25% L2 на рівні Platinum.
                 </div>
@@ -224,8 +225,8 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
       <div className="w-full space-y-2">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+              <GeminiSparkle className="w-3.5 h-3.5 text-blue-400" />
               3D ФІНАНСОВИЙ ОГЛЯД ПАРТНЕРА
             </span>
             <span className="text-[10px] font-mono text-slate-500 hidden sm:inline">
@@ -246,7 +247,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
         {[
           { id: 'CALCULATOR' as AffiliateTab, label: 'Калькулятор та Ранги', icon: Sliders },
           { id: 'NETWORK' as AffiliateTab, label: 'Дерево Мережі (L1/L2)', icon: Network },
@@ -260,10 +261,10 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 border ${
+              className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
                 isActive
-                  ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-950/50'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-900'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-[0_0_15px_rgba(99,102,241,0.35)]'
+                  : 'bg-white/5 text-slate-400 border-white/10 hover:text-white hover:bg-white/10'
               }`}
             >
               <Icon className="w-4 h-4" />

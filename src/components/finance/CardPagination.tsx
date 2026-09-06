@@ -1,6 +1,7 @@
 import React from 'react';
 import { Wallet, TrendingUp, Coins } from 'lucide-react';
 import { playWebAudioSound } from '../../utils/sirenAudio';
+import { GeminiSparkle } from '../common/GeminiSparkle';
 
 interface CardPaginationProps {
   total: number;
@@ -24,34 +25,34 @@ export const CardPagination: React.FC<CardPaginationProps> = ({
       label: 'БАЛАНС',
       value: `₴ ${balanceTotal.toLocaleString('uk-UA')}`,
       icon: Wallet,
-      color: 'cyan',
-      activeClass: 'bg-cyan-500/15 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)]',
-      dotColor: 'bg-cyan-400',
+      color: 'blue',
+      activeClass: 'bg-gradient-to-r from-blue-600/40 via-indigo-600/30 to-purple-600/40 border-indigo-400/60 text-white shadow-[0_0_20px_rgba(99,102,241,0.35)]',
+      dotColor: 'bg-gradient-to-r from-blue-400 to-indigo-400',
     },
     {
-      label: 'ЗАРОБЛЕНО',
+      label: 'ДОХІД',
       value: `₴ ${monthlyEarnings.toLocaleString('uk-UA')}`,
       icon: TrendingUp,
-      color: 'amber',
-      activeClass: 'bg-amber-500/15 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)]',
-      dotColor: 'bg-amber-400',
+      color: 'purple',
+      activeClass: 'bg-gradient-to-r from-purple-600/40 via-pink-600/30 to-rose-600/40 border-pink-400/60 text-white shadow-[0_0_20px_rgba(236,72,153,0.35)]',
+      dotColor: 'bg-gradient-to-r from-purple-400 to-pink-400',
     },
     {
-      label: 'ДО ВИВОДУ',
+      label: 'ВИПЛАТА',
       value: `₴ ${availablePayout.toLocaleString('uk-UA')}`,
       icon: Coins,
-      color: 'emerald',
-      activeClass: 'bg-emerald-500/15 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.3)]',
-      dotColor: 'bg-emerald-400',
+      color: 'teal',
+      activeClass: 'bg-gradient-to-r from-teal-600/40 via-emerald-600/30 to-cyan-600/40 border-teal-400/60 text-white shadow-[0_0_20px_rgba(20,184,166,0.35)]',
+      dotColor: 'bg-gradient-to-r from-teal-400 to-emerald-400',
     },
   ];
 
   return (
-    <div className="flex flex-col items-center gap-2.5 pt-2 select-none">
+    <div className="flex flex-col items-center gap-3 pt-3 select-none">
       
-      {/* Tactical Quick-Selector Dock */}
+      {/* Google Gemini Luminous Quick-Selector Pill Dock */}
       <div 
-        className="flex items-center gap-1 sm:gap-2 p-1 rounded-2xl bg-slate-900/90 border border-slate-800/90 backdrop-blur-md shadow-xl max-w-full overflow-x-auto"
+        className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-full bg-slate-950/80 border border-white/15 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_24px_rgba(99,102,241,0.15)] max-w-full overflow-x-auto"
         role="tablist"
       >
         {tabs.map((tab, idx) => {
@@ -67,14 +68,18 @@ export const CardPagination: React.FC<CardPaginationProps> = ({
               }}
               role="tab"
               aria-selected={isActive}
-              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all duration-300 border flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-mono font-bold transition-all duration-300 border flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 isActive
                   ? tab.activeClass
-                  : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? '' : 'opacity-70'}`} />
-              <span className="text-[10px] sm:text-xs">{tab.label}</span>
+              {isActive ? (
+                <GeminiSparkle className="w-3.5 h-3.5" />
+              ) : (
+                <Icon className="w-3.5 h-3.5 opacity-70" />
+              )}
+              <span className="text-[10px] sm:text-xs tracking-wider">{tab.label}</span>
               <span className={`text-[10px] sm:text-xs font-black ${isActive ? 'text-white' : 'text-slate-400'}`}>
                 {tab.value}
               </span>
@@ -83,8 +88,8 @@ export const CardPagination: React.FC<CardPaginationProps> = ({
         })}
       </div>
 
-      {/* Micro Navigation Dots */}
-      <div className="flex items-center justify-center gap-1.5">
+      {/* Micro Navigation Dots with Gemini Glow */}
+      <div className="flex items-center justify-center gap-2">
         {tabs.map((tab, idx) => {
           const isActive = activeIndex === idx;
           return (
@@ -97,7 +102,7 @@ export const CardPagination: React.FC<CardPaginationProps> = ({
               aria-label={`Картка ${idx + 1}`}
               className={`transition-all duration-300 rounded-full ${
                 isActive
-                  ? `w-6 h-1.5 ${tab.dotColor} shadow-md`
+                  ? `w-7 h-1.5 ${tab.dotColor} shadow-[0_0_8px_rgba(168,85,247,0.5)]`
                   : 'w-1.5 h-1.5 bg-slate-700 hover:bg-slate-500'
               }`}
             />

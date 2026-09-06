@@ -1,62 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
-  --siren-ink: #030712;
-  --siren-panel: rgba(8, 15, 30, 0.85);
-  --siren-line: rgba(56, 189, 248, 0.2);
-  --siren-cyan: #38bdf8;
-  --siren-amber: #fbbf24;
-  --siren-rose: #f43f5e;
+  color-scheme: light;
+  --siren-bg: #f4f7fb;
+  --siren-card: #ffffff;
+  --siren-blue: #2563eb;
+  --siren-blue-light: #eff6ff;
+  --siren-slate-900: #0f172a;
+  --siren-slate-800: #1e293b;
+  --siren-slate-600: #475569;
+  --siren-slate-400: #94a3b8;
 }
 
 html {
   scroll-behavior: smooth;
-  background: var(--siren-ink);
+  background: #f4f7fb;
 }
 
 body {
   margin: 0;
   min-width: 320px;
-  background:
-    radial-gradient(circle at 50% -10%, rgba(14, 116, 144, 0.22), transparent 42rem),
-    radial-gradient(circle at 85% 60%, rgba(225, 29, 72, 0.12), transparent 30rem),
-    linear-gradient(180deg, #020617 0%, #060d1f 50%, #020617 100%);
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  color: #f8fafc;
+  background: #f4f7fb;
+  background-image: 
+    radial-gradient(circle at 60% -10%, rgba(59, 130, 246, 0.08), transparent 40rem),
+    radial-gradient(circle at 10% 30%, rgba(99, 102, 241, 0.05), transparent 35rem),
+    radial-gradient(circle at 80% 60%, rgba(6, 182, 212, 0.04), transparent 30rem);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
   overflow-x: hidden;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 99;
-  opacity: 0.12;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.2) 0.5px, transparent 0.5px);
-  background-size: 6px 6px;
-  mix-blend-mode: soft-light;
-}
-
-/* Custom Scrollbars */
+/* Custom Clean Scrollbars */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(#1e293b, #0f172a);
-  border: 1px solid #334155;
+  background: #cbd5e1;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #38bdf8;
+  background: #94a3b8;
 }
 
 @layer utilities {
@@ -77,175 +67,51 @@ body::before {
   }
 }
 
-/* 3D Glass & Hologram Stack */
-.glass-panel-cyan {
-  background: rgba(8, 15, 30, 0.75);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 16px 0 rgba(56, 189, 248, 0.08);
+/* Light Card & Clean Shadow Utilities */
+.siren-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
 }
 
-.glass-panel-rose {
-  background: rgba(20, 10, 20, 0.8);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(244, 63, 94, 0.35);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 16px 0 rgba(244, 63, 94, 0.12);
+.siren-card-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.neon-edge-cyan {
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 10px rgba(56, 189, 248, 0.2);
+.siren-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
 }
 
-.neon-edge-red {
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5), inset 0 0 12px rgba(239, 68, 68, 0.25);
+.siren-blue-btn {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease-in-out;
 }
 
-.neon-edge-amber {
-  box-shadow: 0 0 15px rgba(251, 191, 36, 0.4), inset 0 0 10px rgba(251, 191, 36, 0.2);
+.siren-blue-btn:hover {
+  background: #1d4ed8;
+  box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
 }
 
-/* 3D Exploded Layer Stack */
-.exploded-layer-stack {
-  perspective: 1400px;
-  transform-style: preserve-3d;
-}
-
-.exploded-layer-1 {
-  transform: translateZ(90px) rotateX(25deg) rotateZ(-10deg);
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.exploded-layer-2 {
-  transform: translateZ(60px) rotateX(25deg) rotateZ(-10deg);
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.exploded-layer-3 {
-  transform: translateZ(30px) rotateX(25deg) rotateZ(-10deg);
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.exploded-layer-4 {
-  transform: translateZ(0px) rotateX(25deg) rotateZ(-10deg);
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.exploded-layer-5 {
-  transform: translateZ(-30px) rotateX(25deg) rotateZ(-10deg);
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Curved Cockpit Screen Effect */
-.cockpit-curved-screen {
-  transform: perspective(1600px) rotateX(4deg);
-  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.9), inset 0 0 40px rgba(56, 189, 248, 0.05);
-}
-
-/* 3D Isometric Map Transformations */
-.map-3d-stage {
-  perspective: 1200px;
-  transform-style: preserve-3d;
-}
-
-.map-3d-plane {
-  transform-style: preserve-3d;
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
-}
-
-.map-3d-plane.isometric-active {
-  transform: rotateX(34deg) rotateZ(-12deg) scale(0.96) translateZ(20px);
-  filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.85));
-}
-
-.map-3d-plane.flat-active {
-  transform: rotateX(0deg) rotateZ(0deg) scale(1) translateZ(0);
-}
-
-/* 3D Depth Layer Stack */
-.map-depth-base {
-  transform: translateZ(0px);
-}
-
-.map-depth-threats {
-  transform: translateZ(25px);
-}
-
-.map-depth-radar {
-  transform: translateZ(45px);
-}
-
-.map-depth-hologram {
-  transform: translateZ(65px);
-}
-
-/* 3D Glow and Radar Animations */
-@keyframes radarSweep {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-radar-sweep {
-  animation: radarSweep 6s linear infinite;
-  transform-origin: center center;
-}
-
-@keyframes laserDash {
-  to {
-    stroke-dashoffset: -40;
-  }
-}
-
-.animate-laser-dash {
-  animation: laserDash 1.2s linear infinite;
-}
-
-@keyframes hologramFloat {
-  0%, 100% {
-    transform: translateY(0px) rotateX(0deg);
+/* Pulse animation for radar nodes */
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
   }
   50% {
-    transform: translateY(-8px) rotateX(2deg);
+    transform: scale(1.6);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
   }
 }
 
-.animate-hologram-float {
-  animation: hologramFloat 4s ease-in-out infinite;
-}
-
-/* 3D Constellation Device Showcase Styles */
-.device-showcase-container {
-  perspective: 1400px;
-  transform-style: preserve-3d;
-}
-
-.device-card-3d {
-  transform-style: preserve-3d;
-  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
-  will-change: transform;
-}
-
-.device-card-3d:hover {
-  transform: translateY(-8px) rotateX(4deg) rotateY(-3deg) translateZ(15px);
-}
-
-/* Hologram Glow Effects */
-.glow-cyan {
-  box-shadow: 0 0 35px -5px rgba(56, 189, 248, 0.35);
-}
-
-.glow-rose {
-  box-shadow: 0 0 35px -5px rgba(244, 63, 94, 0.45);
-}
-
-.glow-amber {
-  box-shadow: 0 0 35px -5px rgba(251, 191, 36, 0.35);
-}
-
-.glow-purple {
-  box-shadow: 0 0 35px -5px rgba(168, 85, 247, 0.45);
+.animate-radar-ring {
+  animation: radar-pulse 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
