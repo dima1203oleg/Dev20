@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { DigitalTwinHero } from './components/DigitalTwinHero';
 import { DigitalTwinCockpit } from './components/DigitalTwinCockpit';
+import { SirenOrbitalDeviceEcosystem } from './components/orbital/SirenOrbitalDeviceEcosystem';
 import { ThreeDAllGadgetsShowcase } from './components/ThreeDAllGadgetsShowcase';
 import { ThreeDWebGLStudio } from './components/ThreeDWebGLStudio';
 import { ThreeDSpecModal } from './components/ThreeDSpecModal';
@@ -17,7 +18,7 @@ import { AudioSettingsBar } from './components/AudioSettingsBar';
 import { AffiliateProgram } from './components/AffiliateProgram';
 import { INITIAL_REGIONS, INITIAL_ALERTS_FEED } from './data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from './data/spatialThreatData';
-import { RegionData, AlertEvent, UserSettings, ThreatType } from './types';
+import { RegionData, AlertEvent, UserSettings, ThreatType, ThreatSceneModel } from './types';
 import { 
   startSirenSound, 
   stopSirenSound, 
@@ -383,6 +384,47 @@ export default function App() {
     );
   };
 
+  // Compute Unified Threat Scene Model for the 3D Ecosystem
+  const activeAlarmsCount = regions.filter((r) => r.isAlarm).length;
+  const myRegionObj = regions.find((r) => r.id === settings.myRegion);
+  const primaryThreatObj = INITIAL_TRAJECTORIES.find((t) => t.status === 'ACTIVE') || INITIAL_TRAJECTORIES[0] || null;
+
+  const threatSceneModel: ThreatSceneModel = {
+    timestamp: new Date().toLocaleTimeString('uk-UA'),
+    freshness: 'REALTIME',
+    dataMode: 'LIVE',
+    activeAlarmsCount,
+    criticalRegions: regions.filter((r) => r.isAlarm).map((r) => r.name),
+    primaryThreat: primaryThreatObj,
+    nearestShelter: {
+      id: 'sh-1',
+      name: 'Станція метро «Золоті Ворота»',
+      type: 'metro',
+      address: 'вул. Володимирська, 44',
+      regionId: settings.myRegion,
+      capacity: 2500,
+      features: {
+        powerGenerator: true,
+        wifi: true,
+        ventilation: true,
+        waterSupply: true,
+        wheelchairAccessible: true,
+        allDayOpen: true,
+      },
+      distanceMeters: 340,
+      walkTimeMins: 4,
+      verifiedStatus: 'VERIFIED_DSNS',
+    },
+    myRegionStatus: {
+      id: settings.myRegion,
+      name: myRegionObj?.name || 'м. Київ',
+      isAlarm: myRegionObj?.isAlarm || false,
+      etaMinutes: 18,
+      riskLevel: myRegionObj?.isAlarm ? 'HIGH' : 'LOW',
+    },
+    partnerModeActive: activeNavTab === 'AFFILIATE',
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-cyan-500/30 font-['Plus_Jakarta_Sans',sans-serif]">
       
@@ -474,16 +516,16 @@ export default function App() {
               </div>
             </div>
 
-            {/* 3D Multi-Device & All 9 Gadgets Live 3D Showcase */}
+            {/* Signature SIREN 3D Orbital Device Ecosystem */}
             <div id="all-gadgets-3d-ecosystem">
-              <ThreeDAllGadgetsShowcase
-                regions={regions}
-                trajectories={INITIAL_TRAJECTORIES}
-                settings={settings}
-                onNavigateToMap={() => setActiveNavTab('MAP')}
-                onNavigateToSimulator={() => setActiveNavTab('SIMULATOR')}
-                onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-                onNavigateToWebGL={() => setActiveNavTab('WEBGL_3D')}
+              <SirenOrbitalDeviceEcosystem
+                threatModel={threatSceneModel}
+                onNavigateToTab={(tabId) => {
+                  if (tabId === 'map') setActiveNavTab('MAP');
+                  if (tabId === 'simulator') setActiveNavTab('SIMULATOR');
+                  if (tabId === 'shelters') setActiveNavTab('SHELTERS');
+                }}
+                isCriticalAlert={isSirenPlaying}
               />
             </div>
           </div>
@@ -522,16 +564,6 @@ export default function App() {
                 />
               </div>
             </div>
-
-            {/* 3D Gadgets Showcase at bottom of 3D Studio */}
-            <ThreeDAllGadgetsShowcase
-              regions={regions}
-              trajectories={INITIAL_TRAJECTORIES}
-              settings={settings}
-              onNavigateToMap={() => setActiveNavTab('MAP')}
-              onNavigateToSimulator={() => setActiveNavTab('SIMULATOR')}
-              onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-            />
           </div>
         )}
 
@@ -574,23 +606,22 @@ export default function App() {
                 />
               </div>
             </div>
-
-            {/* 3D Gadgets Showcase at bottom of Map */}
-            <ThreeDAllGadgetsShowcase
-              regions={regions}
-              trajectories={INITIAL_TRAJECTORIES}
-              settings={settings}
-              onNavigateToMap={() => setActiveNavTab('MAP')}
-              onNavigateToSimulator={() => setActiveNavTab('SIMULATOR')}
-              onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-              onNavigateToWebGL={() => setActiveNavTab('WEBGL_3D')}
-            />
           </div>
         )}
 
         {/* Tab 3: 3D Multi-Device Ecosystem */}
         {activeNavTab === 'ECOSYSTEM' && (
           <div className="animate-in fade-in duration-200 space-y-6">
+            <SirenOrbitalDeviceEcosystem
+              threatModel={threatSceneModel}
+              onNavigateToTab={(tabId) => {
+                if (tabId === 'map') setActiveNavTab('MAP');
+                if (tabId === 'simulator') setActiveNavTab('SIMULATOR');
+                if (tabId === 'shelters') setActiveNavTab('SHELTERS');
+              }}
+              isCriticalAlert={isSirenPlaying}
+            />
+
             <ThreeDAllGadgetsShowcase
               regions={regions}
               trajectories={INITIAL_TRAJECTORIES}
@@ -609,15 +640,6 @@ export default function App() {
             <InteractiveThreatSimulator
               onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
             />
-            <ThreeDAllGadgetsShowcase
-              regions={regions}
-              trajectories={INITIAL_TRAJECTORIES}
-              settings={settings}
-              onNavigateToMap={() => setActiveNavTab('MAP')}
-              onNavigateToSimulator={() => setActiveNavTab('SIMULATOR')}
-              onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-              onNavigateToWebGL={() => setActiveNavTab('WEBGL_3D')}
-            />
           </div>
         )}
 
@@ -627,15 +649,6 @@ export default function App() {
             <SheltersSection
               myRegionId={settings.myRegion}
               regions={regions}
-            />
-            <ThreeDAllGadgetsShowcase
-              regions={regions}
-              trajectories={INITIAL_TRAJECTORIES}
-              settings={settings}
-              onNavigateToMap={() => setActiveNavTab('MAP')}
-              onNavigateToSimulator={() => setActiveNavTab('SIMULATOR')}
-              onNavigateToShelters={() => setActiveNavTab('SHELTERS')}
-              onNavigateToWebGL={() => setActiveNavTab('WEBGL_3D')}
             />
           </div>
         )}

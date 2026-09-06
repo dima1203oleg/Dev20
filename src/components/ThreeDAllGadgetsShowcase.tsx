@@ -43,8 +43,24 @@ import {
   ZoomOut,
   HelpCircle
 } from 'lucide-react';
-import { RegionData, ThreatTrajectory, UserSettings } from '../types';
+import { RegionData, ThreatTrajectory, UserSettings, ThreatSceneModel, OrbitalDeviceType } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
+import { OrbitalDeviceModel } from './orbital/OrbitalDeviceModels';
+
+export const mapGadgetIdToOrbitalType = (id: GadgetId): OrbitalDeviceType => {
+  switch (id) {
+    case 'PHONE': return 'smartphone';
+    case 'TABLET': return 'tablet';
+    case 'DESKTOP': return 'desktop';
+    case 'LAPTOP': return 'laptop';
+    case 'WATCH': return 'watch';
+    case 'VISION': return 'ar_vr';
+    case 'CAR': return 'car';
+    case 'TV': return 'tv';
+    case 'KIOSK': return 'kiosk';
+    default: return 'desktop';
+  }
+};
 
 interface ThreeDAllGadgetsShowcaseProps {
   regions: RegionData[];
@@ -302,6 +318,41 @@ export const ThreeDAllGadgetsShowcase: React.FC<ThreeDAllGadgetsShowcaseProps> =
   const activeAlarms = regions.filter((r) => r.isAlarm);
   const myRegionData = regions.find((r) => r.id === settings.myRegion) || regions[0];
   const currentThreat = trajectories[0];
+
+  const currentThreatSceneModel: ThreatSceneModel = {
+    timestamp: new Date().toISOString(),
+    freshness: 'REALTIME',
+    dataMode: 'LIVE',
+    activeAlarmsCount: activeAlarms.length,
+    criticalRegions: activeAlarms.map((r) => r.name),
+    primaryThreat: currentThreat || null,
+    nearestShelter: {
+      id: 'sh-1',
+      name: 'Станція метро "Золоті Ворота"',
+      address: 'вул. Володимирська, 40',
+      regionId: myRegionData.id,
+      type: 'metro',
+      distanceMeters: 340,
+      walkTimeMins: 4,
+      capacity: 2500,
+      features: {
+        powerGenerator: true,
+        wifi: true,
+        ventilation: true,
+        waterSupply: true,
+        wheelchairAccessible: true,
+        allDayOpen: true,
+      },
+      verifiedStatus: 'VERIFIED_DSNS',
+    },
+    myRegionStatus: {
+      id: myRegionData.id,
+      name: myRegionData.name,
+      isAlarm: isSimulatingAlert || isSyncBroadcastActive || myRegionData.isAlarm,
+      etaMinutes: 18,
+      riskLevel: isSimulatingAlert || isSyncBroadcastActive || myRegionData.isAlarm ? 'HIGH' : 'LOW',
+    }
+  };
 
   // Auto orbit animation
   useEffect(() => {
@@ -634,142 +685,26 @@ export const ThreeDAllGadgetsShowcase: React.FC<ThreeDAllGadgetsShowcaseProps> =
                   </span>
                 </div>
 
-                {/* 3D Perspective Mini Stage for the Gadget Screen */}
-                <div className="perspective-1000 my-2">
+                {/* 3D Perspective Mini Stage for the Gadget */}
+                <div className="perspective-1000 my-2 flex items-center justify-center overflow-hidden py-2 min-h-[170px] bg-slate-950/60 rounded-xl border border-slate-800/80">
                   <div 
-                    className="preserve-3d transition-transform duration-500 rounded-xl p-3 bg-slate-950 border border-slate-800 shadow-inner group-hover:rotate-x-6 group-hover:-rotate-y-3"
+                    className="preserve-3d transition-transform duration-500 scale-[0.68] sm:scale-[0.72] group-hover:scale-[0.78] pointer-events-none"
                     style={{
-                      transform: isSelected ? 'rotateX(10deg) rotateY(-8deg)' : 'rotateX(4deg) rotateY(-2deg)'
+                      transform: isSelected ? 'rotateX(8deg) rotateY(-6deg)' : 'rotateX(4deg) rotateY(-2deg)'
                     }}
                   >
-                    {/* Screen Content Render based on device */}
-                    {gadget.id === 'WATCH' ? (
-                      <div className="h-32 flex items-center justify-center">
-                        <div className={`w-24 h-24 rounded-full border-2 flex flex-col items-center justify-center p-1 text-center shadow-lg transition-all ${
-                          isDeviceAlarming
-                            ? 'border-rose-500 bg-rose-950/60 shadow-rose-950/90 animate-pulse'
-                            : 'border-cyan-500/60 bg-slate-900 shadow-cyan-950/40'
-                        }`}>
-                          <span className="text-[8px] font-mono text-rose-300 font-bold">
-                            {isDeviceAlarming ? '🚨 ТРИВОГА' : 'РАДАР'}
-                          </span>
-                          <span className="text-base font-black text-white font-mono leading-none my-0.5">18m</span>
-                          <span className="text-[7px] text-slate-400 font-mono">ETA {myRegionData.shortName}</span>
-                          <span className="text-[7px] text-emerald-400 font-mono">Haptic 8ms</span>
-                        </div>
-                      </div>
-                    ) : gadget.id === 'VISION' ? (
-                      <div className="h-32 relative rounded-lg bg-sky-950/30 border border-sky-500/40 flex items-center justify-center overflow-hidden">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-24 h-24 rounded-full border border-sky-400/30 animate-spin" />
-                          <div className="w-14 h-14 rounded-full border border-dashed border-cyan-400/40" />
-                        </div>
-                        <div className="relative z-10 text-center font-mono">
-                          <span className="text-[10px] font-bold text-sky-300 block">AR SPATIAL HUD</span>
-                          <span className="text-xs font-black text-white">450m AGL · 185 km/h</span>
-                          <span className="text-[8px] text-slate-400 block">Shahed-136 Vector NW</span>
-                          <span className="text-[8px] text-emerald-300 font-bold block mt-1">Photon-to-Motion 12ms</span>
-                        </div>
-                      </div>
-                    ) : gadget.id === 'CAR' ? (
-                      <div className="h-32 rounded-lg bg-slate-900 border border-amber-500/40 p-2.5 flex flex-col justify-between text-xs font-mono">
-                        <div className="flex items-center justify-between text-[9px] text-amber-300 font-bold">
-                          <span>⚠️ ОБ'ЇЗД ЗОНИ ЗАГРОЗИ</span>
-                          <span>ETA 18 хв</span>
-                        </div>
-                        <div className="text-[10px] text-slate-300 leading-snug">
-                          Шлях оптимізовано з урахуванням азимуту підльоту цілі 315° NW.
-                        </div>
-                        <div className="text-[9px] text-emerald-400 font-bold bg-slate-950 p-1.5 rounded flex items-center justify-between">
-                          <span>АЗС-Укриття (WOG):</span>
-                          <span>1.8 км · 2 хв</span>
-                        </div>
-                      </div>
-                    ) : gadget.id === 'PHONE' ? (
-                      <div className="h-32 rounded-lg bg-slate-900 border border-amber-500/30 p-2.5 flex flex-col justify-between text-xs">
-                        {/* Dynamic Island */}
-                        <div className="mx-auto bg-slate-950 px-3 py-0.5 rounded-full border border-slate-700 flex items-center gap-1.5 text-[9px] font-mono text-rose-300 animate-pulse">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
-                          <span>ETA 18 хв ({myRegionData.shortName})</span>
-                        </div>
-                        <div className="text-[10px] text-slate-300 font-mono space-y-0.5 my-auto">
-                          <div className="flex justify-between">
-                            <span className="text-slate-400">Ціль:</span>
-                            <span className="text-amber-300 font-bold">БпЛА Shahed-136</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-slate-400">Укриття:</span>
-                            <span className="text-emerald-400 font-bold">340м (4 хв)</span>
-                          </div>
-                        </div>
-                        <div className="bg-slate-950 px-2 py-1 rounded text-[9px] text-cyan-400 font-mono flex items-center justify-between">
-                          <span>Bypass DND Active</span>
-                          <span>15ms Push</span>
-                        </div>
-                      </div>
-                    ) : gadget.id === 'TV' ? (
-                      <div className="h-32 rounded-lg bg-slate-900 border border-emerald-500/40 p-2.5 flex flex-col justify-between text-xs font-mono">
-                        <div className="flex items-center justify-between text-[9px] text-emerald-400 font-bold">
-                          <span>4K AMBIENT DASHBOARD</span>
-                          <span>65" HDR</span>
-                        </div>
-                        <div className="space-y-1 my-auto text-[10px]">
-                          <div className="flex justify-between text-slate-300">
-                            <span>Активні тривоги:</span>
-                            <span className="text-rose-400 font-bold">{activeAlarms.length} областей</span>
-                          </div>
-                          <div className="flex justify-between text-slate-300">
-                            <span>РЛС сектор:</span>
-                            <span className="text-cyan-300">Купол ППО активний</span>
-                          </div>
-                        </div>
-                        <div className="text-[8px] text-slate-400 flex justify-between bg-slate-950 p-1 rounded">
-                          <span>Диктор голосом: ON</span>
-                          <span>Wall Stream 50ms</span>
-                        </div>
-                      </div>
-                    ) : gadget.id === 'KIOSK' ? (
-                      <div className="h-32 rounded-lg bg-slate-900 border border-indigo-500/40 p-2.5 flex flex-col justify-between text-xs font-mono">
-                        <div className="flex items-center justify-between text-[9px] text-indigo-300 font-bold">
-                          <span>ПУБЛІЧНИЙ ТЕРМІНАЛ</span>
-                          <span className="text-rose-400">МАЯК ON</span>
-                        </div>
-                        <div className="text-[10px] text-slate-200">
-                          Евакуаційний вихід: Сектор В (120м).
-                        </div>
-                        <div className="bg-slate-950 p-1 rounded text-[8px] text-slate-400 flex justify-between">
-                          <span>Фізична сирена: 120 dB</span>
-                          <span>UPS 48 год</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-32 rounded-lg bg-slate-900/90 border border-slate-800 p-2.5 flex flex-col justify-between text-xs">
-                        <div className="flex items-center justify-between text-[10px] font-mono">
-                          <span className="flex items-center gap-1 text-slate-300">
-                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                            {activeAlarms.length} тривог
-                          </span>
-                          <span className="text-cyan-400 font-bold">
-                            {gadget.specs.latency}
-                          </span>
-                        </div>
-
-                        <div className="space-y-1 my-auto">
-                          <div className="flex justify-between text-[10px] text-slate-400">
-                            <span>Провідна ціль:</span>
-                            <span className="text-amber-300 font-bold font-mono">{currentThreat?.name || 'БпЛА Shahed-136'}</span>
-                          </div>
-                          <div className="flex justify-between text-[10px] text-slate-400">
-                            <span>Укриття ({myRegionData.shortName}):</span>
-                            <span className="text-emerald-400 font-bold font-mono">340м · 4 хв</span>
-                          </div>
-                        </div>
-
-                        <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-gradient-to-r from-cyan-500 to-purple-500 h-full w-4/5 animate-pulse" />
-                        </div>
-                      </div>
-                    )}
+                    <OrbitalDeviceModel
+                      type={mapGadgetIdToOrbitalType(gadget.id)}
+                      threatModel={{
+                        ...currentThreatSceneModel,
+                        activeAlarmsCount: isDeviceAlarming ? 8 : activeAlarms.length,
+                        myRegionStatus: {
+                          ...currentThreatSceneModel.myRegionStatus,
+                          isAlarm: isDeviceAlarming || currentThreatSceneModel.myRegionStatus.isAlarm,
+                        }
+                      }}
+                      isSelected={isSelected}
+                    />
                   </div>
                 </div>
 
@@ -940,121 +875,27 @@ export const ThreeDAllGadgetsShowcase: React.FC<ThreeDAllGadgetsShowcaseProps> =
 
                 {/* THE 3D ROTATABLE DEVICE MODEL */}
                 <div 
-                  className="relative preserve-3d transition-transform duration-100 flex items-center justify-center"
+                  className="relative preserve-3d transition-transform duration-100 flex items-center justify-center py-6"
                   style={{
                     transform: `rotateX(${orbitAngle.pitch}deg) rotateY(${orbitAngle.yaw}deg) scale(${orbitAngle.zoom})`,
                   }}
                 >
-                  {/* Hardware Chassis Construction for Selected Gadget */}
-                  <div className={`relative rounded-3xl bg-slate-900 border-4 border-slate-700 p-4 shadow-2xl max-w-md w-[310px] sm:w-[380px] preserve-3d transition-all ${
+                  <div className={`transition-all duration-300 transform-gpu ${
                     isSimulatingAlert || isSyncBroadcastActive 
-                      ? 'ring-4 ring-rose-500 ring-offset-4 ring-offset-slate-950 animate-bounce' 
+                      ? 'ring-4 ring-rose-500/80 ring-offset-4 ring-offset-slate-950 rounded-2xl animate-pulse' 
                       : ''
                   }`}>
-                    
-                    {/* Device Header Strip (Dynamic Island / Bezel) */}
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3 text-xs">
-                      <div className="flex items-center gap-2 font-mono font-bold text-cyan-300">
-                        {React.createElement(selectedGadget.icon, { className: 'w-4 h-4' })}
-                        <span>{selectedGadget.name.split(' ')[0].toUpperCase()} · 3D LIVE</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                        <span>ONLINE</span>
-                      </div>
-                    </div>
-
-                    {/* Display Interior */}
-                    <div className="bg-slate-950 rounded-2xl p-4 border border-slate-800 min-h-[220px] flex flex-col justify-between relative overflow-hidden">
-                      
-                      {/* Live Screen Render based on Device ID */}
-                      {selectedGadget.id === 'WATCH' ? (
-                        <div className="flex flex-col items-center justify-center my-auto space-y-2">
-                          <div className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center p-2 text-center shadow-lg transition-all ${
-                            isSimulatingAlert || isSyncBroadcastActive
-                              ? 'border-rose-500 bg-rose-950/60 shadow-rose-950/80 animate-pulse'
-                              : 'border-rose-500/70 bg-rose-950/30 shadow-rose-950/50'
-                          }`}>
-                            <span className="font-mono text-[10px] font-bold text-rose-300">ТРИВОГА</span>
-                            <span className="font-mono text-3xl font-black text-white">18m</span>
-                            <span className="text-[9px] text-slate-300 font-mono">ETA {myRegionData.shortName}</span>
-                          </div>
-                          <span className="text-[11px] text-slate-300 font-medium">Тактильна вібрація активна</span>
-                        </div>
-                      ) : selectedGadget.id === 'VISION' ? (
-                        <div className="relative h-40 w-full bg-slate-950 rounded-xl border border-sky-500/40 flex items-center justify-center overflow-hidden">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-32 h-32 rounded-full border border-sky-400/30 animate-spin" />
-                            <div className="w-20 h-20 rounded-full border border-dashed border-cyan-400/40" />
-                          </div>
-                          <div className="relative z-10 text-center font-mono">
-                            <span className="text-xs font-bold text-sky-300 block">3D SPATIAL HOLOGRAM</span>
-                            <span className="text-base font-black text-white">450m AGL · 185 km/h</span>
-                            <span className="text-[10px] text-slate-400 block mt-1">Shahed-136 Vector NW</span>
-                            <span className="text-[9px] text-emerald-300 font-bold block mt-1">Купол ППО: 85 км</span>
-                          </div>
-                        </div>
-                      ) : selectedGadget.id === 'CAR' ? (
-                        <div className="space-y-2.5 font-mono">
-                          <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/50 text-amber-200 text-xs">
-                            <div className="font-bold flex items-center justify-between mb-1">
-                              <span>⚠️ ЗАГРОЗА НА ШЛЯХУ</span>
-                              <span>ETA 18 хв</span>
-                            </div>
-                            <p className="text-[10px] text-slate-300">
-                              Авто-маршрутизація безпечного коридору активна.
-                            </p>
-                          </div>
-                          <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-[11px]">
-                            <span>Сховище на трасі:</span>
-                            <span className="font-bold text-emerald-300">АЗС WOG (1.8 км)</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                              <span className="font-bold text-slate-200">Повітряний простір</span>
-                            </div>
-                            <span className="text-rose-400 font-bold">{activeAlarms.length} тривог</span>
-                          </div>
-
-                          <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs space-y-1">
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Ціль:</span>
-                              <span className="text-amber-300 font-bold font-mono">{currentThreat?.name || 'БпЛА Shahed-136'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Вектор:</span>
-                              <span className="text-cyan-300 font-mono">{currentThreat?.azimuthDirection || '315° NW'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Укриття ({myRegionData.shortName}):</span>
-                              <span className="text-emerald-400 font-bold font-mono">340м (4 хв)</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Device Footer Actions */}
-                      <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
-                        <span className="text-[10px] text-cyan-400">{selectedGadget.specs.refreshRate}</span>
-                        <button
-                          onClick={onNavigateToMap}
-                          className="text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 text-[11px]"
-                        >
-                          Карта <ArrowRight className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                    </div>
-
-                    {/* 3D Hardware Stand / Shadow Element */}
-                    <div 
-                      className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-4 rounded-full bg-cyan-500/20 blur-md pointer-events-none"
+                    <OrbitalDeviceModel
+                      type={mapGadgetIdToOrbitalType(selectedGadget.id)}
+                      threatModel={currentThreatSceneModel}
+                      isSelected={true}
                     />
                   </div>
+
+                  {/* 3D Hardware Ground Ambient Shadow */}
+                  <div 
+                    className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-64 h-6 rounded-full bg-cyan-500/20 blur-xl pointer-events-none"
+                  />
                 </div>
 
                 {/* Pitch/Yaw Manual Live Indicators */}

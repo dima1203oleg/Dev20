@@ -179,3 +179,56 @@ export interface AffiliatePromoTemplate {
   tags: string[];
 }
 
+export type OrbitalDeviceType = 
+  | 'tv' 
+  | 'desktop' 
+  | 'laptop' 
+  | 'tablet' 
+  | 'smartphone' 
+  | 'watch' 
+  | 'car' 
+  | 'ar_vr'
+  | 'kiosk';
+
+export interface ThreatSceneModel {
+  timestamp: string;
+  freshness: 'REALTIME' | 'STABLE' | 'DEGRADED';
+  dataMode: 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
+  activeAlarmsCount: number;
+  criticalRegions: string[];
+  primaryThreat: ThreatTrajectory | null;
+  nearestShelter: Shelter | null;
+  myRegionStatus: {
+    id: string;
+    name: string;
+    isAlarm: boolean;
+    etaMinutes: number;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  };
+  partnerModeActive?: boolean;
+}
+
+export interface OrbitalDeviceConfig {
+  id: OrbitalDeviceType;
+  title: string;
+  subtitle: string;
+  category: string;
+  modeTag: string;
+  depthZone: 'FOREGROUND' | 'MIDGROUND' | 'BACKGROUND';
+  orbitRadius: number;
+  orbitAngle: number;
+  orbitSpeed: number;
+  verticalOffset: number;
+  bobAmplitude: number;
+  bobFrequency: number;
+  tilt: [number, number, number]; // [rotX, rotY, rotZ] in degrees
+  scale: number;
+  specs: {
+    screen: string;
+    latency: string;
+    role: string;
+    hapticOrSound: string;
+  };
+  keyFeatures: string[];
+}
+
