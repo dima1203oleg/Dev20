@@ -52,6 +52,7 @@ import {
   AffiliatePayoutRequest,
   AffiliatePromoTemplate 
 } from '../types';
+import { Financial3DCardCarousel } from './finance/Financial3DCardCarousel';
 
 interface AffiliateProgramProps {
   onOpenMap?: () => void;
@@ -217,6 +218,31 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 3D Financial Carousel: БАЛАНС → ЗАРОБЛЕНО → ДОСТУПНО ДО ВИВОДУ */}
+      <div className="w-full space-y-2">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              3D ФІНАНСОВИЙ ОГЛЯД ПАРТНЕРА
+            </span>
+            <span className="text-[10px] font-mono text-slate-500 hidden sm:inline">
+              · 3 просторові картки: Баланс, Заробіток, Вивід
+            </span>
+          </div>
+          <button
+            onClick={() => setActiveTab('PAYOUTS')}
+            className="text-xs font-mono text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
+          >
+            Кабінет виплат →
+          </button>
+        </div>
+
+        <Financial3DCardCarousel
+          onOpenPayout={() => setActiveTab('PAYOUTS')}
+        />
       </div>
 
       {/* Navigation Sub-Tabs */}

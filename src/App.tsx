@@ -35,8 +35,10 @@ import {
   ShieldAlert,
   Navigation,
   Sparkles,
-  BookOpen
+  BookOpen,
+  ArrowUpRight
 } from 'lucide-react';
+import { Financial3DCardCarousel } from './components/finance/Financial3DCardCarousel';
 
 export default function App() {
   // Navigation: HOME | NETWORK | FINANCE | PROFILE
@@ -433,6 +435,32 @@ export default function App() {
               onNavigateToNetwork={() => setActiveSection('NETWORK')}
               onNavigateToShelters={() => setIsSheltersModalOpen(true)}
             />
+
+            {/* 3D Financial Cards Showcase on Front Page */}
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between px-1 sm:px-2 mb-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    3D ФІНАНСОВИЙ ОГЛЯД DEV20 · БАЛАНС → ЗАРОБІТОК → ВИПЛАТА
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-500 hidden md:inline">
+                    · Інтерактивні 3D-картки з паралаксом та свайпом
+                  </span>
+                </div>
+                <button
+                  onClick={() => setActiveSection('FINANCE')}
+                  className="text-xs font-mono text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Детальна виписка</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <Financial3DCardCarousel
+                onOpenPayout={() => setActiveSection('FINANCE')}
+              />
+            </div>
 
             {/* Central Workspace (The Core Crown Jewel) */}
             <CentralWorkspace

@@ -23,8 +23,10 @@ import {
   Zap,
   Minimize2,
   X,
-  Volume2
+  Volume2,
+  Sparkles
 } from 'lucide-react';
+import { Financial3DCardCarousel } from './finance/Financial3DCardCarousel';
 import { 
   RegionData, 
   ThreatTrajectory, 
@@ -348,9 +350,41 @@ export const CentralWorkspace: React.FC<CentralWorkspaceProps> = ({
               </div>
             )}
 
-            {/* Network Mode: Radial Referral Network (YOU -> L1 -> L2) */}
+            {/* Network Mode: 3D Financial Carousel -> Referral Network (YOU -> L1 -> L2) */}
             {workspaceMode === 'NETWORK' && (
-              <div className="relative w-full h-full flex flex-col justify-between p-2 sm:p-4">
+              <div className="relative w-full h-full flex flex-col justify-start p-2 sm:p-4 space-y-4 overflow-y-auto">
+                {/* Top Executive 3D Financial Carousel */}
+                <div className="w-full shrink-0">
+                  <div className="flex items-center justify-between px-2 mb-1">
+                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      3D ФІНАНСОВИЙ ОГЛЯД · БАЛАНС → ЗАРОБІТОК → ВИПЛАТА
+                    </span>
+                    {onNavigateToFinance && (
+                      <button
+                        onClick={onNavigateToFinance}
+                        className="text-[10px] font-mono text-slate-400 hover:text-cyan-300 transition-colors cursor-pointer"
+                      >
+                        Детальна виписка →
+                      </button>
+                    )}
+                  </div>
+                  <Financial3DCardCarousel
+                    onOpenPayout={onNavigateToFinance}
+                  />
+                </div>
+
+                {/* Network Ring Header Divider */}
+                <div className="flex items-center justify-between px-2 pt-2 border-t border-slate-800/80">
+                  <div className="text-xs font-mono font-bold text-slate-300 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-amber-400" />
+                    <span>ДЕРЕВО ПАРТНЕРСЬКОЇ МЕРЕЖІ · YOU → L1 → L2</span>
+                  </div>
+                  <div className="text-[10px] font-mono text-slate-400">
+                    Орбітальна 3D структура зв'язків
+                  </div>
+                </div>
+
                 {networkViewMode === '3D_GRAPH' ? (
                   <div className="relative w-full flex-1 min-h-[460px] flex items-center justify-center overflow-hidden">
                     

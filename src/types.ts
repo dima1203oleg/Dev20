@@ -249,3 +249,5 @@ export interface SmartMetric {
   onAction?: () => void;
 }
 
+export * from './types/finance';
+

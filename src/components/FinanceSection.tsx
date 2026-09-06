@@ -15,9 +15,10 @@ import {
   X,
   Send
 } from 'lucide-react';
-import { AffiliatePayoutRequest } from '../types';
+import { AffiliatePayoutRequest, PartnerFinancialSummary } from '../types';
 import { SAMPLE_PAYOUT_HISTORY, SAMPLE_SIMULATED_TRANSACTIONS } from '../data/affiliateData';
 import { playWebAudioSound } from '../utils/sirenAudio';
+import { Financial3DCardCarousel } from './finance/Financial3DCardCarousel';
 
 interface FinanceSectionProps {
   availableBalance?: number;
@@ -114,64 +115,35 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
         </button>
       </div>
 
-      {/* 3 Main Hero Financial Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
-        {/* Card 1: Доступно до виводу */}
-        <div className="p-5 rounded-3xl bg-slate-900/90 border-2 border-emerald-500/40 shadow-xl relative overflow-hidden backdrop-blur-md">
-          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-            <span>ДОСТУПНИЙ БАЛАНС</span>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-bold">
-              ГОТОВО ДО ВИВОДУ
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl sm:text-4xl font-black text-emerald-400 font-mono tracking-tight">
-              ₴ {availableBalance.toLocaleString('uk-UA')}
-            </div>
-            <div className="text-xs font-mono text-slate-400 mt-1">
-              ≈ ${(availableBalance / 41.5).toFixed(2)} USD · Комісія: 0%
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: В очікуванні (Pending) */}
-        <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md">
-          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-            <span>В ОБРОБЦІ (PENDING)</span>
-            <span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800 text-[10px] font-bold">
-              ХОЛД 72 ГОД.
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl sm:text-4xl font-black text-amber-400 font-mono tracking-tight">
-              ₴ {pendingBalance.toLocaleString('uk-UA')}
-            </div>
-            <div className="text-xs font-mono text-slate-400 mt-1">
-              Підтверджується платіжним шлюзом
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Зароблено всього (Lifetime) */}
-        <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md">
-          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-            <span>ЗАРОБЛЕНО ВСЬОГО</span>
-            <span className="px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 text-[10px] font-bold">
-              LIFETIME
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight">
-              ₴ {lifetimeEarnings.toLocaleString('uk-UA')}
-            </div>
-            <div className="text-xs font-mono text-emerald-400 mt-1">
-              +24% порівняно з минулим періодом
-            </div>
-          </div>
-        </div>
-
+      {/* 3D Financial Cards Carousel: БАЛАНС → ЗАРОБЛЕНО → ДОСТУПНО ДО ВИВОДУ */}
+      <div className="w-full">
+        <Financial3DCardCarousel
+          initialSummary={{
+            totalBalance: availableBalance + pendingBalance,
+            availableBalance: availableBalance,
+            pendingBalance: pendingBalance,
+            heldBalance: 580,
+            earnedThisMonth: 2840,
+            earnedLastMonth: 2310,
+            lifetimeEarnings: lifetimeEarnings,
+            lifetimePaid: 14330,
+            minimumPayout: minPayoutUah,
+            amountUntilMinimum: availableBalance < minPayoutUah ? minPayoutUah - availableBalance : 0,
+            l1Earnings: 1940,
+            l2Earnings: 900,
+            sparkline: [1350, 1520, 1780, 2100, 1950, 2310, 2840],
+            qualifiedL1: 154,
+            updatedAt: '22:14',
+            status: 'SUCCESS',
+          }}
+          onOpenPayout={() => {
+            setIsModalOpen(true);
+            playWebAudioSound('click');
+          }}
+          isPayoutModalOpen={isModalOpen}
+        />
       </div>
+
 
       {/* Two Columns: Recent Payouts History + Transparent Ledger */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

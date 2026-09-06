@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
   Home, 
@@ -7,7 +7,9 @@ import {
   User, 
   Bell, 
   Sparkles,
-  Award
+  Award,
+  Radio,
+  Clock
 } from 'lucide-react';
 import { DashboardSection, RegionData } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
@@ -26,7 +28,25 @@ export const Header: React.FC<HeaderProps> = ({
   myRegionName = 'Київська обл.',
 }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>('');
   const activeAlarmsCount = regions.filter((r) => r.isAlarm).length;
+
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('uk-UA', {
+        timeZone: 'Europe/Kyiv',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      setCurrentTime(timeString);
+    };
+    updateClock();
+    const interval = setInterval(updateClock, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleNavClick = (sec: DashboardSection) => {
     onSelectSection(sec);
@@ -36,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Top Fixed Header */}
-      <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800">
+      <header className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-3">
             
@@ -60,13 +80,21 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="text-base sm:text-lg font-black tracking-tight text-white font-mono group-hover:text-cyan-300 transition-colors">
                     SIREN UA
                   </span>
-                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">
-                    DEV20 v2
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                    DEV20 3D
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 font-mono hidden sm:block">
-                  Просторовий Digital Twin & Мережа безпеки
-                </p>
+                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono hidden sm:flex">
+                  <span className="flex items-center gap-1 text-emerald-400">
+                    <Radio className="w-2.5 h-2.5 animate-pulse" />
+                    РЛС 12ms
+                  </span>
+                  <span className="text-slate-600">·</span>
+                  <span className="text-slate-300 flex items-center gap-1">
+                    <Clock className="w-2.5 h-2.5 text-cyan-400" />
+                    {currentTime || 'КИЇВ'}
+                  </span>
+                </div>
               </div>
             </div>
 
