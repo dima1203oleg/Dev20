@@ -479,7 +479,7 @@ export default function App() {
             <SheltersSection
               myRegionId={settings.myRegion}
               regions={displayRegions}
-              dataState={isDemoMode ? 'DEMO' : 'NOT_CONNECTED'}
+              dataState={isDemoMode || threatDataState === 'DEMO' ? 'DEMO' : threatDataState === 'LIVE' ? 'LIVE' : 'NOT_CONNECTED'}
             />
           </div>
         </div>
