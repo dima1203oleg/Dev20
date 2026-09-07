@@ -61,7 +61,7 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
 
   return (
     <div className="w-full my-0">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="siren-home-features-grid grid grid-cols-1 md:grid-cols-2 gap-3">
         {cards.map((card) => (
           <button
             type="button"
@@ -71,14 +71,14 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
               if (onNavigateToTab) onNavigateToTab(card.id as DashboardSection);
               playWebAudioSound('click');
             }}
-            className={`w-full text-left rounded-[22px] p-4 lg:p-3 border flex flex-col lg:h-[78px] lg:justify-center cursor-pointer group transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+            className={`w-full min-w-0 text-left rounded-[22px] p-4 lg:p-3 border flex flex-col min-[1160px]:h-[78px] min-[1160px]:justify-center cursor-pointer group transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
               isDark 
                 ? 'bg-[#131C2B] border-[#24344D] text-white hover:border-[#334768] shadow-lg' 
                 : 'bg-white border-[#CBD6E2] text-[#0F172A] hover:border-blue-300 shadow-sm hover:shadow-md'
             }`}
           >
-            <div className="lg:flex lg:items-center lg:gap-3">
-              <div className="flex items-center justify-between mb-3 lg:mb-0 lg:w-9 lg:shrink-0">
+            <div className="min-w-0 min-[1160px]:flex min-[1160px]:items-center min-[1160px]:gap-3">
+              <div className="flex items-center justify-between mb-3 min-[1160px]:mb-0 min-[1160px]:w-9 min-[1160px]:shrink-0">
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${
                   isDark ? 'bg-[#1B293F] border border-[#2E4160]' : 'bg-blue-50 border border-blue-100'
                 }`}>
@@ -89,21 +89,23 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
                 }`} />
               </div>
               
-              <h3 className={`text-[15px] font-extrabold tracking-tight mb-1.5 lg:mb-1 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                {card.title}
-              </h3>
+              <div className="min-w-0 flex-1">
+                <h3 className={`text-[15px] font-extrabold tracking-tight mb-1.5 min-[1160px]:mb-1 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+                  {card.title}
+                </h3>
 
-              <div className="space-y-0.5 text-[11px]">
-                {card.features.map((row, idx) => (
-                  <div key={idx} className="flex items-center justify-between gap-2">
-                    <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-[#334155]'}`}>
-                      {row[0]}
-                    </span>
-                    <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-                      {row[1]}
-                    </span>
-                  </div>
-                ))}
+                <div className="space-y-0.5 text-[10px] leading-tight">
+                  {card.features.map((row, idx) => (
+                    <div key={idx} className="flex min-w-0 items-center justify-between gap-2">
+                      <span className={`min-w-0 font-semibold ${isDark ? 'text-slate-300' : 'text-[#334155]'}`}>
+                        {row[0]}
+                      </span>
+                      <span className={`min-w-0 text-right font-medium ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
+                        {row[1]}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </button>

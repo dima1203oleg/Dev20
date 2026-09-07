@@ -43,6 +43,8 @@ import { ContextDrawer } from './ContextDrawer';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 import { profileService, UserProfileData } from '../services/profileService';
 import { DataState } from '../types/dataEnvelope';
+import { kycService, KycVerificationData } from '../services/kycService';
+import { authSecurityService, UserSecurityData } from '../services/authSecurityService';
 
 interface ProfileSectionProps {
   theme?: 'light' | 'dark';
@@ -56,6 +58,12 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const [isEditingData, setIsEditingData] = useState(false);
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [profileState, setProfileState] = useState<DataState>('LOADING');
+  const [kycData, setKycData] = useState<KycVerificationData | null>(null);
+  const [kycState, setKycState] = useState<DataState>('LOADING');
+  const [securityData, setSecurityData] = useState<UserSecurityData | null>(null);
+  const [securityState, setSecurityState] = useState<DataState>('LOADING');
+  const [activeDrawer, setActiveDrawer] = useState<'rank' | 'payments' | 'kyc' | 'security' | 'achievements' | 'support' | null>(null);
+  const [profileNotice, setProfileNotice] = useState<string | null>(null);
   const [notifications, setNotifications] = useState({
     push: true,
     email: true,
@@ -81,6 +89,20 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    Promise.all([kycService.getKycStatus(), authSecurityService.getSecurityStatus()]).then(([kyc, security]) => {
+      if (!mounted) return;
+      setKycState(kyc.state);
+      setKycData(kyc.data || null);
+      setSecurityState(security.state);
+      setSecurityData(security.data || null);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const profile = profileData;
   const displayName = profile?.fullName || 'Олександр Кравчук';
   const displayFirstName = profile?.firstName || 'Олександр';
@@ -100,6 +122,10 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const displayRankProgress = profile?.rankProgressPercent ?? 63;
   const displayAvatar = profile?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
   const displayReferralUrl = `https://siren.ua/r/${displayCode}`;
+  const isKycLive = kycState === 'LIVE';
+  const isSecurityLive = securityState === 'LIVE';
+  const kycStatusLabel = isKycLive && kycData?.status === 'VERIFIED' ? 'Підтверджено' : 'Не підтверджено';
+  const securitySessions = isSecurityLive ? (securityData?.activeSessions.length ?? 0) : 0;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(displayCode);
@@ -118,6 +144,12 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const toggleNotification = (key: keyof typeof notifications) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
     playWebAudioSound('click');
+  };
+
+  const notifyAction = (message: string) => {
+    setProfileNotice(message);
+    playWebAudioSound('click');
+    window.setTimeout(() => setProfileNotice(null), 4200);
   };
 
   return (
@@ -170,6 +202,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               </div>
               {/* Camera Icon Overlay */}
               <button 
+                onClick={() => notifyAction('Зміна фото стане доступною після підключення auth/storage API.')}
                 className="absolute bottom-0 right-0 p-1.5 rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-colors cursor-pointer"
                 title="Змінити фото"
               >
@@ -358,7 +391,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <Award className="w-4 h-4 text-amber-500" />
                 <h3 className="text-sm font-bold">Партнерський статус</h3>
               </div>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-0.5 hover:underline">
+              <button onClick={() => setActiveDrawer('rank')} className="text-xs text-blue-500 font-semibold flex items-center gap-0.5 hover:underline cursor-pointer">
                 <span>Інфо</span>
                 <ChevronRight className="w-3 h-3" />
               </button>
@@ -505,7 +538,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <CreditCard className="w-4 h-4 text-blue-600" />
                 <h3 className="text-sm font-bold">Способи виплати</h3>
               </div>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
+              <button onClick={() => setActiveDrawer('payments')} className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
                 <span>Додати</span>
                 <Plus className="w-3 h-3" />
               </button>
@@ -570,7 +603,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <ShieldCheck className="w-4 h-4 text-emerald-500" />
                 <h3 className="text-sm font-bold">Верифікація / KYC</h3>
               </div>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-0.5 hover:underline">
+              <button onClick={() => setActiveDrawer('kyc')} className="text-xs text-blue-500 font-semibold flex items-center gap-0.5 hover:underline cursor-pointer">
                 <span>Переглянути</span>
                 <ChevronRight className="w-3 h-3" />
               </button>
@@ -579,27 +612,27 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             <div className="flex items-center gap-2 my-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-500 text-white" />
               <div>
-                <div className="text-sm font-black text-emerald-600">Підтверджено</div>
-                <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Твій акаунт повністю верифікований</div>
+                <div className={`text-sm font-black ${kycStatusLabel === 'Підтверджено' ? 'text-emerald-600' : 'text-amber-600'}`}>{kycStatusLabel}</div>
+                <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{isKycLive ? 'Статус наданий KYC-провайдером' : 'Провайдер KYC не підключений'}</div>
               </div>
             </div>
 
             <div className="space-y-1.5 text-xs pt-2">
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Підтвердження email</span>
-                <span className="font-bold text-emerald-500">Так</span>
+                <span className={`font-bold ${isKycLive && kycData?.status === 'VERIFIED' ? 'text-emerald-500' : 'text-amber-500'}`}>{isKycLive && kycData?.status === 'VERIFIED' ? 'Так' : 'Не підтверджено'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Підтвердження телефону</span>
-                <span className="font-bold text-emerald-500">Так</span>
+                <span className={`font-bold ${isKycLive && kycData?.status === 'VERIFIED' ? 'text-emerald-500' : 'text-amber-500'}`}>{isKycLive && kycData?.status === 'VERIFIED' ? 'Так' : 'Не підтверджено'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Документ (ID Card)</span>
-                <span className="font-bold text-blue-600">Завантажено</span>
+                <span className={`font-bold ${isKycLive ? 'text-blue-600' : 'text-amber-500'}`}>{isKycLive ? 'Завантажено' : 'Немає даних'}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Остання перевірка</span>
-                <span className="font-semibold">04.09.2026</span>
+                <span className="font-semibold">{isKycLive ? (kycData?.verifiedAt || 'Провайдер') : '—'}</span>
               </div>
             </div>
           </div>
@@ -615,7 +648,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <Lock className="w-4 h-4 text-blue-600" />
                 <h3 className="text-sm font-bold">Безпека</h3>
               </div>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
+              <button onClick={() => setActiveDrawer('security')} className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
                 <span>Керувати</span>
               </button>
             </div>
@@ -623,29 +656,29 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Пароль</span>
-                <span className="font-semibold">Оновлено 12 днів тому</span>
+                <span className="font-semibold">{isSecurityLive ? (securityData?.lastPasswordChange || 'Провайдер') : 'Немає даних'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400 flex items-center gap-1">
                   Двофакторна автентифікація (2FA)
                   <InfoTooltip text="Захист вашого акаунта. Під час входу потрібно буде ввести код із додатка Google Authenticator." />
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                  Увімкнено
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${isSecurityLive && securityData?.twoFactorEnabled ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
+                  {isSecurityLive && securityData?.twoFactorEnabled ? 'Увімкнено' : 'Не підтверджено'}
                 </span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Активні сесії</span>
-                <span className="font-bold text-blue-600">3 пристрої</span>
+                <span className={`font-bold ${isSecurityLive ? 'text-blue-600' : 'text-amber-500'}`}>{isSecurityLive ? `${securitySessions} пристрої` : 'Немає даних'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Останній вхід</span>
-                <span className="font-semibold">Сьогодні о 18:42</span>
+                <span className="font-semibold">{isSecurityLive ? 'Провайдер' : '—'}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Статус акаунта</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                  Захищено
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${isSecurityLive ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
+                  {isSecurityLive ? 'Підтверджено' : 'Не підтверджено'}
                 </span>
               </div>
             </div>
@@ -698,7 +731,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <Award className="w-4 h-4 text-amber-500" />
                 <h3 className="text-sm font-bold">Мої досягнення</h3>
               </div>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
+              <button onClick={() => setActiveDrawer('achievements')} className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
                 <span>Всі досягнення</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
@@ -751,7 +784,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <HelpCircle className="w-4 h-4 text-blue-600" />
                 <h3 className="text-sm font-bold">Підтримка</h3>
               </div>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
+              <button onClick={() => setActiveDrawer('support')} className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
                 <span>Перейти</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
@@ -784,17 +817,17 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             <h3 className="text-sm font-bold text-rose-500 mb-3">Небезпечні дії</h3>
 
             <div className="space-y-2 text-xs">
-              <button className="w-full flex items-center justify-between p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
+              <button onClick={() => notifyAction('Завершення всіх сесій потребує підключеного auth API.')} className="w-full flex items-center justify-between p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
                 <span className="flex items-center gap-2"><LogOut className="w-3.5 h-3.5" /> Вийти з усіх пристроїв</span>
               </button>
-              <button className="w-full flex items-center justify-between p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
+              <button onClick={() => notifyAction('Деактивація профілю доступна після підтвердження особи та підключення auth API.')} className="w-full flex items-center justify-between p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
                 <span className="flex items-center gap-2"><UserX className="w-3.5 h-3.5" /> Деактивувати профіль</span>
               </button>
-              <button className="w-full flex items-center justify-between p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
+              <button onClick={() => notifyAction('Експорт даних буде доступний після підключення profile API.')} className="w-full flex items-center justify-between p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
                 <span className="flex items-center gap-2"><Download className="w-3.5 h-3.5" /> Запросити експорт даних</span>
               </button>
               
-              <button className="w-full mt-2 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/40 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer">
+              <button onClick={() => notifyAction('Видалення акаунта заблоковано до підключення auth/compliance API.')} className="w-full mt-2 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/40 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer">
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Видалити акаунт</span>
               </button>
@@ -804,6 +837,31 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
         </div>
 
       </div>
+
+      {profileNotice && (
+        <div role="status" className={`fixed bottom-5 right-5 z-50 max-w-sm rounded-2xl border px-4 py-3 text-xs font-semibold shadow-xl ${
+          isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
+        }`}>
+          {profileNotice}
+        </div>
+      )}
+
+      <ContextDrawer
+        isOpen={activeDrawer !== null}
+        onClose={() => setActiveDrawer(null)}
+        title={activeDrawer === 'rank' ? 'Партнерський статус' : activeDrawer === 'payments' ? 'Способи виплати' : activeDrawer === 'kyc' ? 'KYC-перевірка' : activeDrawer === 'security' ? 'Безпека акаунта' : activeDrawer === 'achievements' ? 'Досягнення' : 'Підтримка'}
+        icon={<ShieldCheck className="w-5 h-5" />}
+        theme={theme}
+      >
+        <div className="space-y-4 text-sm">
+          {activeDrawer === 'rank' && <><p>Поточний ранг: <strong>{displayRank}</strong>, ставка L1: <strong>{displayRate}%</strong>.</p><p className="text-xs text-slate-500">Ранг визначається кваліфікованими активними L1. Історичні нарахування не перераховуються після зміни рангу.</p></>}
+          {activeDrawer === 'payments' && <><p>Платіжні методи керуються payout-провайдером.</p><p className="text-xs text-amber-600">{profileState === 'LIVE' ? 'Провайдер повернув live-дані.' : 'Payout API не підключений: локальні реквізити не зберігаються і не вважаються верифікованими.'}</p></>}
+          {activeDrawer === 'kyc' && <><p>Статус: <strong>{kycStatusLabel}</strong>.</p><p className="text-xs text-slate-500">{isKycLive ? 'Дані надані підключеним KYC-провайдером.' : 'Підключіть KYC-провайдера, щоб пройти перевірку та відкрити payout-ліміти.'}</p></>}
+          {activeDrawer === 'security' && <><p>Стан безпеки: <strong>{isSecurityLive ? 'підтверджено' : 'не підтверджено'}</strong>.</p><p className="text-xs text-slate-500">{isSecurityLive ? `2FA: ${securityData?.twoFactorEnabled ? 'увімкнено' : 'вимкнено'}. Активних сесій: ${securitySessions}.` : 'Auth security API не підключений; локальний екран не робить заяв про захищені сесії.'}</p></>}
+          {activeDrawer === 'achievements' && <><p>Досягнення відокремлені від фінансової компенсації.</p><p className="text-xs text-slate-500">У demo mode показані приклади badge; реальні achievements завантажуються з partner API.</p></>}
+          {activeDrawer === 'support' && <><p>Для швидкої відповіді відкрийте офіційний Telegram-чат або FAQ.</p><a className="inline-flex items-center gap-2 text-blue-600 font-semibold" href="https://t.me/sirenua_support" target="_blank" rel="noreferrer">Відкрити Telegram-підтримку <ArrowRight className="w-3.5 h-3.5" /></a></>}
+        </div>
+      </ContextDrawer>
 
     </div>
   );

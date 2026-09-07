@@ -17,6 +17,7 @@ interface HeaderProps {
   onOpenGuide?: () => void;
   onToggleTheme?: () => void;
   theme?: 'light' | 'dark';
+  dataMode?: 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -24,14 +25,28 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectSection,
   onOpenGuide,
   onToggleTheme,
-  theme = 'light'
+  theme = 'light',
+  dataMode = 'NOT_CONNECTED'
 }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'home' | 'features' | 'how' | 'pricing' | 'about'>('home');
   const [lang, setLang] = useState('UK');
+  const [languageOpen, setLanguageOpen] = useState(false);
   
   const isDark = theme === 'dark';
+  const searchItems: Array<{ label: string; section: DashboardSection }> = [
+    { label: 'Головна карта', section: 'HOME' },
+    { label: 'Мережа та реферали', section: 'NETWORK' },
+    { label: 'Фінанси та виплати', section: 'FINANCE' },
+    { label: 'Аналітика', section: 'ANALYTICS' },
+    { label: 'Партнерська програма', section: 'AFFILIATE' },
+    { label: 'Про SIREN UA', section: 'ABOUT' },
+    { label: 'Профіль і безпека', section: 'PROFILE' },
+  ];
+  const searchResults = searchItems.filter((item) =>
+    item.label.toLocaleLowerCase('uk-UA').includes(searchQuery.trim().toLocaleLowerCase('uk-UA'))
+  );
 
   const handleNavClick = (section: DashboardSection) => {
     onSelectSection(section);
@@ -75,13 +90,13 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Center: Main Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-6 min-[1160px]:gap-8">
           {[
             { id: 'home', label: 'Головна', section: 'HOME' },
             { id: 'features', label: 'Можливості', section: 'NETWORK' },
             { id: 'how', label: 'Як це працює', section: 'HOME' },
             { id: 'pricing', label: 'Тарифи', section: 'FINANCE' },
-            { id: 'about', label: 'Про нас', section: 'AFFILIATE' },
+            { id: 'about', label: 'Про нас', section: 'ABOUT' },
           ].map((item) => {
             const isActive = activeTab === item.id || (item.id === 'home' && activeSection === 'HOME');
             return (
@@ -111,19 +126,51 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-3">
           
           {/* Search Bar (Capsule) */}
-          <div className="relative hidden lg:flex items-center">
+          <div className="relative hidden min-[1160px]:flex items-center">
             <Search className={`w-3.5 h-3.5 absolute left-3.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
             <input
               type="text"
               placeholder="Пошук..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchResults[0]) {
+                  handleNavClick(searchResults[0].section);
+                  setSearchQuery('');
+                }
+                if (e.key === 'Escape') setSearchQuery('');
+              }}
               className={`pl-9 pr-3 py-1.5 rounded-full text-[12px] font-medium outline-none transition-all w-36 focus:w-48 ${
                 isDark 
                   ? 'bg-[#182335] text-white placeholder-slate-400 border border-[#24344D]' 
                   : 'bg-white/80 text-[#0F172A] placeholder-slate-500 border border-[#CBD6E2]'
               }`}
             />
+            {searchQuery.trim() && (
+              <div className={`absolute right-0 top-full mt-2 w-64 rounded-2xl border p-2 shadow-xl z-50 ${
+                isDark ? 'bg-[#131C2B] border-[#24344D] text-white' : 'bg-white border-[#CBD6E2] text-[#0F172A]'
+              }`}>
+                {searchResults.length > 0 ? searchResults.map((item) => (
+                  <button
+                    key={item.section}
+                    type="button"
+                    onClick={() => {
+                      handleNavClick(item.section);
+                      setSearchQuery('');
+                    }}
+                    className={`w-full text-left rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
+                      isDark ? 'hover:bg-[#1C293E]' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                )) : (
+                  <div className={`px-3 py-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Нічого не знайдено
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Theme Switcher Button */}
@@ -155,9 +202,11 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <Bell className="w-4 h-4" />
-              <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[8.5px] font-black flex items-center justify-center border border-white dark:border-[#0D131F]">
-                3
-              </span>
+              {dataMode === 'LIVE' && (
+                <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[8.5px] font-black flex items-center justify-center border border-white dark:border-[#0D131F]">
+                  1
+                </span>
+              )}
             </button>
 
             {notificationsOpen && (
@@ -165,12 +214,14 @@ export const Header: React.FC<HeaderProps> = ({
                 isDark ? 'bg-[#131C2B] border border-[#24344D] text-white' : 'bg-white border border-[#CBD6E2] text-[#0F172A]'
               }`}>
                 <div className="text-[11px] font-bold mb-2 px-1">Сповіщення системи</div>
-                <div className="space-y-1">
-                  <div className={`p-2 rounded-xl flex items-start gap-2.5 ${isDark ? 'hover:bg-[#1C293E]' : 'hover:bg-slate-50'}`}>
-                    <ShieldAlert className="w-3.5 h-3.5 text-rose-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="text-[12px] font-semibold">Київська область</div>
-                      <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Відбій загроз о 22:14</div>
+                <div className={`p-2 rounded-xl flex items-start gap-2.5 ${isDark ? 'bg-[#1C293E]' : 'bg-slate-50'}`}>
+                  <ShieldAlert className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${dataMode === 'LIVE' ? 'text-rose-500' : 'text-amber-500'}`} />
+                  <div>
+                    <div className="text-[12px] font-semibold">
+                      {dataMode === 'LIVE' ? 'Realtime-канал активний' : 'Актуальні сповіщення недоступні'}
+                    </div>
+                    <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {dataMode === 'LIVE' ? 'Системні оновлення надходитимуть сюди.' : 'Підключіть realtime API, щоб отримувати live-події.'}
                     </div>
                   </div>
                 </div>
@@ -179,7 +230,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Language Selector Dropdown */}
-          <button className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer transition-colors border ${
+          <div className="relative hidden sm:block">
+          <button onClick={() => setLanguageOpen((open) => !open)} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer transition-colors border ${
             isDark 
               ? 'bg-[#182335] text-slate-300 border-[#24344D] hover:bg-[#202E46]' 
               : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
@@ -187,13 +239,24 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{lang}</span>
             <ChevronDown className="w-3 h-3 text-slate-400" />
           </button>
+          {languageOpen && (
+            <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl border p-2 shadow-xl z-50 ${
+              isDark ? 'bg-[#131C2B] border-[#24344D] text-white' : 'bg-white border-[#CBD6E2] text-[#0F172A]'
+            }`}>
+              <button type="button" onClick={() => { setLang('UK'); setLanguageOpen(false); }} className={`w-full rounded-xl px-3 py-2 text-left text-xs font-semibold ${isDark ? 'hover:bg-[#1C293E]' : 'hover:bg-slate-50'}`}>
+                Українська <span className="float-right text-emerald-500">✓</span>
+              </button>
+              <div className={`px-3 py-2 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>English — локалізація готується</div>
+            </div>
+          )}
+          </div>
 
           {/* Profile Capsule (Matches screenshots: Photo + Олександр + Gold Partner badge) */}
           <button
             type="button"
             onClick={() => handleNavClick('PROFILE')}
             aria-label="Відкрити профіль Олександра"
-            className={`hidden sm:flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full cursor-pointer border transition-all ${
+            className={`hidden min-[1120px]:flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full cursor-pointer border transition-all ${
               isDark 
                 ? 'bg-[#182335] border-[#24344D] hover:bg-[#202E46] text-white' 
                 : 'bg-white/90 border-[#CBD6E2] hover:bg-white text-[#0F172A] shadow-sm'

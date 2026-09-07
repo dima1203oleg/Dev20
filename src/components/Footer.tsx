@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, Send, Youtube, Facebook, Instagram } from 'lucide-react';
 
 interface FooterProps {
@@ -7,6 +7,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ theme = 'light' }) => {
   const isDark = theme === 'dark';
+  const [languageNote, setLanguageNote] = useState(false);
 
   return (
     <footer className={`w-full border-t mt-8 py-6 transition-colors ${
@@ -36,13 +37,14 @@ export const Footer: React.FC<FooterProps> = ({ theme = 'light' }) => {
         {/* Right: Language Switcher & Social Links */}
         <div className="flex items-center gap-5">
           {/* Language selector */}
-          <button className={`px-2.5 py-1 rounded-full border flex items-center gap-1.5 transition-colors cursor-pointer text-[11px] font-bold ${
+          <button type="button" onClick={() => setLanguageNote((visible) => !visible)} className={`px-2.5 py-1 rounded-full border flex items-center gap-1.5 transition-colors cursor-pointer text-[11px] font-bold ${
             isDark ? 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800' : 'bg-white border-slate-200/80 text-slate-800 hover:bg-slate-50 shadow-2xs'
           }`}>
             <span>🇺🇦</span>
             <span>Українська</span>
             <ChevronDown className="w-3 h-3 text-slate-400" />
           </button>
+          {languageNote && <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>English — локалізація готується</span>}
 
           {/* Social Icons */}
           <div className="flex items-center gap-3 text-slate-400">

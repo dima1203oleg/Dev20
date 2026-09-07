@@ -86,6 +86,12 @@ body {
   -webkit-user-drag: none;
 }
 
+@media (min-width: 1160px) {
+  .siren-home-features-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* Custom Soft Google-style Shadow Utilities */
 .shadow-google-sm {
   box-shadow: 0 1px 3px 0 rgba(17, 24, 39, 0.04), 0 1px 2px -1px rgba(17, 24, 39, 0.03);

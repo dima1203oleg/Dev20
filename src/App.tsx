@@ -14,6 +14,7 @@ import { EmergencyGuideModal } from './components/EmergencyGuideModal';
 import { SheltersSection } from './components/SheltersSection';
 import { Footer } from './components/Footer';
 import { OnboardingFlow } from './components/OnboardingFlow';
+import { AboutSection } from './components/AboutSection';
 
 import { INITIAL_REGIONS, INITIAL_ALERTS_FEED } from './data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from './data/spatialThreatData';
@@ -283,6 +284,7 @@ export default function App() {
           handleUpdateSettings({ theme: nextTheme });
         }}
         theme={settings.theme || 'light'}
+        dataMode={threatSceneModel.dataMode}
       />
 
       {/* 2. Critical Alert Banner if Active */}
@@ -390,6 +392,16 @@ export default function App() {
                 onOpenMap={() => setActiveSection('HOME')}
                 onOpenSimulator={() => setIsSimulatorOpen(true)}
                 theme={settings.theme || 'light'}
+              />
+            </div>
+          )}
+
+          {activeSection === 'ABOUT' && (
+            <div className="animate-in fade-in duration-200">
+              <AboutSection
+                theme={settings.theme || 'light'}
+                onOpenMap={() => setActiveSection('HOME')}
+                onOpenGuide={() => setIsGuideOpen(true)}
               />
             </div>
           )}
