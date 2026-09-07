@@ -8,9 +8,6 @@ import {
   Clock, 
   CheckCircle2, 
   Search, 
-  Filter, 
-  ExternalLink,
-  Users,
   Compass
 } from 'lucide-react';
 import { Shelter, RegionData } from '../types';
@@ -22,9 +19,11 @@ interface SheltersSectionProps {
   myRegionId: string;
   regions: RegionData[];
   dataState?: DataState;
+  theme?: 'light' | 'dark';
 }
 
-export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, regions, dataState = 'DEMO' }) => {
+export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, regions, dataState = 'DEMO', theme = 'light' }) => {
+  const isDark = theme === 'dark';
   const [shelters, setShelters] = useState<Shelter[]>([]);
   const [shelterState, setShelterState] = useState<DataState>('LOADING');
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,23 +64,36 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
     return true;
   });
 
+  const surfaceClass = isDark
+    ? 'bg-slate-950/90 border-slate-800 text-slate-100 shadow-2xl'
+    : 'bg-[#F7FAFC] border-[#D9E2E8] text-[#0F172A] shadow-sm';
+  const cardClass = isDark
+    ? 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'
+    : 'bg-white border-[#D9E2E8] hover:border-blue-200 hover:bg-white shadow-sm';
+  const detailClass = isDark
+    ? 'bg-slate-900/90 border-slate-800'
+    : 'bg-white border-[#D9E2E8] shadow-sm';
+  const primaryTextClass = isDark ? 'text-slate-100' : 'text-[#0F172A]';
+  const mutedTextClass = isDark ? 'text-slate-400' : 'text-[#5A6A80]';
+  const subtleBorderClass = isDark ? 'border-slate-800' : 'border-[#E3EBF0]';
+
   return (
-    <div className="bg-slate-950/90 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl relative mb-8">
+    <div className={`rounded-3xl border p-5 sm:p-7 relative mb-8 ${surfaceClass}`}>
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 pb-5 border-b border-slate-800 gap-4">
+      <div className={`flex flex-col md:flex-row md:items-end justify-between mb-6 pb-5 border-b gap-4 ${subtleBorderClass}`}>
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-2">
             <Shield className="w-3.5 h-3.5" />
             <span>{shelterState === 'LIVE' ? 'Захисні споруди цивільного захисту' : shelterState === 'NOT_CONNECTED' ? 'Реєстр укриттів недоступний' : 'Каталог укриттів'}</span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-xl sm:text-2xl font-black text-slate-100">
+            <h2 className={`text-xl sm:text-2xl font-black ${primaryTextClass}`}>
               {shelterState === 'LIVE' ? 'Перевірені укриття та маршрутизація' : shelterState === 'NOT_CONNECTED' ? 'Укриття тимчасово недоступні' : 'Укриття та маршрутизація'}
             </h2>
-            <DataFreshnessIndicator state={shelterState} theme="dark" />
+            <DataFreshnessIndicator state={shelterState} theme={theme} />
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
             {shelterState === 'LIVE'
               ? 'Швидкий пошук укриттів із актуальними даними джерела та маршрутом до обраної точки.'
               : shelterState === 'NOT_CONNECTED'
@@ -98,7 +110,7 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
             placeholder="Пошук вулиці або назви..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
+            className={`w-full rounded-xl border pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-cyan-400 transition-colors ${isDark ? 'bg-slate-900 border-slate-700/80 text-slate-200 placeholder-slate-500' : 'bg-white border-[#CBD6E2] text-[#0F172A] placeholder-slate-400'}`}
           />
         </div>
       </div>
@@ -118,7 +130,7 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
               activeFilter === tab.id
                 ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/50'
-                : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                : isDark ? 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800' : 'bg-white text-[#5A6A80] hover:text-[#0F172A] border border-[#D9E2E8]'
             }`}
           >
             {tab.label}
@@ -139,13 +151,14 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
             filteredShelters.map((shelter) => {
               const isSelected = selectedShelter?.id === shelter.id;
               return (
-                <div
+                <button
+                  type="button"
                   key={shelter.id}
                   onClick={() => setSelectedShelter(shelter)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                  className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
                     isSelected
-                      ? 'bg-slate-900 border-cyan-500/60 shadow-lg shadow-cyan-950/40'
-                      : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'
+                      ? (isDark ? 'bg-slate-900 border-cyan-500/60 shadow-lg shadow-cyan-950/40' : 'bg-blue-50/70 border-cyan-500/60 shadow-sm')
+                      : cardClass
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -164,8 +177,8 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
                           <CheckCircle2 className="w-3 h-3" /> {shelterState === 'LIVE' ? 'ДСНС ПЕРЕВІРЕНО' : shelterState === 'NOT_CONNECTED' ? 'ДАНІ НЕДОСТУПНІ' : 'ДЕМО-ДАНІ'}
                         </span>
                       </div>
-                      <h4 className="text-sm font-bold text-slate-100 mt-1.5">{shelter.name}</h4>
-                      <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                      <h4 className={`text-sm font-bold mt-1.5 ${primaryTextClass}`}>{shelter.name}</h4>
+                      <p className={`text-xs flex items-center gap-1 mt-0.5 ${mutedTextClass}`}>
                         <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" /> {shelter.address}
                       </p>
                     </div>
@@ -174,14 +187,14 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
                       <div className="text-sm font-black font-mono text-cyan-300">
                         {shelter.distanceMeters} м
                       </div>
-                      <div className="text-[10px] text-slate-400 flex items-center gap-1 justify-end mt-0.5">
+                      <div className={`text-[10px] flex items-center gap-1 justify-end mt-0.5 ${mutedTextClass}`}>
                         <Clock className="w-3 h-3" /> ~{shelter.walkTimeMins} хв пішки
                       </div>
                     </div>
                   </div>
 
                   {/* Feature Badges */}
-                  <div className="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-slate-800 text-[10px]">
+                  <div className={`flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t text-[10px] ${subtleBorderClass}`}>
                     {shelter.features.powerGenerator && (
                       <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
                         <Zap className="w-2.5 h-2.5" /> Генератор
@@ -198,20 +211,20 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
                       </span>
                     )}
                   </div>
-                </div>
+                </button>
               );
             })
           )}
         </div>
 
         {/* Shelter Detail / Tactical Navigation Panel */}
-        <div className="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 relative overflow-hidden">
+        <div className={`lg:col-span-5 rounded-2xl border p-5 relative overflow-hidden ${detailClass}`}>
           {selectedShelter ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className={`flex items-center justify-between border-b pb-3 ${subtleBorderClass}`}>
                 <div>
                   <span className="text-[10px] font-mono uppercase text-slate-400 block">КАРТКА УКРИТТЯ</span>
-                  <h3 className="text-base font-black text-slate-100">{selectedShelter.name}</h3>
+                  <h3 className={`text-base font-black ${primaryTextClass}`}>{selectedShelter.name}</h3>
                 </div>
                 <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
                   <Compass className="w-5 h-5 animate-spin" style={{ animationDuration: '10s' }} />
@@ -219,20 +232,20 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
               </div>
 
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Адреса:</span>
-                  <span className="text-slate-200 font-medium text-right max-w-[200px]">{selectedShelter.address}</span>
+                <div className={`flex justify-between py-1 border-b ${subtleBorderClass}`}>
+                  <span className={mutedTextClass}>Адреса:</span>
+                  <span className={`${primaryTextClass} font-medium text-right max-w-[200px]`}>{selectedShelter.address}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Місткість:</span>
-                  <span className="text-slate-200 font-mono font-bold">{selectedShelter.capacity} осіб</span>
+                <div className={`flex justify-between py-1 border-b ${subtleBorderClass}`}>
+                  <span className={mutedTextClass}>Місткість:</span>
+                  <span className={`${primaryTextClass} font-mono font-bold`}>{selectedShelter.capacity} осіб</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Дистанція / Час:</span>
+                <div className={`flex justify-between py-1 border-b ${subtleBorderClass}`}>
+                  <span className={mutedTextClass}>Дистанція / Час:</span>
                   <span className="text-cyan-300 font-mono font-bold">{selectedShelter.distanceMeters}м (~{selectedShelter.walkTimeMins} хв)</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Статус верифікації:</span>
+                <div className={`flex justify-between py-1 border-b ${subtleBorderClass}`}>
+                  <span className={mutedTextClass}>Статус верифікації:</span>
                   <span className={`${shelterState === 'LIVE' ? 'text-emerald-400' : 'text-purple-300'} font-bold`}>{shelterState === 'LIVE' ? 'Офіційний реєстр ДСНС' : shelterState === 'NOT_CONNECTED' ? 'Дані не підтверджені' : 'Демонстраційний запис'}</span>
                 </div>
               </div>
@@ -243,7 +256,7 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
                   href={`https://maps.google.com/?q=${encodeURIComponent(selectedShelter.name + ' ' + selectedShelter.address)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950"
+                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950/20"
                 >
                   <Navigation className="w-4 h-4" /> Прокласти маршрут на карті
                 </a>

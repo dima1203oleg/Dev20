@@ -503,6 +503,7 @@ export default function App() {
                 myRegionId={settings.myRegion}
                 regions={displayRegions}
                 dataState={currentDataMode === 'DEMO_DATA' ? 'DEMO' : currentDataMode}
+                theme={settings.theme === 'dark' ? 'dark' : 'light'}
               />
             </div>
           )}
@@ -565,6 +566,7 @@ export default function App() {
               myRegionId={settings.myRegion}
               regions={displayRegions}
               dataState={currentDataMode === 'DEMO_DATA' ? 'DEMO' : currentDataMode}
+              theme={settings.theme === 'dark' ? 'dark' : 'light'}
             />
           </div>
         </div>
