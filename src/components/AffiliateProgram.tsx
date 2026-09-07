@@ -159,7 +159,10 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   const summary: NetworkSummary = networkSummary || (dataState === 'NOT_CONNECTED' ? unavailableSummary : demoSummary);
   const referralCode = summary.referralCode || (dataState === 'NOT_CONNECTED' ? '—' : 'OLEKSANDR25');
   const referralUrl = summary.referralUrl || (dataState === 'NOT_CONNECTED' ? '' : 'https://siren.ua/r/OLEKSANDR25');
-  const partnerActionsAvailable = Boolean(referralUrl);
+  // Demo / unavailable payloads may include illustrative values, but must never
+  // enable production-looking share or referral actions before a live partner API
+  // has verified the referral URL.
+  const partnerActionsAvailable = dataState === 'LIVE' && Boolean(referralUrl);
   const activePartnerTotal = summary.activeL1Count + summary.activeL2Count;
   const activeSharePercent = summary.totalNetworkSize > 0
     ? Math.round((activePartnerTotal / summary.totalNetworkSize) * 100)
