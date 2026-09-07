@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { 
   ArrowRight, 
   Apple,
@@ -40,6 +40,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const [mapMode, setMapMode] = useState<'RENDER' | 'WEBGL'>('RENDER');
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const isDark = theme === 'dark';
+
+  // A live source must never be represented by the decorative preview asset.
+  // Switch to the normalized WebGL scene as soon as live data is available.
+  useEffect(() => {
+    if (threatModel?.dataMode === 'LIVE') setMapMode('WEBGL');
+  }, [threatModel?.dataMode]);
 
   return (
     <div className={`siren-panel siren-hero w-full rounded-[30px] p-5 sm:p-7 lg:p-4 border relative overflow-hidden transition-all duration-300 ${
@@ -119,7 +125,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </button>
             <button
               onClick={() => {
-                setMapMode((current) => current === 'RENDER' ? 'WEBGL' : 'RENDER');
+                setMapMode((current) => threatModel?.dataMode === 'LIVE' ? 'WEBGL' : current === 'RENDER' ? 'WEBGL' : 'RENDER');
                 playWebAudioSound('click');
               }}
               className={`w-full sm:w-auto px-6 py-2.5 rounded-full border font-bold text-[13px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
@@ -226,17 +232,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 />
               </Suspense>
             ) : (
-              <img
-                src={isDark ? ukraine3dCutoutDark : ukraine3dCutout}
-                alt="3D Карта України SIREN UA"
-                referrerPolicy="no-referrer"
-                style={{
-                  filter: isDark
-                    ? 'saturate(0.46) brightness(0.72) contrast(0.94)'
-                    : 'saturate(0.42) brightness(1.1) contrast(0.94)'
-                }}
-                className="w-full h-auto object-contain max-h-[290px] lg:max-h-[255px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
-              />
+              <>
+                <img
+                  src={isDark ? ukraine3dCutoutDark : ukraine3dCutout}
+                  alt="3D Карта України SIREN UA — дизайн-прев’ю"
+                  referrerPolicy="no-referrer"
+                  style={{
+                    filter: isDark
+                      ? 'saturate(0.46) brightness(0.72) contrast(0.94)'
+                      : 'saturate(0.42) brightness(1.1) contrast(0.94)'
+                  }}
+                  className="w-full h-auto object-contain max-h-[290px] lg:max-h-[255px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
+                />
+                {threatModel?.dataMode === 'NOT_CONNECTED' && (
+                  <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border px-3 py-2 text-center text-[10px] font-black tracking-[0.12em] backdrop-blur-md ${
+                    isDark
+                      ? 'border-amber-400/40 bg-slate-950/80 text-amber-200'
+                      : 'border-amber-300 bg-white/90 text-amber-700'
+                  }`}>
+                    <span className="block">ДИЗАЙН-ПРЕВ’Ю</span>
+                    <span className="mt-1 block text-[9px] font-bold tracking-normal opacity-80">LIVE DATA НЕ ПІДКЛЮЧЕНО</span>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Conceptual arcs are allowed only in explicit DEMO mode. Live spatial paths come from the normalized threat model. */}
