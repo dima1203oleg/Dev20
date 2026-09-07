@@ -59,14 +59,54 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   const [activities, setActivities] = useState<NetworkActivity[]>([]);
   const [branches, setBranches] = useState<NetworkBranchStats[]>([]);
 
-  const summary = networkSummary || {
-    totalPartners: 248,
-    activeL1: 154,
-    activeL2: 94,
-    newLast30Days: 42,
-    activeSubscriptionsRate: 98,
-    monthlyRevenue: 12460,
-    currentRank: 'Gold Partner'
+  const summary: NetworkSummary = networkSummary || {
+    totalNetworkSize: 2847,
+    activeL1Count: 247,
+    activeL2Count: 2600,
+    new30DaysCount: 84,
+    conversionRatePercent: 13.8,
+    monthlyNetworkIncomeUah: 12460,
+    qualifiedL1: 154,
+    currentTier: {
+      id: 'GOLD',
+      name: 'Gold',
+      minL1: 75,
+      maxL1: 199,
+      l1Percent: 20,
+      l2Percent: 20,
+      l1Rate: 0.2,
+      l2Rate: 0.2,
+      isL2Unlocked: true,
+      badgeLabel: 'Gold Partner',
+      description: 'Лідерський рівень. 20% з L1 та 20% з L2.'
+    },
+    nextTier: {
+      id: 'PLATINUM',
+      name: 'Platinum',
+      minL1: 200,
+      maxL1: null,
+      l1Percent: 25,
+      l2Percent: 25,
+      l1Rate: 0.25,
+      l2Rate: 0.25,
+      isL2Unlocked: true,
+      badgeLabel: 'Platinum Partner',
+      description: 'Максимальний партнерський статус. 25% з L1 та 25% з L2.'
+    },
+    remainingToNextRank: 46,
+    rankProgressPercent: 77,
+    ambassador: {
+      status: 'CANDIDATE',
+      criteria: {
+        minL1: 500,
+        currentL1: 154,
+        communityVerified: true,
+        educationalContentCreated: true
+      }
+    },
+    referralCode: 'OLEKSANDR25',
+    referralUrl: 'https://siren.ua/r/OLEKSANDR25',
+    trafficSources: []
   };
 
   useEffect(() => {
@@ -192,7 +232,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               Усього в мережі
               <InfoTooltip theme={theme} content="Загальна кількість партнерів на всіх рівнях вашої структури, незалежно від їх статусу оплати." />
             </div>
-            <div className="text-2xl font-black mt-0.5">{summary.totalPartners.toLocaleString()}</div>
+            <div className="text-2xl font-black mt-0.5">{summary.totalNetworkSize.toLocaleString()}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Всі рівні</div>
           </div>
 
@@ -214,7 +254,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               Активні L1
               <InfoTooltip theme={theme} content="Кількість ваших особисто запрошених партнерів (1-ша лінія), які здійснили оплату підписки. Тільки вони впливають на ваш Ранг." />
             </div>
-            <div className="text-2xl font-black mt-0.5">{summary.activeL1.toLocaleString()}</div>
+            <div className="text-2xl font-black mt-0.5">{summary.activeL1Count.toLocaleString()}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Перший рівень</div>
           </div>
 
@@ -236,7 +276,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               Активні L2
               <InfoTooltip theme={theme} content="Партнери 2-го рівня (запрошені вашими L1). Ви отримуєте 20% комісійних з їх оплат, але вони не підвищують ваш Ранг." />
             </div>
-            <div className="text-2xl font-black mt-0.5">{summary.activeL2.toLocaleString()}</div>
+            <div className="text-2xl font-black mt-0.5">{summary.activeL2Count.toLocaleString()}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Другий рівень</div>
           </div>
 
@@ -669,7 +709,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                   <Crown className="w-5 h-5 fill-amber-500" />
                 </div>
                 <div>
-                  <div className="text-sm font-black">{summary.currentRank}</div>
+                  <div className="text-sm font-black">{summary.currentTier.badgeLabel}</div>
                   <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Ставка: <span className="font-bold text-slate-800 dark:text-slate-200">20%</span></div>
                 </div>
               </div>

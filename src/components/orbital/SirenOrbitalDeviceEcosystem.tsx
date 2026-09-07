@@ -15,6 +15,7 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
   theme = 'light',
 }) => {
   const [activeDeviceIndex, setActiveDeviceIndex] = useState(2);
+  const [showDetails, setShowDetails] = useState(false);
   const isDark = theme === 'dark';
 
   const devices = [
@@ -28,10 +29,10 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
   ];
 
   return (
-    <div className={`w-full rounded-[28px] p-6 sm:p-8 border relative overflow-hidden my-6 transition-all duration-300 ${
+    <div className={`siren-panel siren-device-panel w-full rounded-[28px] p-6 sm:p-8 border relative overflow-hidden my-6 transition-all duration-300 ${
       isDark 
-        ? 'bg-[#131C2B] border-[#24344D] text-white shadow-xl' 
-        : 'bg-white border-[#CBD6E2] text-[#0F172A] shadow-sm'
+        ? 'bg-[#10232B] border-[#2D4A55] text-white shadow-[0_20px_70px_rgba(0,0,0,0.22)]'
+        : 'bg-[#F7FAFC] border-[#D9E2E8] text-[#0F172A] shadow-[0_16px_60px_rgba(42,68,83,0.07)]'
     }`}>
       
       {/* Background Soft Glow */}
@@ -59,9 +60,10 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
           <div className="pt-2">
             <button
               onClick={() => {
-                alert('Перехід до інформації');
+                setShowDetails((current) => !current);
                 playWebAudioSound('click');
               }}
+              aria-expanded={showDetails}
               className={`px-6 py-2.5 rounded-full border text-[13px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 isDark 
                   ? 'bg-[#182335] border-[#2E4160] text-blue-400 hover:bg-[#202E46]' 
@@ -70,16 +72,23 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
             >
               <span>Дізнатись більше</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+              </button>
+              {showDetails && (
+                <div className={`mt-3 rounded-2xl border px-3 py-2.5 text-[11px] leading-relaxed ${
+                  isDark ? 'border-[#345562] bg-[#142D37] text-[#B9D8E2]' : 'border-[#D5E4EA] bg-[#F0F7F9] text-[#506A75]'
+                }`}>
+                  Єдина модель даних синхронізує карту, події, партнерську статистику та налаштування між сумісними пристроями.
+                </div>
+              )}
           </div>
         </div>
 
         {/* Center: Devices Image & Pedestal Platform */}
-        <div className="flex-1 flex flex-col items-center">
+        <div className="flex-1 min-w-0 w-full flex flex-col items-center">
           <div className="relative w-full max-w-2xl min-h-[180px] aspect-[21/9] flex items-center justify-center">
             {/* Devices 3D Render Image */}
             <img
-              src="/src/assets/images/devices_3d_cutout.png"
+              src={isDark ? "/src/assets/images/devices_3d_cutout_dark.png" : "/src/assets/images/devices_3d_cutout.png"}
               alt="SIREN UA на всіх пристроях"
               referrerPolicy="no-referrer"
               className="w-full h-full object-contain drop-shadow-[0_15px_30px_rgba(37,99,235,0.18)]"
@@ -156,4 +165,3 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
     </div>
   );
 };
-

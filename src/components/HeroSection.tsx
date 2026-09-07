@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { 
   ArrowRight, 
   Apple,
@@ -8,9 +8,12 @@ import {
   ShieldCheck,
   QrCode
 } from 'lucide-react';
-import { ThreeMapUkraine } from './ThreeMapUkraine';
 import { RegionData, ThreatSceneModel } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
+
+const ThreeMapUkraine = React.lazy(() => import('./ThreeMapUkraine').then((module) => ({
+  default: module.ThreeMapUkraine,
+})));
 
 interface HeroSectionProps {
   regions?: RegionData[];
@@ -30,13 +33,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   theme = 'light'
 }) => {
   const [mapMode, setMapMode] = useState<'RENDER' | 'WEBGL'>('RENDER');
+  const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const isDark = theme === 'dark';
 
   return (
-    <div className={`w-full rounded-[32px] p-6 sm:p-10 lg:p-12 border relative overflow-hidden transition-all duration-300 ${
+    <div className={`siren-panel siren-hero w-full rounded-[30px] p-6 sm:p-8 lg:p-10 border relative overflow-hidden transition-all duration-300 ${
       isDark 
-        ? 'bg-[#131C2B] border-[#24344D] text-white shadow-2xl' 
-        : 'bg-[#FFFFFF] border-[#CBD6E2] text-[#0F172A] shadow-md'
+        ? 'bg-[#10232B] border-[#2D4A55] text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]'
+        : 'bg-[#F7FAFC] border-[#D9E2E8] text-[#0F172A] shadow-[0_20px_70px_rgba(42,68,83,0.08)]'
     }`}>
       
       {/* Background Soft Glow */}
@@ -63,11 +67,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           {/* Heading */}
-          <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] ${
+          <h1 className={`text-4xl sm:text-5xl lg:text-[44px] font-black tracking-tight leading-[1.08] ${
             isDark ? 'text-white' : 'text-[#0F172A]'
           }`}>
             Розумій ситуацію.<br />
-            <span className="text-[#2563EB]">Не просто отримуй тривогу.</span>
+            <span className={isDark ? 'text-[#8FBACB]' : 'text-[#5E87A0]'}>Не просто отримуй тривогу.</span>
           </h1>
           
           {/* Subtitle */}
@@ -81,10 +85,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="mt-7 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
             <button
               onClick={() => {
-                alert('Завантаження для iPhone...');
+                setDownloadNotice('App Store-посилання буде активне після підключення офіційного застосунку.');
                 playWebAudioSound('click');
+                window.setTimeout(() => setDownloadNotice(null), 4200);
               }}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-[14px] flex items-center justify-center gap-2.5 transition-all shadow-md hover:shadow-lg cursor-pointer"
+              className={`w-full sm:w-auto px-7 py-3.5 rounded-full font-bold text-[14px] flex items-center justify-center gap-2.5 transition-all shadow-md hover:shadow-lg cursor-pointer ${
+                isDark
+                  ? 'bg-[#73AFC7] hover:bg-[#8BC2D7] active:bg-[#5E9BB4] text-[#07151C] shadow-[0_10px_28px_rgba(115,175,199,0.25)]'
+                  : 'bg-[#6D9FB8] hover:bg-[#5E8EA7] active:bg-[#4F7D96] text-white shadow-[0_10px_28px_rgba(80,128,153,0.20)]'
+              }`}
             >
               <Apple className="w-4 h-4 fill-white mb-0.5" />
               <span>Завантажити для iPhone</span>
@@ -92,6 +101,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </button>
             <button
               onClick={() => {
+                setMapMode((current) => current === 'RENDER' ? 'WEBGL' : 'RENDER');
                 playWebAudioSound('click');
               }}
               className={`w-full sm:w-auto px-7 py-3.5 rounded-full border font-bold text-[14px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
@@ -104,6 +114,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <span>Дивитись демо</span>
             </button>
           </div>
+
+          {downloadNotice && (
+            <div role="status" className={`mt-3 max-w-md rounded-xl border px-3 py-2 text-[11px] font-semibold ${
+              isDark ? 'border-[#3B5B68] bg-[#17313B] text-[#B9D8E2]' : 'border-[#C7DCE5] bg-[#EDF7FA] text-[#416B7C]'
+            }`}>
+              {downloadNotice}
+            </div>
+          )}
 
           {/* Sub-block: QR Code, App Store Pill & Checkmarks */}
           <div className={`mt-9 pt-7 border-t w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 ${
@@ -148,14 +166,34 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Right: 3D Ukraine Map matching screenshots 1:1 with pins & arcs */}
         <div className="flex-1 w-full flex items-center justify-center relative min-h-[380px] lg:min-h-[460px]">
-          <div className="relative w-full max-w-[620px] aspect-[16/10] flex items-center justify-center">
-            {/* Base 3D Relief Map Image */}
-            <img 
-              src="/src/assets/images/ukraine_3d_cutout.png" 
-              alt="3D Карта України SIREN UA" 
-              referrerPolicy="no-referrer"
-              className="w-full h-auto object-contain max-h-[440px] drop-shadow-[0_20px_35px_rgba(37,99,235,0.25)]"
-            />
+          <div className={`relative w-full max-w-[620px] aspect-[16/10] flex items-center justify-center rounded-[24px] ${
+            isDark ? 'bg-[radial-gradient(circle_at_50%_48%,rgba(89,145,165,0.12),transparent_66%)]' : 'bg-[radial-gradient(circle_at_50%_48%,rgba(154,192,209,0.22),transparent_66%)]'
+          }`}>
+            {mapMode === 'WEBGL' ? (
+              <Suspense fallback={(
+                <div className={`absolute inset-0 flex items-center justify-center rounded-[24px] text-xs font-semibold ${isDark ? 'text-[#9BC7D7]' : 'text-[#5E87A0]'}`}>
+                  Завантаження інтерактивної 3D-сцени…
+                </div>
+              )}>
+                <ThreeMapUkraine
+                  variant="hero"
+                  theme={theme}
+                  regions={regions}
+                  selectedRegionId={selectedRegion?.id || null}
+                  onSelectRegion={(region) => onSelectRegion?.(region)}
+                  activeThreatCount={threatModel?.activeAlarmsCount || 0}
+                  enableControls
+                  className="absolute inset-0"
+                />
+              </Suspense>
+            ) : (
+              <img
+                src={isDark ? "/src/assets/images/ukraine_3d_cutout_dark.png" : "/src/assets/images/ukraine_3d_cutout.png"}
+                alt="3D Карта України SIREN UA"
+                referrerPolicy="no-referrer"
+                className="w-full h-auto object-contain max-h-[440px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
+              />
+            )}
 
             {/* SVG Arcs Connecting Cities */}
             <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
@@ -166,15 +204,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </filter>
               </defs>
               {/* Arc 1: Львів (28, 42) -> Київ (57, 28) */}
-              <path d="M 28,42 Q 42,22 57,28" fill="none" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              <path d="M 28,42 Q 42,22 57,28" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
               {/* Arc 2: Київ (57, 28) -> Харків (80, 36) */}
-              <path d="M 57,28 Q 68,22 80,36" fill="none" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              <path d="M 57,28 Q 68,22 80,36" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
               {/* Arc 3: Київ (57, 28) -> Дніпро (72, 58) */}
-              <path d="M 57,28 Q 66,42 72,58" fill="none" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              <path d="M 57,28 Q 66,42 72,58" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
               {/* Arc 4: Дніпро (72, 58) -> Одеса (58, 76) */}
-              <path d="M 72,58 Q 64,72 58,76" fill="none" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              <path d="M 72,58 Q 64,72 58,76" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
               {/* Arc 5: Львів (28, 42) -> Одеса (58, 76) */}
-              <path d="M 28,42 Q 40,68 58,76" fill="none" stroke="#38BDF8" strokeWidth="0.5" strokeDasharray="1 1" opacity="0.5" />
+              <path d="M 28,42 Q 40,68 58,76" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.5" strokeDasharray="1 1" opacity="0.5" />
             </svg>
 
             {/* Map Pins and City Labels */}
@@ -185,8 +223,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               { name: 'Дніпро', top: '58%', left: '72%' },
               { name: 'Одеса', top: '76%', left: '58%' },
             ].map((city, idx) => (
-              <div 
+              <button
                 key={idx} 
+                type="button"
+                aria-label={`Вибрати регіон ${city.name}`}
+                onClick={() => {
+                  const lookup: Record<string, string[]> = {
+                    'Київ': ['kyiv_obl', 'kyiv_city'],
+                    'Харків': ['kharkiv'],
+                    'Дніпро': ['dnipro'],
+                    'Одеса': ['odesa'],
+                    'Львів': ['lviv'],
+                  };
+                  const region = (regions || []).find((item) => lookup[city.name]?.includes(item.id));
+                  if (region) onSelectRegion?.(region);
+                }}
                 className="absolute flex items-center gap-1.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-10 transition-transform hover:scale-110"
                 style={{ top: city.top, left: city.left }}
               >
@@ -215,7 +266,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 }`}>
                   {city.name}
                 </span>
-              </div>
+              </button>
             ))}
 
             {/* Bottom Right Pill Badge: SIREN UA - Україна */}
@@ -233,4 +284,3 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     </div>
   );
 };
-

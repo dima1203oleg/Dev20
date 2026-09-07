@@ -110,7 +110,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
             </div>
           </div>
           <div className={`text-[12px] font-medium mt-4 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-            Доступно: <strong className={isDark ? 'text-white' : 'text-[#0F172A]'}>$ $ 450</strong>
+            Доступно: <strong className={isDark ? 'text-white' : 'text-[#0F172A]'}>$450</strong>
           </div>
         </div>
 
@@ -233,7 +233,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
               <div className="h-full bg-[#2563EB] rounded-full" style={{ width: '75%' }}></div>
             </div>
             <div className={`text-[10px] font-medium mt-1.5 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-              До Platinum: 46 / 560
+              До Platinum: 46 / 200
             </div>
           </div>
         </div>
@@ -242,4 +242,3 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
     </div>
   );
 };
-

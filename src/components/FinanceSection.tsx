@@ -58,6 +58,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [showFaqDrawer, setShowFaqDrawer] = useState(false);
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [summary, setSummary] = useState<PartnerFinancialSummary>(DEFAULT_FINANCIAL_SUMMARY);
   const [ledger, setLedger] = useState<LedgerTransaction[]>(() => financialService.getLedgerTransactions());
   const [payoutMethods, setPayoutMethods] = useState<PayoutMethodConfig[]>(() => financialService.getPayoutMethods());
@@ -86,6 +87,9 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
   }, []);
 
   const selectedMethod = payoutMethods.find(m => m.id === selectedMethodId) || payoutMethods[0];
+  const levelOneIncome = summary.l1Earnings ?? 0;
+  const levelTwoIncome = summary.l2Earnings ?? 0;
+  const bonusIncome = Math.max(0, summary.totalBalance - levelOneIncome - levelTwoIncome);
   const calculatedFee = selectedMethod?.feePercent > 0 
     ? Math.round((Number(withdrawAmount || 0) * selectedMethod.feePercent) / 100)
     : (selectedMethod?.fixedFeeUah || 0);
@@ -304,7 +308,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
           </div>
           <div className={`text-xs font-medium mt-3 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Виведено</div>
           <div className="text-2xl sm:text-3xl font-black mt-0.5">₴ {summary.lifetimePaid.toLocaleString()}</div>
-          <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Успішних виплат: {ledger.filter(l => l.type === 'PAYOUT' && l.status === 'COMPLETED').length}</div>
+          <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Успішних виплат: {ledger.filter(l => l.type === 'PAYOUT_WITHDRAWAL').length}</div>
         </div>
 
         {/* Card 4: Очікується */}
@@ -394,11 +398,11 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               <div className="flex items-center justify-center my-3 relative">
                 <svg viewBox="0 0 100 100" className="w-28 h-28 transform -rotate-90">
                   {/* Рівень 1 (10%): ₴8 460 ~ 68% */}
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="#2563EB" strokeWidth="12" strokeDasharray={`${(summary.totalL1Income / Math.max(1, summary.totalBalance)) * 238.7} 238.7`} strokeDashoffset="0" />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#2563EB" strokeWidth="12" strokeDasharray={`${(levelOneIncome / Math.max(1, summary.totalBalance)) * 238.7} 238.7`} strokeDashoffset="0" />
                   {/* Рівень 2 (5%): ₴3 250 ~ 26% */}
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="#8B5CF6" strokeWidth="12" strokeDasharray={`${(summary.totalL2Income / Math.max(1, summary.totalBalance)) * 238.7} 238.7`} strokeDashoffset={`-${(summary.totalL1Income / Math.max(1, summary.totalBalance)) * 238.7}`} />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#8B5CF6" strokeWidth="12" strokeDasharray={`${(levelTwoIncome / Math.max(1, summary.totalBalance)) * 238.7} 238.7`} strokeDashoffset={`-${(levelOneIncome / Math.max(1, summary.totalBalance)) * 238.7}`} />
                   {/* Бонуси: ₴750 ~ 6% */}
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="#F59E0B" strokeWidth="12" strokeDasharray={`${(summary.totalBonusIncome / Math.max(1, summary.totalBalance)) * 238.7} 238.7`} strokeDashoffset={`-${((summary.totalL1Income + summary.totalL2Income) / Math.max(1, summary.totalBalance)) * 238.7}`} />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#F59E0B" strokeWidth="12" strokeDasharray={`${(bonusIncome / Math.max(1, summary.totalBalance)) * 238.7} 238.7`} strokeDashoffset={`-${((levelOneIncome + levelTwoIncome) / Math.max(1, summary.totalBalance)) * 238.7}`} />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                   <span className="text-sm font-black leading-tight">₴ {summary.totalBalance.toLocaleString()}</span>
@@ -412,21 +416,21 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                     <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
                     <span>Рівень 1 (20%)</span>
                   </span>
-                  <span className="font-bold">₴ {summary.totalL1Income.toLocaleString()}</span>
+                  <span className="font-bold">₴ {levelOneIncome.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                     <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
                     <span>Рівень 2 (20%)</span>
                   </span>
-                  <span className="font-bold">₴ {summary.totalL2Income.toLocaleString()}</span>
+                  <span className="font-bold">₴ {levelTwoIncome.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                     <span>Бонуси</span>
                   </span>
-                  <span className="font-bold">₴ {summary.totalBonusIncome.toLocaleString()}</span>
+                  <span className="font-bold">₴ {bonusIncome.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -483,7 +487,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                 <div className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Партнерський рівень</div>
                 <div className="text-base font-black text-amber-500 flex items-center gap-1.5 mt-0.5">
                   <Award className="w-4 h-4" />
-                  <span>{summary.currentRank}</span>
+                  <span>{calculateRankByL1(summary.qualifiedL1 ?? 0).badgeLabel}</span>
                 </div>
               </div>
               <button className="w-8 h-8 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 flex items-center justify-center">
@@ -534,6 +538,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               <button
                 onClick={() => {
                   setShowWithdrawModal(true);
+                  onOpenWithdrawModal?.();
                   playWebAudioSound('click');
                 }}
                 className="w-full mt-4 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
@@ -600,9 +605,9 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   <div className="flex items-center gap-2">
                     <CreditCard className={`w-4 h-4 ${idx === 0 ? 'text-blue-600' : 'text-purple-600'}`} />
                     <div>
-                      <div className="font-bold leading-tight">{method.type === 'CARD_UAH' ? 'Картка' : 'IBAN (UAH)'}</div>
+                      <div className="font-bold leading-tight">{method.type === 'IBAN' ? 'IBAN (UAH)' : method.type === 'USDT_TRC20' ? 'USDT (TRC-20)' : 'Картка'}</div>
                       <div className="text-[10px] text-slate-400">
-                        {method.type === 'CARD_UAH' ? `**** ${method.details.slice(-4)}` : `${method.details.substring(0, 15)}...`}
+                        {method.accountMasked}
                       </div>
                     </div>
                   </div>
@@ -646,7 +651,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold">Останні транзакції</h3>
               <button 
-                onClick={onOpenHistory}
+                onClick={() => {
+                  setShowHistoryDrawer(true);
+                  onOpenHistory?.();
+                }}
                 className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
               >
                 <span>Всі транзакції</span>
@@ -661,34 +669,25 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                     <div className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${
                       tx.type === 'COMMISSION_L1' || tx.type === 'COMMISSION_L2'
                         ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400' 
-                        : tx.type === 'BONUS'
+                        : tx.type === 'BONUS_LEADER'
                         ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400'
                         : 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400'
                     }`}>
-                      {tx.type === 'PAYOUT' ? <ArrowDownLeft className="w-3.5 h-3.5" /> : tx.type === 'BONUS' ? <Gift className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+                      {tx.type === 'PAYOUT_WITHDRAWAL' ? <ArrowDownLeft className="w-3.5 h-3.5" /> : tx.type === 'BONUS_LEADER' ? <Gift className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                     </div>
                     <div>
                       <div className="font-semibold">{tx.description}</div>
-                      <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{new Date(tx.date).toLocaleDateString('uk-UA')}</div>
+                      <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{tx.timestamp}</div>
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <div className={`font-black ${tx.type === 'PAYOUT' ? 'text-slate-800 dark:text-slate-200' : 'text-emerald-500'}`}>
-                      {tx.type === 'PAYOUT' ? `-${tx.amountUah}` : `+${tx.amountUah}`} ₴
+                    <div className={`font-black ${tx.direction === 'DEBIT' ? 'text-slate-800 dark:text-slate-200' : 'text-emerald-500'}`}>
+                      {tx.direction === 'DEBIT' ? `−${tx.amount.toLocaleString('uk-UA')}` : `+${tx.amount.toLocaleString('uk-UA')}`} ₴
                     </div>
-                    <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${
-                      tx.status === 'COMPLETED' ? 'text-emerald-500' : 
-                      tx.status === 'PENDING' ? 'text-amber-500' : 'text-rose-500'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${
-                        tx.status === 'COMPLETED' ? 'bg-emerald-500' : 
-                        tx.status === 'PENDING' ? 'bg-amber-500' : 'bg-rose-500'
-                      }`} />
-                      <span>{
-                        tx.status === 'COMPLETED' ? 'Зараховано' : 
-                        tx.status === 'PENDING' ? 'В обробці' : 'Відхилено'
-                      }</span>
+                    <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${tx.direction === 'DEBIT' ? 'text-blue-500' : 'text-emerald-500'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${tx.direction === 'DEBIT' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
+                      <span>{tx.direction === 'DEBIT' ? 'Виплачено' : 'Зараховано'}</span>
                     </div>
                   </div>
                 </div>
@@ -917,6 +916,31 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
           </div>
         </div>
       )}
+
+      {/* FAQ Drawer */}
+      <ContextDrawer
+        isOpen={showHistoryDrawer}
+        onClose={() => setShowHistoryDrawer(false)}
+        title="Історія операцій"
+        icon={<FileText className="w-5 h-5" />}
+        theme={theme}
+      >
+        <div className="space-y-2">
+          {ledger.map((transaction) => (
+            <div key={transaction.id} className={`rounded-2xl border p-3 ${isDark ? 'border-slate-800 bg-slate-900/70' : 'border-slate-200 bg-slate-50'}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs font-bold">{transaction.description}</div>
+                  <div className={`mt-1 text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{transaction.timestamp}</div>
+                </div>
+                <div className={`whitespace-nowrap text-xs font-black ${transaction.direction === 'CREDIT' ? 'text-emerald-500' : 'text-slate-500'}`}>
+                  {transaction.direction === 'CREDIT' ? '+' : '−'}₴ {transaction.amount.toLocaleString('uk-UA')}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </ContextDrawer>
 
       {/* FAQ Drawer */}
       <ContextDrawer

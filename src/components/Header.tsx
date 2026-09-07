@@ -186,9 +186,11 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Profile Capsule (Matches screenshots: Photo + Олександр + Gold Partner badge) */}
-          <div 
+          <button
+            type="button"
             onClick={() => handleNavClick('PROFILE')}
-            className={`flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full cursor-pointer border transition-all ${
+            aria-label="Відкрити профіль Олександра"
+            className={`hidden sm:flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full cursor-pointer border transition-all ${
               isDark 
                 ? 'bg-[#182335] border-[#24344D] hover:bg-[#202E46] text-white' 
                 : 'bg-white/90 border-[#CBD6E2] hover:bg-white text-[#0F172A] shadow-sm'
@@ -211,11 +213,10 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
-          </div>
+          </button>
 
         </div>
       </div>
     </header>
   );
 };
-

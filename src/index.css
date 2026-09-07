@@ -30,6 +30,62 @@ body {
   overflow-x: hidden;
 }
 
+/* SIREN UA visual language: quiet navy/graphite depth in dark mode and a
+   cool, paper-like surface in light mode. Components opt into this shell
+   without losing their existing responsive layout. */
+.siren-app {
+  --siren-shell-bg: #eaeff5;
+  --siren-shell-text: #111827;
+  --siren-panel-bg: rgba(255, 255, 255, 0.78);
+  --siren-panel-border: rgba(217, 226, 232, 0.95);
+  --siren-ink-soft: #5a6a80;
+  --siren-accent: #6d9fb8;
+  background:
+    radial-gradient(circle at 78% 7%, rgba(142, 190, 210, 0.17), transparent 28rem),
+    var(--siren-shell-bg);
+}
+
+.siren-app--dark {
+  --siren-shell-bg: #08151c;
+  --siren-shell-text: #eef4f5;
+  --siren-panel-bg: rgba(16, 35, 43, 0.92);
+  --siren-panel-border: rgba(53, 82, 93, 0.86);
+  --siren-ink-soft: #a7b9bf;
+  --siren-accent: #8fbacb;
+  background:
+    radial-gradient(circle at 75% 4%, rgba(89, 145, 165, 0.11), transparent 31rem),
+    radial-gradient(circle at 8% 42%, rgba(38, 91, 106, 0.12), transparent 24rem),
+    var(--siren-shell-bg);
+}
+
+.siren-app--dark .siren-panel {
+  background-color: var(--siren-panel-bg);
+  border-color: var(--siren-panel-border);
+}
+
+.siren-app--light .siren-panel {
+  background-color: var(--siren-panel-bg);
+  border-color: var(--siren-panel-border);
+}
+
+.siren-app button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.siren-hero button[aria-label^='Вибрати регіон'] {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.siren-hero img,
+.siren-device-panel img {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 /* Custom Soft Google-style Shadow Utilities */
 .shadow-google-sm {
   box-shadow: 0 1px 3px 0 rgba(17, 24, 39, 0.04), 0 1px 2px -1px rgba(17, 24, 39, 0.03);

@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { HomeFeaturesGrid } from './components/HomeFeaturesGrid';
 import { HomeFinanceSituationRow } from './components/HomeFinanceSituationRow';
+import { AnalyticsSection } from './components/AnalyticsSection';
 import { SirenOrbitalDeviceEcosystem } from './components/orbital/SirenOrbitalDeviceEcosystem';
 import { FinanceSection } from './components/FinanceSection';
 import { ProfileSection } from './components/ProfileSection';
@@ -34,14 +35,9 @@ export default function App() {
   // Navigation: HOME | NETWORK | FINANCE | PROFILE | ANALYTICS | AFFILIATE
   const [activeSection, setActiveSection] = useState<DashboardSection>('HOME');
 
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    try {
-      const completed = localStorage.getItem('sirenua_onboarding_completed');
-      return completed !== 'true';
-    } catch {
-      return true;
-    }
-  });
+  // Onboarding remains available in the codebase, but it must not block the
+  // production landing surface on a fresh browser visit.
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const handleCompleteOnboarding = () => {
     try {
@@ -78,7 +74,7 @@ export default function App() {
       volume: 0.75,
       voiceChime: true,
       vibrateOnMobile: true,
-      theme: 'light',
+      theme: 'dark',
       showLabels: true,
       showThreatIcons: true,
       show3DDepth: true,
@@ -207,7 +203,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
+    <div className={`siren-app ${settings.theme === 'dark' ? 'siren-app--dark' : 'siren-app--light'} min-h-screen flex flex-col font-sans transition-colors duration-300 ${
       settings.theme === 'dark' ? 'bg-[#0E1520] text-slate-100' : 'bg-[#EAEFF5] text-[#111827]'
     }`}>
       
@@ -287,6 +283,7 @@ export default function App() {
               <AffiliateProgram
                 onOpenMap={() => setActiveSection('HOME')}
                 onOpenSimulator={() => setIsSimulatorOpen(true)}
+                theme={settings.theme || 'light'}
               />
             </div>
           )}
@@ -299,6 +296,7 @@ export default function App() {
               <FinanceSection
                 onOpenWithdrawModal={() => {}}
                 onOpenHistory={() => {}}
+                theme={settings.theme || 'light'}
               />
             </div>
           )}
@@ -308,7 +306,7 @@ export default function App() {
              ========================================================================= */}
           {activeSection === 'PROFILE' && (
             <div className="animate-in fade-in duration-200">
-              <ProfileSection />
+              <ProfileSection theme={settings.theme || 'light'} />
             </div>
           )}
 
@@ -316,10 +314,7 @@ export default function App() {
               SECTION 5: ANALYTICS (Аналітика)
              ========================================================================= */}
           {activeSection === 'ANALYTICS' && (
-            <div className="animate-in fade-in duration-200 p-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <h2 className="text-2xl font-bold mb-2">Аналітика загрози та активності</h2>
-              <p className="text-slate-500 text-sm">Збір статистики реального часу за останні 30 днів...</p>
-            </div>
+            <AnalyticsSection theme={settings.theme || 'light'} />
           )}
 
           {/* =========================================================================
