@@ -90,6 +90,14 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'about', label: 'Про нас', section: 'ABOUT' as DashboardSection },
   ];
 
+  const isNavItemActive = (item: { id: string; section: DashboardSection }) => {
+    // The public header must reflect the routed workspace, not the last tab
+    // the user happened to click before opening a product section.
+    if (item.section === 'PRICING') return activeSection === 'PRICING';
+    if (item.section === 'ABOUT') return activeSection === 'ABOUT';
+    return activeSection === 'HOME' && activeTab === item.id;
+  };
+
   const mobileSectionItems = [
     { id: 'network', label: 'Мережа та реферали', section: 'NETWORK' as DashboardSection },
     { id: 'finance', label: 'Фінанси та виплати', section: 'FINANCE' as DashboardSection },
@@ -135,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Center: Main Navigation Links */}
         <nav className="hidden md:flex items-center gap-6 min-[1160px]:gap-8">
           {navItems.map((item) => {
-            const isActive = activeTab === item.id || (item.id === 'home' && activeSection === 'HOME');
+            const isActive = isNavItemActive(item);
             return (
               <button
                 key={item.id}
@@ -347,7 +355,7 @@ export const Header: React.FC<HeaderProps> = ({
         }`}>
           <nav aria-label="Мобільна навігація" className="grid grid-cols-1 gap-1.5">
             {navItems.map((item) => {
-              const isActive = activeTab === item.id || (item.id === 'home' && activeSection === 'HOME');
+              const isActive = isNavItemActive(item);
               return (
                 <button
                   key={item.id}
