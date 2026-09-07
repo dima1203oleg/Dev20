@@ -195,6 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
             <input
               type="text"
               placeholder="Пошук..."
+              aria-label="Пошук розділу SIREN UA"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -211,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             />
             {searchQuery.trim() && (
-              <div className={`absolute right-0 top-full mt-2 w-64 rounded-2xl border p-2 shadow-xl z-50 ${
+              <div role="listbox" aria-label="Результати пошуку" className={`absolute right-0 top-full mt-2 w-64 rounded-2xl border p-2 shadow-xl z-50 ${
                 isDark ? 'bg-[#131C2B] border-[#24344D] text-white' : 'bg-white border-[#CBD6E2] text-[#0F172A]'
               }`}>
                 {searchResults.length > 0 ? searchResults.map((item) => (
@@ -272,6 +273,9 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Notifications Icon with Red Badge */}
           <div className="relative">
             <button
+              type="button"
+              aria-label="Відкрити сповіщення"
+              aria-expanded={notificationsOpen}
               onClick={() => setNotificationsOpen(!notificationsOpen)}
               className={`min-h-11 min-w-11 p-2 rounded-full relative flex items-center justify-center transition-colors cursor-pointer border ${
                 isDark 
@@ -309,7 +313,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Language Selector Dropdown */}
           <div className="relative hidden sm:block">
-          <button onClick={() => setLanguageOpen((open) => !open)} className={`min-h-11 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer transition-colors border ${
+          <button type="button" aria-label="Змінити мову" aria-expanded={languageOpen} onClick={() => setLanguageOpen((open) => !open)} className={`min-h-11 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer transition-colors border ${
             isDark 
               ? 'bg-[#182335] text-slate-300 border-[#24344D] hover:bg-[#202E46]' 
               : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
