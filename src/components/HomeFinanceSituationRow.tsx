@@ -12,8 +12,9 @@ import {
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 import { DataState } from '../types/dataEnvelope';
-import { financialService, DEFAULT_FINANCIAL_SUMMARY } from '../services/financialService';
+import { financialService, DEFAULT_FINANCIAL_SUMMARY, UNAVAILABLE_FINANCIAL_SUMMARY } from '../services/financialService';
 import { PartnerFinancialSummary } from '../types/finance';
+import { calculateRankByL1, getNextTierInfo } from '../services/referralEngine';
 
 interface HomeFinanceSituationRowProps {
   onNavigateToFinance?: () => void;
@@ -39,6 +40,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
       if (!mounted) return;
       setSummaryState(response.state);
       if (response.data) setSummary(response.data);
+      else if (response.state === 'NOT_CONNECTED') setSummary(UNAVAILABLE_FINANCIAL_SUMMARY);
     });
     return () => {
       mounted = false;
@@ -46,9 +48,14 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
   }, []);
 
   const effectiveDataState = summaryState === 'LOADING' ? dataState : summaryState;
-  const percentageChange = summary.earnedLastMonth > 0
-    ? Number((((summary.earnedThisMonth - summary.earnedLastMonth) / summary.earnedLastMonth) * 100).toFixed(1))
+  const displaySummary = effectiveDataState === 'NOT_CONNECTED' ? UNAVAILABLE_FINANCIAL_SUMMARY : summary;
+  const percentageChange = displaySummary.earnedLastMonth > 0
+    ? Number((((displaySummary.earnedThisMonth - displaySummary.earnedLastMonth) / displaySummary.earnedLastMonth) * 100).toFixed(1))
     : 0;
+  const qualifiedL1 = displaySummary.qualifiedL1 ?? 0;
+  const rank = calculateRankByL1(qualifiedL1);
+  const nextRank = getNextTierInfo(rank, qualifiedL1);
+  const unavailable = effectiveDataState === 'NOT_CONNECTED';
 
   return (
     <div className="w-full my-0 space-y-2">
@@ -62,7 +69,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
             <DataFreshnessIndicator state={effectiveDataState} theme={theme} />
           </div>
           <p className={`text-[13px] font-medium mt-0.5 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-            {effectiveDataState === 'LIVE' ? 'Ваш дохід. Ваш розвиток. Більше можливостей.' : 'Демонстраційний стан до підключення фінансового API.'}
+            {effectiveDataState === 'LIVE' ? 'Ваш дохід. Ваш розвиток. Більше можливостей.' : effectiveDataState === 'DEMO' ? 'Демонстраційний стан до підключення фінансового API.' : 'Фінансові дані тимчасово недоступні.'}
           </p>
         </div>
         <button
@@ -102,10 +109,10 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                     <span className={`text-xl lg:text-[16px] font-black tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                    ₴ {summary.earnedThisMonth.toLocaleString('uk-UA')}
+                    {unavailable ? '—' : `₴ ${displaySummary.earnedThisMonth.toLocaleString('uk-UA')}`}
                   </span>
                   <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 text-[10px] font-bold flex items-center gap-0.5">
-                    <TrendingUp className="w-3 h-3" /> {percentageChange >= 0 ? '+' : ''}{percentageChange}%
+                    <TrendingUp className="w-3 h-3" /> {unavailable ? '—' : `${percentageChange >= 0 ? '+' : ''}${percentageChange}%`}
                   </span>
                 </div>
               </div>
@@ -134,13 +141,13 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                   Баланс
                 </div>
                 <div className={`text-xl font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                  ₴ {summary.totalBalance.toLocaleString('uk-UA')}
+                  {unavailable ? '—' : `₴ ${displaySummary.totalBalance.toLocaleString('uk-UA')}`}
                 </div>
               </div>
             </div>
           </div>
           <div className={`text-[12px] font-medium mt-4 lg:mt-2 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-            Доступно: <strong className={isDark ? 'text-white' : 'text-[#0F172A]'}>₴ {summary.availableBalance.toLocaleString('uk-UA')}</strong>
+            Доступно: <strong className={isDark ? 'text-white' : 'text-[#0F172A]'}>{unavailable ? '—' : `₴ ${displaySummary.availableBalance.toLocaleString('uk-UA')}`}</strong>
           </div>
         </div>
 
@@ -162,7 +169,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                   Доступна до виводу
                 </div>
                 <div className={`text-xl lg:text-[16px] font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                  ₴ {summary.availableBalance.toLocaleString('uk-UA')}
+                  {unavailable ? '—' : `₴ ${displaySummary.availableBalance.toLocaleString('uk-UA')}`}
                 </div>
               </div>
             </div>
@@ -202,7 +209,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                     Виплачено
                   </div>
                   <div className={`text-xl lg:text-[16px] font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                    ₴ {summary.lifetimePaid.toLocaleString('uk-UA')}
+                    {unavailable ? '—' : `₴ ${displaySummary.lifetimePaid.toLocaleString('uk-UA')}`}
                   </div>
                 </div>
               </div>
@@ -249,11 +256,11 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                 <div className="flex items-center gap-1 mt-0.5">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   <span className={`text-[14px] lg:text-[13px] font-black ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                    Gold Partner
+                    {unavailable ? 'Статус недоступний' : `${rank.name} Partner`}
                   </span>
                 </div>
                 <div className={`text-[10px] lg:text-[9px] font-medium leading-tight mt-0.5 ${isDark ? 'text-slate-300' : 'text-[#334155]'}`}>
-                  <strong className="font-extrabold">{summary.qualifiedL1 ?? 0}</strong> кваліфікація L1
+                  <strong className="font-extrabold">{unavailable ? '—' : qualifiedL1}</strong> {unavailable ? 'кваліфікація недоступна' : 'кваліфікованих L1'}
                 </div>
               </div>
             </div>
@@ -262,10 +269,10 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
           
           <div className="mt-2 lg:mt-1">
             <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full bg-[#2563EB] rounded-full" style={{ width: '75%' }}></div>
+              <div className="h-full bg-[#2563EB] rounded-full" style={{ width: unavailable ? '0%' : `${Math.min(100, nextRank.progressPercent)}%` }}></div>
             </div>
             <div className={`text-[9px] font-medium mt-1 lg:mt-0.5 leading-none ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-              До Platinum: {Math.max(0, 200 - (summary.qualifiedL1 ?? 0))} / 200
+              {unavailable ? 'Досягнення рангу потребує API' : nextRank.nextTier ? `До ${nextRank.nextTier.name}: ${nextRank.remainingL1}` : 'Максимальний ранг досягнуто'}
             </div>
           </div>
         </button>

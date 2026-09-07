@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, ArrowUpRight, BarChart3, CheckCircle2, Clock3, Users } from 'lucide-react';
 import { networkService, NetworkSummary } from '../services/networkService';
+import { analyticsService, PartnerAnalytics } from '../services/analyticsService';
 import { DataState } from '../types/dataEnvelope';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 
@@ -8,28 +9,30 @@ interface AnalyticsSectionProps {
   theme?: 'light' | 'dark';
 }
 
-const monthlyActivity = [42, 56, 51, 72, 68, 84, 96, 88, 108, 121, 116, 134];
-
 export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'light' }) => {
   const isDark = theme === 'dark';
   const [summary, setSummary] = useState<NetworkSummary | null>(null);
+  const [analytics, setAnalytics] = useState<PartnerAnalytics | null>(null);
   const [dataState, setDataState] = useState<DataState>('LOADING');
 
   useEffect(() => {
     let active = true;
-    networkService.getNetworkSummary().then((response) => {
-      setDataState(response.state);
-      if (active && response.data) setSummary(response.data);
+    Promise.all([networkService.getNetworkSummary(), analyticsService.getPartnerAnalytics()]).then(([summaryResponse, analyticsResponse]) => {
+      if (!active) return;
+      setDataState(analyticsResponse.state === 'LIVE' && summaryResponse.state === 'LIVE' ? 'LIVE' : analyticsResponse.state);
+      setSummary(summaryResponse.data);
+      setAnalytics(analyticsResponse.data);
     });
     return () => { active = false; };
   }, []);
 
   const data = summary;
+  const unavailable = dataState === 'NOT_CONNECTED' || dataState === 'ERROR';
   const cards = [
-    { label: 'Кваліфіковані L1', value: data?.qualifiedL1 ?? 154, note: 'впливають на ранг', icon: Users, tone: 'blue' },
-    { label: 'Конверсія в оплату', value: `${data?.conversionRatePercent ?? 68}%`, note: 'trial → paid', icon: CheckCircle2, tone: 'green' },
-    { label: 'Нові за 30 днів', value: data?.new30DaysCount ?? 42, note: 'нові учасники', icon: Activity, tone: 'cyan' },
-    { label: 'Дохід мережі', value: `₴ ${(data?.monthlyNetworkIncomeUah ?? 12460).toLocaleString('uk-UA')}`, note: 'поточний місяць', icon: BarChart3, tone: 'amber' },
+    { label: 'Кваліфіковані L1', value: unavailable ? '—' : (data?.qualifiedL1 ?? '—'), note: 'впливають на ранг', icon: Users, tone: 'blue' },
+    { label: 'Конверсія в оплату', value: unavailable ? '—' : `${data?.conversionRatePercent ?? '—'}%`, note: 'trial → paid', icon: CheckCircle2, tone: 'green' },
+    { label: 'Нові за 30 днів', value: unavailable ? '—' : (data?.new30DaysCount ?? '—'), note: 'нові учасники', icon: Activity, tone: 'cyan' },
+    { label: 'Дохід мережі', value: unavailable ? '—' : `₴ ${(data?.monthlyNetworkIncomeUah ?? 0).toLocaleString('uk-UA')}`, note: 'поточний місяць', icon: BarChart3, tone: 'amber' },
   ];
 
   return (
@@ -53,8 +56,8 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'lig
         </div>
 
         {dataState !== 'LIVE' && (
-          <div className={`mt-4 rounded-xl border px-3 py-2 text-xs font-semibold ${isDark ? 'border-amber-900/60 bg-amber-950/20 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
-            Демонстраційні метрики: підключіть partner API, щоб замінити приклади на актуальні дані.
+          <div className={`mt-4 rounded-xl border px-3 py-2 text-xs font-semibold ${dataState === 'NOT_CONNECTED' ? (isDark ? 'border-rose-900/60 bg-rose-950/20 text-rose-300' : 'border-rose-200 bg-rose-50 text-rose-700') : (isDark ? 'border-amber-900/60 bg-amber-950/20 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-700')}`}>
+            {dataState === 'NOT_CONNECTED' ? 'Аналітика тимчасово недоступна. Підключіть partner analytics API, щоб отримувати фактичні метрики.' : 'Демонстраційні метрики: підключіть partner API, щоб замінити приклади на актуальні дані.'}
           </div>
         )}
 
@@ -85,7 +88,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'lig
             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${isDark ? 'bg-[#17313B] text-[#A8CCD8]' : 'bg-[#EDF7FA] text-[#4D788A]'}`}><Clock3 className="h-3 w-3" /> 12 періодів</span>
           </div>
           <div className="mt-7 flex h-48 items-end gap-2 sm:gap-3">
-            {monthlyActivity.map((value, index) => (
+            {(analytics?.monthlyActivity ?? []).map((value, index) => (
               <div key={`${value}-${index}`} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
                 <div className={`w-full max-w-9 rounded-t-lg ${isDark ? 'bg-gradient-to-t from-[#4F8398] to-[#9BC7D7]' : 'bg-gradient-to-t from-[#6D9FB8] to-[#A8CCD8]'}`} style={{ height: `${Math.max(12, (value / 140) * 100)}%` }} title={`${value} qualified actions`} />
                 <span className={`text-[9px] ${isDark ? 'text-[#78939D]' : 'text-[#8B99A5]'}`}>{index + 1}</span>
@@ -98,12 +101,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'lig
           <h2 className="text-base font-black">Воронка конверсії</h2>
           <p className={`mt-1 text-xs ${isDark ? 'text-[#92AAB1]' : 'text-[#6E7F8B]'}`}>Де саме втрачаються користувачі</p>
           <div className="mt-6 space-y-4">
-            {[
-              ['Переходи за посиланням', 100, 'blue'],
-              ['Реєстрації', 78, 'cyan'],
-              ['Почали trial', 64, 'amber'],
-              ['Перша оплата', data?.conversionRatePercent ?? 52, 'green'],
-            ].map(([label, percent, tone]) => (
+            {(analytics?.funnel ?? []).map(({ label, percent, tone }) => (
               <div key={String(label)}>
                 <div className="flex items-center justify-between gap-3 text-xs font-semibold"><span>{label}</span><span className={tone === 'green' ? 'text-emerald-400' : isDark ? 'text-[#A8CCD8]' : 'text-[#4D788A]'}>{percent}%</span></div>
                 <div className={`mt-2 h-2 rounded-full ${isDark ? 'bg-[#1A3641]' : 'bg-[#E7EFF2]'}`}><div className={`h-full rounded-full ${tone === 'amber' ? 'bg-amber-400' : tone === 'green' ? 'bg-emerald-400' : 'bg-[#76AFC7]'}`} style={{ width: `${percent}%` }} /></div>

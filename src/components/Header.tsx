@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Bell, 
   Search, 
@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { DashboardSection } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
+import { profileService, UserProfileData } from '../services/profileService';
+import { DataState } from '../types/dataEnvelope';
 
 interface HeaderProps {
   activeSection: DashboardSection;
@@ -36,6 +38,18 @@ export const Header: React.FC<HeaderProps> = ({
   const [lang, setLang] = useState('UK');
   const [languageOpen, setLanguageOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileData, setProfileData] = useState<UserProfileData | null>(null);
+  const [profileState, setProfileState] = useState<DataState>('LOADING');
+
+  useEffect(() => {
+    let active = true;
+    profileService.getProfile().then((response) => {
+      if (!active) return;
+      setProfileState(response.state);
+      setProfileData(response.data);
+    });
+    return () => { active = false; };
+  }, []);
   
   const isDark = theme === 'dark';
   const searchItems: Array<{ label: string; section: DashboardSection }> = [
@@ -277,31 +291,36 @@ export const Header: React.FC<HeaderProps> = ({
           )}
           </div>
 
-          {/* Profile Capsule (Matches screenshots: Photo + Олександр + Gold Partner badge) */}
+          {/* Profile capsule: identity and rank come from auth/profile API, never a static production fallback. */}
           <button
             type="button"
             onClick={() => handleNavClick('PROFILE')}
-            aria-label="Відкрити профіль Олександра"
+            aria-label={profileData ? `Відкрити профіль ${profileData.firstName}` : 'Відкрити профіль'}
             className={`hidden min-[1120px]:flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full cursor-pointer border transition-all ${
               isDark 
                 ? 'bg-[#182335] border-[#24344D] hover:bg-[#202E46] text-white' 
                 : 'bg-white/90 border-[#CBD6E2] hover:bg-white text-[#0F172A] shadow-sm'
             }`}
           >
-            <div className="w-7 h-7 rounded-full overflow-hidden bg-blue-500 flex-shrink-0 border border-amber-400/60">
-              <img 
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" 
-                alt="Олександр"
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
+            <div className={`w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border ${profileState === 'LIVE' ? 'bg-blue-500 border-amber-400/60' : profileState === 'DEMO' ? 'bg-purple-500/30 border-purple-400/60' : 'bg-slate-500/30 border-slate-400/60'}`}>
+              {profileData?.avatarUrl ? (
+                <img
+                  src={profileData.avatarUrl}
+                  alt={profileData.firstName || 'Профіль'}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="w-full h-full flex items-center justify-center text-[10px] font-black text-white">—</span>
+              )}
             </div>
             <div className="flex flex-col text-left">
               <span className={`text-[11.5px] font-bold leading-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                Олександр
+                {profileState === 'NOT_CONNECTED' ? 'Профіль недоступний' : profileData?.firstName || 'Завантаження…'}
               </span>
-              <span className="text-[9px] font-extrabold text-amber-500 flex items-center gap-0.5 leading-none mt-0.5">
-                <Star className="w-2.5 h-2.5 fill-amber-500" /> Gold Partner
+              <span className={`text-[9px] font-extrabold flex items-center gap-0.5 leading-none mt-0.5 ${profileState === 'LIVE' ? 'text-amber-500' : profileState === 'DEMO' ? 'text-purple-400' : 'text-slate-400'}`}>
+                {profileState === 'LIVE' && <Star className="w-2.5 h-2.5 fill-amber-500" />}
+                {profileState === 'DEMO' ? `${profileData?.currentRank.name || 'Demo'} · DEMO` : profileState === 'NOT_CONNECTED' ? 'AUTH API OFFLINE' : profileData?.currentRank.name || 'Завантаження…'}
               </span>
             </div>
             <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
