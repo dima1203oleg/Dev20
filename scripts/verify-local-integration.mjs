@@ -50,15 +50,18 @@ const run = async () => {
 
   const network = await requestJson('/api/partner/network');
   requireCheck(network.response.ok, `/api/partner/network returned ${network.response.status}`);
+  requireCheck(typeof network.body?.status === 'string', 'Partner network must expose explicit status');
   requireCheck(typeof network.body?.l1 === 'object', 'Partner network must expose l1 aggregate');
   requireCheck(typeof network.body?.l2 === 'object', 'Partner network must expose l2 aggregate');
 
   const ledger = await requestJson('/api/partner/ledger');
   requireCheck(ledger.response.ok, `/api/partner/ledger returned ${ledger.response.status}`);
+  requireCheck(typeof ledger.body?.status === 'string', 'Partner ledger must expose explicit status');
   requireCheck(Array.isArray(ledger.body?.entries), 'Partner ledger must expose entries[]');
 
   const payouts = await requestJson('/api/partner/payouts');
   requireCheck(payouts.response.ok, `/api/partner/payouts returned ${payouts.response.status}`);
+  requireCheck(typeof payouts.body?.status === 'string', 'Partner payouts must expose explicit status');
   requireCheck(Array.isArray(payouts.body?.payouts), 'Partner payouts must expose payouts[]');
 
   const ready = await requestJson('/api/ready');
