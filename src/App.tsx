@@ -111,6 +111,7 @@ export default function App() {
   const [threatPayload, setThreatPayload] = useState<LiveThreatsPayload | null>(null);
   const [sceneTrajectories, setSceneTrajectories] = useState<typeof INITIAL_TRAJECTORIES>([]);
   const previousThreatStateRef = useRef<DataState>('LOADING');
+  const [threatRefreshNonce, setThreatRefreshNonce] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -146,7 +147,13 @@ export default function App() {
       mounted = false;
       window.clearInterval(refreshTimer);
     };
-  }, [settings.myRegion, isDemoMode]);
+  }, [settings.myRegion, isDemoMode, threatRefreshNonce]);
+
+  const handleRefreshThreatData = () => {
+    if (isDemoMode) return;
+    setThreatDataState('LOADING');
+    setThreatRefreshNonce((current) => current + 1);
+  };
 
   // Sync to LocalStorage
   useEffect(() => {
@@ -384,6 +391,7 @@ export default function App() {
                 selectedRegion={selectedRegion}
                 onSelectRegion={(reg) => setSelectedRegion(reg)}
                 threatModel={threatSceneModel}
+                onRefreshData={handleRefreshThreatData}
                 onNavigateToShelters={() => setIsSheltersModalOpen(true)}
                 theme={settings.theme || 'light'}
               />

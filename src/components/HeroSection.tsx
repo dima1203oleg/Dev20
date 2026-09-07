@@ -24,6 +24,7 @@ interface HeroSectionProps {
   onSelectRegion?: (region: RegionData | null) => void;
   trajectories?: ThreatTrajectory[];
   threatModel?: ThreatSceneModel;
+  onRefreshData?: () => void;
   onNavigateToShelters?: () => void;
   theme?: 'light' | 'dark';
 }
@@ -34,6 +35,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onSelectRegion,
   trajectories = [],
   threatModel,
+  onRefreshData,
   onNavigateToShelters,
   theme = 'light'
 }) => {
@@ -283,6 +285,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   }`}>
                     <span className="block">ДИЗАЙН-ПРЕВ’Ю</span>
                     <span className="mt-1 block text-[9px] font-bold tracking-normal opacity-80">{dataModeMessage}</span>
+                    {onRefreshData && (
+                      <button
+                        type="button"
+                        onClick={onRefreshData}
+                        className={`mt-2 rounded-lg border px-2.5 py-1.5 text-[9px] font-black tracking-normal transition-colors ${
+                          isDark
+                            ? 'border-amber-300/40 bg-amber-300/10 text-amber-100 hover:bg-amber-300/20'
+                            : 'border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                        }`}
+                      >
+                        Повторити підключення
+                      </button>
+                    )}
                   </div>
                 )}
               </>
