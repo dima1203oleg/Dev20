@@ -42,17 +42,23 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
     };
   }, []);
 
-  const financeBalanceLabel = financeState === 'LIVE'
+  const financeBalanceLabel = financeState === 'LOADING'
+    ? 'Завантаження…'
+    : financeState === 'LIVE'
     ? `₴ ${financeSummary.totalBalance.toLocaleString('uk-UA')}`
     : financeState === 'NOT_CONNECTED'
       ? 'Дані недоступні'
       : `₴ ${financeSummary.totalBalance.toLocaleString('uk-UA')} · DEMO`;
-  const affiliateRankLabel = networkState === 'LIVE'
+  const affiliateRankLabel = networkState === 'LOADING'
+    ? 'Завантаження…'
+    : networkState === 'LIVE'
     ? networkSummary?.currentTier.badgeLabel || 'Ранг недоступний'
     : networkState === 'NOT_CONNECTED'
       ? 'Ранг недоступний'
       : `${networkSummary?.currentTier.badgeLabel || 'Demo Partner'} · DEMO`;
-  const affiliateStatusLabel = networkState === 'LIVE'
+  const affiliateStatusLabel = networkState === 'LOADING'
+    ? 'Перевірка статусу…'
+    : networkState === 'LIVE'
     ? 'Статус підтверджено'
     : networkState === 'NOT_CONNECTED'
       ? 'API не підключено'
@@ -74,7 +80,7 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
       icon: <Wallet className="w-5 h-5 text-blue-500" />,
       features: [
         [financeBalanceLabel, 'Виплати/доступність'],
-        [financeState === 'LIVE' ? 'Дохід' : financeState === 'NOT_CONNECTED' ? 'API не підключено' : 'Дохід · DEMO', 'Історія']
+        [financeState === 'LOADING' ? 'Завантаження…' : financeState === 'LIVE' ? 'Дохід' : financeState === 'NOT_CONNECTED' ? 'API не підключено' : 'Дохід · DEMO', 'Історія']
       ]
     },
     {
@@ -83,7 +89,7 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
       icon: <BarChart2 className="w-5 h-5 text-blue-500" />,
       features: [
         ['Конверсії', 'Активність'],
-        ['Рост мережі', 'Ефективність']
+        ['Зростання мережі', 'Ефективність']
       ]
     },
     {
