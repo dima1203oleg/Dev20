@@ -65,7 +65,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   const [activityState, setActivityState] = useState<DataState>('LOADING');
   const [branchState, setBranchState] = useState<DataState>('LOADING');
 
-  const summary: NetworkSummary = networkSummary || {
+  const demoSummary: NetworkSummary = {
     totalNetworkSize: 2847,
     activeL1Count: 247,
     activeL2Count: 2600,
@@ -114,8 +114,48 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
     referralUrl: 'https://siren.ua/r/OLEKSANDR25',
     trafficSources: []
   };
-  const referralCode = summary.referralCode || 'OLEKSANDR25';
-  const referralUrl = summary.referralUrl || 'https://siren.ua/r/OLEKSANDR25';
+  const unavailableSummary: NetworkSummary = {
+    ...demoSummary,
+    totalNetworkSize: 0,
+    activeL1Count: 0,
+    activeL2Count: 0,
+    new30DaysCount: 0,
+    conversionRatePercent: 0,
+    monthlyNetworkIncomeUah: 0,
+    qualifiedL1: 0,
+    currentTier: {
+      ...demoSummary.currentTier,
+      id: 'STARTER',
+      name: 'Starter',
+      minL1: 0,
+      maxL1: 0,
+      l1Percent: 5,
+      l2Percent: 5,
+      l1Rate: 0.05,
+      l2Rate: 0.05,
+      badgeLabel: 'Starter Partner',
+      description: 'Реальні дані про ранг будуть доступні після підключення partner API.',
+    },
+    nextTier: demoSummary.nextTier,
+    remainingToNextRank: 0,
+    rankProgressPercent: 0,
+    ambassador: {
+      status: 'NOT_ELIGIBLE',
+      criteria: {
+        minL1: 500,
+        currentL1: 0,
+        communityVerified: false,
+        educationalContentCreated: false,
+      },
+    },
+    referralCode: '',
+    referralUrl: '',
+    trafficSources: [],
+  };
+  const summary: NetworkSummary = networkSummary || (dataState === 'NOT_CONNECTED' ? unavailableSummary : demoSummary);
+  const referralCode = summary.referralCode || (dataState === 'NOT_CONNECTED' ? '—' : 'OLEKSANDR25');
+  const referralUrl = summary.referralUrl || (dataState === 'NOT_CONNECTED' ? '' : 'https://siren.ua/r/OLEKSANDR25');
+  const partnerActionsAvailable = Boolean(referralUrl);
   const activePartnerTotal = summary.activeL1Count + summary.activeL2Count;
   const activeSharePercent = summary.totalNetworkSize > 0
     ? Math.round((activePartnerTotal / summary.totalNetworkSize) * 100)
@@ -151,6 +191,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   }, []);
 
   const handleCopyLink = () => {
+    if (!referralUrl) return;
     navigator.clipboard.writeText(referralUrl);
     setCopiedLink(true);
     playWebAudioSound('click');
@@ -340,7 +381,8 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 setShowInviteModal(true);
                 playWebAudioSound('click');
               }}
-              className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs shadow-google-sm flex items-center gap-2 transition-all cursor-pointer"
+              disabled={!partnerActionsAvailable}
+              className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs shadow-google-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span>Запросити партнерів</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -349,11 +391,12 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               <div className={`flex items-center rounded-xl border p-0.5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
               <button
                 onClick={handleCopyLink}
+                disabled={!partnerActionsAvailable}
                 className={`px-3 py-2 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
                   isDark 
                     ? 'hover:bg-slate-800 text-slate-300' 
                     : 'hover:bg-slate-50 text-slate-700'
-                }`}
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Скопіювати посилання"
               >
                 {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -367,11 +410,12 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                   setShowQRModal(true);
                   playWebAudioSound('click');
                 }}
+                disabled={!partnerActionsAvailable}
                 className={`px-3 py-2 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
                   isDark 
                     ? 'hover:bg-slate-800 text-slate-300' 
                     : 'hover:bg-slate-50 text-slate-700'
-                }`}
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
                 title="Показати QR-код"
               >
                 <QrCode className="w-3.5 h-3.5 text-[#2563EB]" />

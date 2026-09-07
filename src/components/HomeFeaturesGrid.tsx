@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { DashboardSection } from '../types';
-import { financialService, DEFAULT_FINANCIAL_SUMMARY } from '../services/financialService';
+import { financialService, DEFAULT_FINANCIAL_SUMMARY, UNAVAILABLE_FINANCIAL_SUMMARY } from '../services/financialService';
 import { DataState } from '../types/dataEnvelope';
 
 interface HomeFeaturesGridProps {
@@ -30,6 +30,7 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
       if (!mounted) return;
       setFinanceState(response.state);
       if (response.data) setFinanceSummary(response.data);
+      else if (response.state === 'NOT_CONNECTED') setFinanceSummary(UNAVAILABLE_FINANCIAL_SUMMARY);
     });
     return () => {
       mounted = false;
@@ -38,7 +39,9 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
 
   const financeBalanceLabel = financeState === 'LIVE'
     ? `₴ ${financeSummary.totalBalance.toLocaleString('uk-UA')}`
-    : `₴ ${financeSummary.totalBalance.toLocaleString('uk-UA')} · DEMO`;
+    : financeState === 'NOT_CONNECTED'
+      ? 'Дані недоступні'
+      : `₴ ${financeSummary.totalBalance.toLocaleString('uk-UA')} · DEMO`;
 
   const cards = [
     {
@@ -56,7 +59,7 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
       icon: <Wallet className="w-5 h-5 text-blue-500" />,
       features: [
         [financeBalanceLabel, 'Виплати/доступність'],
-        [financeState === 'LIVE' ? 'Дохід' : 'Дохід · DEMO', 'Історія']
+        [financeState === 'LIVE' ? 'Дохід' : financeState === 'NOT_CONNECTED' ? 'API не підключено' : 'Дохід · DEMO', 'Історія']
       ]
     },
     {

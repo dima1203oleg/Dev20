@@ -35,6 +35,26 @@ export const DEFAULT_FINANCIAL_SUMMARY: PartnerFinancialSummary = {
   status: 'DEMO',
 };
 
+export const UNAVAILABLE_FINANCIAL_SUMMARY: PartnerFinancialSummary = {
+  ...DEFAULT_FINANCIAL_SUMMARY,
+  totalBalance: 0,
+  availableBalance: 0,
+  pendingBalance: 0,
+  heldBalance: 0,
+  earnedThisMonth: 0,
+  earnedLastMonth: 0,
+  lifetimeEarnings: 0,
+  lifetimePaid: 0,
+  minimumPayout: 0,
+  amountUntilMinimum: 0,
+  l1Earnings: 0,
+  l2Earnings: 0,
+  sparkline: [],
+  qualifiedL1: 0,
+  updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+  status: 'NOT_CONNECTED',
+};
+
 const INITIAL_PAYOUT_METHODS: PayoutMethodConfig[] = [
   {
     id: 'pm-1',
@@ -196,7 +216,17 @@ class FinancialService {
         };
       }
     } catch {
-      // Offline fallback
+      if (runtimeConfig.apiBaseUrl) {
+        return {
+          data: null,
+          state: 'NOT_CONNECTED',
+          source: 'SIREN_UA_FINANCE_LEDGER',
+          updatedAt: nowTime,
+          isRealData: false,
+          error: 'Financial API is not connected or returned an invalid payload',
+        };
+      }
+      // Local development fallback remains explicitly DEMO.
     }
 
     // Check cached entry

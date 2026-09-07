@@ -28,7 +28,8 @@ import { playWebAudioSound } from '../utils/sirenAudio';
 import { 
   financialService, 
   mapSummaryToViewModel,
-  DEFAULT_FINANCIAL_SUMMARY 
+  DEFAULT_FINANCIAL_SUMMARY,
+  UNAVAILABLE_FINANCIAL_SUMMARY,
 } from '../services/financialService';
 import { 
   PartnerFinancialSummary, 
@@ -85,6 +86,12 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
       if (res.data) {
         setSummary(res.data);
         setWithdrawAmount(String(res.data.availableBalance));
+      } else if (res.state === 'NOT_CONNECTED') {
+        setSummary(UNAVAILABLE_FINANCIAL_SUMMARY);
+        setWithdrawAmount('0');
+        setLedger([]);
+        setPayoutMethods([]);
+        setSelectedMethodId('');
       }
     });
     setLedger(financialService.getLedgerTransactions());
@@ -222,7 +229,9 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
           <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             {dataState === 'LIVE'
               ? 'Заробляй, розвивай мережу та підтримуй важливу справу. Прозора статистика, автоматичні виплати, повний контроль.'
-              : 'Демонстраційний фінансовий кабінет: структура доходу, ledger і payout flow готові до підключення production billing API.'}
+              : dataState === 'NOT_CONNECTED'
+                ? 'Актуальні фінансові дані тимчасово недоступні. Баланс, ledger і payout flow не показуються як live.'
+                : 'Демонстраційний фінансовий кабінет: структура доходу, ledger і payout flow готові до підключення production billing API.'}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -584,7 +593,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-bold">Вивести кошти</h3>
-                <button onClick={() => setShowWithdrawModal(true)} aria-label="Відкрити виведення коштів" className="w-7 h-7 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 flex items-center justify-center cursor-pointer">
+                <button onClick={() => setShowWithdrawModal(true)} disabled={dataState === 'NOT_CONNECTED'} aria-label="Відкрити виведення коштів" className="w-7 h-7 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -599,9 +608,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   setShowWithdrawModal(true);
                   playWebAudioSound('click');
                 }}
-                className="w-full mt-4 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                disabled={dataState === 'NOT_CONNECTED'}
+                className="w-full mt-4 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>Вивести кошти</span>
+                <span>{dataState === 'NOT_CONNECTED' ? 'Виведення недоступне' : 'Вивести кошти'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>

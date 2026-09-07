@@ -8,6 +8,7 @@
  */
 
 import { DataEnvelope, DataState } from '../types/dataEnvelope';
+import { runtimeConfig } from '../config/runtime';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
 import { getJson, isJsonObject } from './apiClient';
 
@@ -474,6 +475,21 @@ class NetworkService {
   private monthlyEarnings = 12460;
   private referralCode = 'OLEKSANDR25';
 
+  private now(): string {
+    return new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  private notConnected<T>(source: string): DataEnvelope<T> {
+    return {
+      data: null,
+      state: 'NOT_CONNECTED',
+      source,
+      updatedAt: this.now(),
+      isRealData: false,
+      error: 'Partner API is not connected or returned an invalid payload',
+    };
+  }
+
   private buildSummary(overrides: Partial<NetworkSummary> = {}): NetworkSummary {
     const qualifiedL1 = Number.isFinite(overrides.qualifiedL1) ? Number(overrides.qualifiedL1) : this.qualifiedL1;
     const currentTier = calculateRankByL1(qualifiedL1);
@@ -517,7 +533,7 @@ class NetworkService {
    * Returns unified summary data envelope
    */
   public async getNetworkSummary(): Promise<DataEnvelope<NetworkSummary>> {
-    const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+    const updatedAt = this.now();
 
     try {
       const remote = await getJson<unknown>('/api/v1/partner/summary', 2000);
@@ -546,6 +562,17 @@ class NetworkService {
         qualifiedL1: remote.qualifiedL1 as number,
         referralCode: typeof remote.referralCode === 'string' ? remote.referralCode : undefined,
         referralUrl: typeof remote.referralUrl === 'string' ? remote.referralUrl : undefined,
+        trafficSources: Array.isArray(remote.trafficSources)
+          ? remote.trafficSources.filter((source): source is NetworkSummary['trafficSources'][number] => (
+            isJsonObject(source)
+            && typeof source.name === 'string'
+            && typeof source.percent === 'number'
+            && Number.isFinite(source.percent)
+            && typeof source.count === 'number'
+            && Number.isFinite(source.count)
+            && typeof source.color === 'string'
+          ))
+          : [],
       });
 
       return {
@@ -556,7 +583,8 @@ class NetworkService {
         isRealData: true,
       };
     } catch {
-      // The UI remains useful, but explicitly labels the local dataset as DEMO.
+      if (runtimeConfig.apiBaseUrl) return this.notConnected<NetworkSummary>('SIREN_UA_PARTNER_SUMMARY');
+      // Local development remains useful, but explicitly labels the local dataset as DEMO.
     }
 
     const summary = this.buildSummary();
@@ -574,6 +602,24 @@ class NetworkService {
    * Returns graph nodes and relational edges
    */
   public async getNetworkGraph(): Promise<DataEnvelope<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>> {
+    if (runtimeConfig.apiBaseUrl) {
+      try {
+        const remote = await getJson<unknown>('/api/v1/partner/network', 2500);
+        if (!isJsonObject(remote) || !Array.isArray(remote.nodes) || !Array.isArray(remote.edges)) {
+          throw new Error('Partner network has invalid shape');
+        }
+        return {
+          data: { nodes: remote.nodes as NetworkNode[], edges: remote.edges as NetworkEdge[] },
+          state: 'LIVE',
+          source: 'SIREN_UA_PARTNER_NETWORK',
+          updatedAt: this.now(),
+          isRealData: true,
+        };
+      } catch {
+        return this.notConnected<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>('SIREN_UA_PARTNER_NETWORK');
+      }
+    }
+
     return {
       data: {
         nodes: AUTHORITATIVE_PARTNER_NODES,
@@ -581,7 +627,7 @@ class NetworkService {
       },
       state: 'DEMO',
       source: 'LOCAL_DEMO_NETWORK_DATA',
-      updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+      updatedAt: this.now(),
       isRealData: false,
     };
   }
@@ -590,6 +636,23 @@ class NetworkService {
    * Returns list of partners filtered by level and search
    */
   public async getNetworkPartners(levelFilter: 'ALL' | 'L1' | 'L2' = 'ALL', search: string = ''): Promise<DataEnvelope<NetworkNode[]>> {
+    if (runtimeConfig.apiBaseUrl) {
+      try {
+        const query = new URLSearchParams({ level: levelFilter, search: search.trim() });
+        const remote = await getJson<unknown>(`/api/v1/partner/network/partners?${query.toString()}`, 2500);
+        if (!Array.isArray(remote)) throw new Error('Partner list has invalid shape');
+        return {
+          data: remote as NetworkNode[],
+          state: 'LIVE',
+          source: 'SIREN_UA_PARTNER_NETWORK_PARTNERS',
+          updatedAt: this.now(),
+          isRealData: true,
+        };
+      } catch {
+        return this.notConnected<NetworkNode[]>('SIREN_UA_PARTNER_NETWORK_PARTNERS');
+      }
+    }
+
     let filtered = AUTHORITATIVE_PARTNER_NODES.filter(n => n.level !== 'ME');
     if (levelFilter !== 'ALL') {
       filtered = filtered.filter(n => n.level === levelFilter);
@@ -603,7 +666,7 @@ class NetworkService {
       data: filtered,
       state: 'DEMO',
       source: 'LOCAL_DEMO_NETWORK_DATA',
-      updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+      updatedAt: this.now(),
       isRealData: false,
     };
   }
@@ -612,11 +675,27 @@ class NetworkService {
    * Returns real-time activity stream
    */
   public async getNetworkActivity(): Promise<DataEnvelope<NetworkActivity[]>> {
+    if (runtimeConfig.apiBaseUrl) {
+      try {
+        const remote = await getJson<unknown>('/api/v1/partner/activity', 2500);
+        if (!Array.isArray(remote)) throw new Error('Partner activity has invalid shape');
+        return {
+          data: remote as NetworkActivity[],
+          state: 'LIVE',
+          source: 'SIREN_UA_PARTNER_ACTIVITY',
+          updatedAt: this.now(),
+          isRealData: true,
+        };
+      } catch {
+        return this.notConnected<NetworkActivity[]>('SIREN_UA_PARTNER_ACTIVITY');
+      }
+    }
+
     return {
       data: AUTHORITATIVE_ACTIVITIES,
       state: 'DEMO',
       source: 'LOCAL_DEMO_NETWORK_DATA',
-      updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+      updatedAt: this.now(),
       isRealData: false,
     };
   }
@@ -625,11 +704,27 @@ class NetworkService {
    * Returns branch breakdown
    */
   public async getBranchStats(): Promise<DataEnvelope<NetworkBranchStats[]>> {
+    if (runtimeConfig.apiBaseUrl) {
+      try {
+        const remote = await getJson<unknown>('/api/v1/partner/branches', 2500);
+        if (!Array.isArray(remote)) throw new Error('Partner branches have invalid shape');
+        return {
+          data: remote as NetworkBranchStats[],
+          state: 'LIVE',
+          source: 'SIREN_UA_PARTNER_BRANCHES',
+          updatedAt: this.now(),
+          isRealData: true,
+        };
+      } catch {
+        return this.notConnected<NetworkBranchStats[]>('SIREN_UA_PARTNER_BRANCHES');
+      }
+    }
+
     return {
       data: AUTHORITATIVE_BRANCHES,
       state: 'DEMO',
       source: 'LOCAL_DEMO_NETWORK_DATA',
-      updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+      updatedAt: this.now(),
       isRealData: false,
     };
   }
