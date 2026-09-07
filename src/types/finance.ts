@@ -71,6 +71,11 @@ export interface PartnerFinancialSummary {
   lifetimeEarnings: Money;
   lifetimePaid: Money;
   minimumPayout: Money;
+  minimumPayoutBaseCurrency?: string;
+  minimumPayoutBaseAmount?: Money;
+  minimumPayoutResolved?: boolean;
+  payoutEligibilityStatus?: string;
+  payoutProviderStatus?: string;
   amountUntilMinimum?: Money;
   l1Earnings?: Money;
   l2Earnings?: Money;

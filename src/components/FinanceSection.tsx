@@ -109,6 +109,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
   }, []);
 
   const selectedMethod = payoutMethods.find(m => m.id === selectedMethodId) || payoutMethods[0];
+  const minimumPayoutResolved = summary.minimumPayoutResolved !== false;
+  const minimumPayoutLabel = minimumPayoutResolved
+    ? `₴ ${summary.minimumPayout.toLocaleString('uk-UA')}`
+    : `еквівалент ${summary.minimumPayoutBaseCurrency || 'USD'} ${summary.minimumPayoutBaseAmount ?? 10} · курс не підключено`;
   const levelOneIncome = summary.l1Earnings ?? 0;
   const levelTwoIncome = summary.l2Earnings ?? 0;
   const bonusIncome = Math.max(0, summary.totalBalance - levelOneIncome - levelTwoIncome);
@@ -127,6 +131,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
     e.preventDefault();
     const amount = Number(withdrawAmount);
     if (isNaN(amount) || amount <= 0) return;
+    if (!minimumPayoutResolved) {
+      setWithdrawError(`Payout недоступний: ${minimumPayoutLabel}. Потрібен verified FX source.`);
+      return;
+    }
     if (!selectedMethod) {
       setWithdrawError('Спосіб виплати не підключений. Додайте verified payout method після підключення provider API.');
       return;
@@ -906,7 +914,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
 
             {dataState !== 'LIVE' && (
               <div className={`mb-4 rounded-2xl border px-3 py-2 text-[11px] ${isDark ? 'border-purple-900/50 bg-purple-950/30 text-purple-200' : 'border-purple-200 bg-purple-50 text-purple-700'}`}>
-                DEMO: payout provider не підключений. Нижче можна пройти локальний сценарій без реального переказу коштів.
+                DEMO: payout provider не підключений. Реальний переказ не виконується; доступність payout залежить від verified FX, KYC та provider.
               </div>
             )}
 
@@ -927,12 +935,12 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
                     max={summary.availableBalance}
-                    min={summary.minimumPayout}
+                    min={summary.minimumPayout > 0 ? summary.minimumPayout : undefined}
                     className={`w-full px-4 py-2.5 rounded-2xl border text-base font-bold outline-none ${
                       isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   />
-                  <div className="text-[10px] text-slate-400 mt-1">Мінімальна сума: ₴ {summary.minimumPayout.toLocaleString('uk-UA')}</div>
+                  <div className="text-[10px] text-slate-400 mt-1">Мінімальна сума: {minimumPayoutLabel}</div>
                 </div>
 
                 <div>
@@ -950,9 +958,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-2"
+                  disabled={isProcessing || (dataState === 'DEMO' && payoutMethods.length === 0) || !minimumPayoutResolved}
+                  className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-2"
                 >
-                  <span>{dataState === 'LIVE' ? 'Підтвердити' : 'Запустити DEMO'} виплату ₴ {withdrawAmount}</span>
+                  <span>{!minimumPayoutResolved ? 'Payout недоступний' : dataState === 'LIVE' ? 'Підтвердити' : 'Запустити DEMO'}{minimumPayoutResolved ? ` виплату ₴ ${withdrawAmount}` : ''}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </form>

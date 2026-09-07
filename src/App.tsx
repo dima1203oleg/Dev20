@@ -28,6 +28,7 @@ import {
 
 const AnalyticsSection = React.lazy(() => import('./components/AnalyticsSection').then((module) => ({ default: module.AnalyticsSection })));
 const FinanceSection = React.lazy(() => import('./components/FinanceSection').then((module) => ({ default: module.FinanceSection })));
+const PricingSection = React.lazy(() => import('./components/PricingSection').then((module) => ({ default: module.PricingSection })));
 const ProfileSection = React.lazy(() => import('./components/ProfileSection').then((module) => ({ default: module.ProfileSection })));
 const AffiliateProgram = React.lazy(() => import('./components/AffiliateProgram').then((module) => ({ default: module.AffiliateProgram })));
 const RegionInspectorModal = React.lazy(() => import('./components/RegionInspectorModal').then((module) => ({ default: module.RegionInspectorModal })));
@@ -426,6 +427,15 @@ export default function App() {
             </div>
           )}
 
+          {/* SECTION 3b: PRICING (public Premium offer) */}
+          {activeSection === 'PRICING' && (
+            <PricingSection
+              theme={settings.theme || 'light'}
+              onStartOnboarding={() => setShowOnboarding(true)}
+              onOpenHome={() => setActiveSection('HOME')}
+            />
+          )}
+
           {/* =========================================================================
               SECTION 4: PROFILE (Профіль)
              ========================================================================= */}
@@ -537,6 +547,7 @@ export default function App() {
       {showOnboarding && (
         <OnboardingFlow 
           onComplete={handleCompleteOnboarding}
+          theme={settings.theme || 'light'}
         />
       )}
       </Suspense>

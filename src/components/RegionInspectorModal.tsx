@@ -64,7 +64,7 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
   const Icon = badge.icon;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-labelledby="region-inspector-title">
       <div 
         className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-5 sm:p-6"
         onClick={(e) => e.stopPropagation()}
@@ -73,7 +73,7 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
         <div className="flex items-start justify-between border-b border-slate-800 pb-4 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-100">
+              <h2 id="region-inspector-title" className="text-xl sm:text-2xl font-black text-slate-100">
                 {region.name}
               </h2>
               {isMyRegion && (
@@ -92,6 +92,7 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
 
           <button
             onClick={onClose}
+            aria-label="Закрити інформацію про область"
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />

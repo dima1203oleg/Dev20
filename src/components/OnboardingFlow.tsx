@@ -40,7 +40,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, them
     },
     {
       title: 'Точна Карта Загроз',
-      description: 'Головна сторінка показує інтерактивну 3D карту з реальними векторами загроз та статусом регіонів.',
+      description: 'Головна сторінка показує інтерактивну 3D карту та статус регіонів. Реальні вектори з’являються лише після підключення verified джерела, а demo-режим завжди позначений.',
       icon: <Map className="w-8 h-8 text-emerald-500" />
     },
     {
@@ -50,7 +50,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, them
     },
     {
       title: 'Фінанси та Виплати',
-      description: 'Отримуйте комісію за підписки ваших партнерів. Усі фінанси, баланс та виплати зібрані в окремому захищеному розділі.',
+      description: 'У захищеному розділі можна переглядати баланс, ledger та payout flow. Реальні комісії й виплати з’являються лише після підключення billing/payout provider.',
       icon: <Wallet className="w-8 h-8 text-amber-500" />
     },
     {
@@ -65,7 +65,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, them
   return (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${
       isVisible ? 'opacity-100' : 'opacity-0'
-    }`}>
+    }`} role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={handleComplete} />
 
@@ -79,6 +79,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, them
         {/* Close Button */}
         <button 
           onClick={handleComplete}
+          aria-label="Закрити onboarding"
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
           <X className="w-4 h-4 text-slate-500" />
@@ -105,7 +106,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, them
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5 bg-slate-50 dark:bg-slate-800">
             {steps[currentStep].icon}
           </div>
-          <h2 className="text-xl font-bold mb-3">{steps[currentStep].title}</h2>
+          <h2 id="onboarding-title" className="text-xl font-bold mb-3">{steps[currentStep].title}</h2>
           <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             {steps[currentStep].description}
           </p>

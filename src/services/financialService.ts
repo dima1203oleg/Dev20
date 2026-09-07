@@ -26,6 +26,11 @@ export const DEFAULT_FINANCIAL_SUMMARY: PartnerFinancialSummary = {
   lifetimeEarnings: 18560,
   lifetimePaid: 14330,
   minimumPayout: 415, // ~10 USD
+  minimumPayoutBaseCurrency: 'USD',
+  minimumPayoutBaseAmount: 10,
+  minimumPayoutResolved: true,
+  payoutEligibilityStatus: 'CONFIGURED',
+  payoutProviderStatus: 'DEMO',
   amountUntilMinimum: 0,
   l1Earnings: 1940,
   l2Earnings: 900,
@@ -46,6 +51,11 @@ export const UNAVAILABLE_FINANCIAL_SUMMARY: PartnerFinancialSummary = {
   lifetimeEarnings: 0,
   lifetimePaid: 0,
   minimumPayout: 0,
+  minimumPayoutBaseCurrency: 'USD',
+  minimumPayoutBaseAmount: 10,
+  minimumPayoutResolved: false,
+  payoutEligibilityStatus: 'NOT_CONNECTED',
+  payoutProviderStatus: 'NOT_CONNECTED',
   amountUntilMinimum: 0,
   l1Earnings: 0,
   l2Earnings: 0,
@@ -201,6 +211,15 @@ class FinancialService {
         '/api/partner/dashboard',
         '/api/partner/finance/summary',
       ], 2500);
+      const payoutEligibility = isJsonObject(remote) && isJsonObject(remote.payoutEligibility)
+        ? remote.payoutEligibility
+        : null;
+      const minimumPayout = payoutEligibility && isJsonObject(payoutEligibility.minimumPayout)
+        ? payoutEligibility.minimumPayout
+        : null;
+      const minimumPayoutMinor = minimumPayout && typeof minimumPayout.amountMinor === 'number'
+        ? minimumPayout.amountMinor
+        : null;
       const data = isJsonObject(remote) && isJsonObject(remote.wallet)
         ? {
             totalBalance: (Number(remote.wallet.pendingMinor) + Number(remote.wallet.heldMinor) + Number(remote.wallet.availableMinor)) / 100,
@@ -210,9 +229,12 @@ class FinancialService {
             lifetimeEarnings: Number(remote.wallet.lifetimeEarnedMinor) / 100,
             lifetimePaid: Number(remote.wallet.paidTotalMinor) / 100,
             qualifiedL1: isJsonObject(remote.partner) ? Number(remote.partner.activeL1PaidCount) : undefined,
-            minimumPayout: isJsonObject(remote.payoutEligibility) && isJsonObject(remote.payoutEligibility.minimumPayout)
-              ? Number(remote.payoutEligibility.minimumPayout.amountMinor ?? 0) / 100
-              : 0,
+            minimumPayout: minimumPayoutMinor === null ? 0 : minimumPayoutMinor / 100,
+            minimumPayoutBaseCurrency: minimumPayout && typeof minimumPayout.baseCurrency === 'string' ? minimumPayout.baseCurrency : 'USD',
+            minimumPayoutBaseAmount: minimumPayout && typeof minimumPayout.baseAmount === 'string' ? Number(minimumPayout.baseAmount) : 10,
+            minimumPayoutResolved: minimumPayoutMinor !== null,
+            payoutEligibilityStatus: payoutEligibility && typeof payoutEligibility.status === 'string' ? payoutEligibility.status : 'UNKNOWN',
+            payoutProviderStatus: isJsonObject(remote) && typeof remote.payoutProviderStatus === 'string' ? remote.payoutProviderStatus : 'UNKNOWN',
           }
         : remote;
 
@@ -396,6 +418,10 @@ class FinancialService {
     onProgress?: (step: string, status: PayoutLifecycleStatus, stepIndex: number) => void
   ): Promise<{ success: boolean; transaction?: PayoutTransaction; error?: string }> {
     const selectedMethod = this.payoutMethods.find(m => m.id === methodId) || this.payoutMethods[0];
+
+    if (!selectedMethod) {
+      return { success: false, error: 'Спосіб виплати не підключений' };
+    }
     
     if (amount > this.summary.availableBalance) {
       return { success: false, error: 'Сума перевищує доступний до виведення баланс' };

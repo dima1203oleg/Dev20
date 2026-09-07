@@ -56,6 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
     { label: 'Головна карта', section: 'HOME' },
     { label: 'Мережа та реферали', section: 'NETWORK' },
     { label: 'Фінанси та виплати', section: 'FINANCE' },
+    { label: 'Тарифи Premium', section: 'PRICING' },
     { label: 'Аналітика', section: 'ANALYTICS' },
     { label: 'Партнерська програма', section: 'AFFILIATE' },
     { label: 'Про SIREN UA', section: 'ABOUT' },
@@ -81,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'home', label: 'Головна', section: 'HOME' as DashboardSection },
     { id: 'features', label: 'Можливості', section: 'NETWORK' as DashboardSection },
     { id: 'how', label: 'Як це працює', section: 'HOME' as DashboardSection },
-    { id: 'pricing', label: 'Тарифи', section: 'FINANCE' as DashboardSection },
+    { id: 'pricing', label: 'Тарифи', section: 'PRICING' as DashboardSection },
     { id: 'about', label: 'Про нас', section: 'ABOUT' as DashboardSection },
   ];
 

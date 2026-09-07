@@ -83,6 +83,7 @@ export const EmergencyGuideModal: React.FC<EmergencyGuideModalProps> = ({ isOpen
 
           <button
             onClick={onClose}
+            aria-label="Закрити пам’ятку безпеки"
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
