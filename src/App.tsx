@@ -1,20 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { HomeFeaturesGrid } from './components/HomeFeaturesGrid';
 import { HomeFinanceSituationRow } from './components/HomeFinanceSituationRow';
-import { AnalyticsSection } from './components/AnalyticsSection';
 import { SirenOrbitalDeviceEcosystem } from './components/orbital/SirenOrbitalDeviceEcosystem';
-import { FinanceSection } from './components/FinanceSection';
-import { ProfileSection } from './components/ProfileSection';
-import { AffiliateProgram } from './components/AffiliateProgram';
-import { RegionInspectorModal } from './components/RegionInspectorModal';
-import { SimulatorModal } from './components/SimulatorModal';
-import { EmergencyGuideModal } from './components/EmergencyGuideModal';
-import { SheltersSection } from './components/SheltersSection';
 import { Footer } from './components/Footer';
-import { OnboardingFlow } from './components/OnboardingFlow';
-import { AboutSection } from './components/AboutSection';
 import { threatServerService, LiveThreatsPayload } from './services/threatServerService';
 import { DataState } from './types/dataEnvelope';
 
@@ -34,6 +24,17 @@ import {
   playAllClearSound, 
   speakAlertNotification 
 } from './utils/sirenAudio';
+
+const AnalyticsSection = React.lazy(() => import('./components/AnalyticsSection').then((module) => ({ default: module.AnalyticsSection })));
+const FinanceSection = React.lazy(() => import('./components/FinanceSection').then((module) => ({ default: module.FinanceSection })));
+const ProfileSection = React.lazy(() => import('./components/ProfileSection').then((module) => ({ default: module.ProfileSection })));
+const AffiliateProgram = React.lazy(() => import('./components/AffiliateProgram').then((module) => ({ default: module.AffiliateProgram })));
+const RegionInspectorModal = React.lazy(() => import('./components/RegionInspectorModal').then((module) => ({ default: module.RegionInspectorModal })));
+const SimulatorModal = React.lazy(() => import('./components/SimulatorModal').then((module) => ({ default: module.SimulatorModal })));
+const EmergencyGuideModal = React.lazy(() => import('./components/EmergencyGuideModal').then((module) => ({ default: module.EmergencyGuideModal })));
+const SheltersSection = React.lazy(() => import('./components/SheltersSection').then((module) => ({ default: module.SheltersSection })));
+const OnboardingFlow = React.lazy(() => import('./components/OnboardingFlow').then((module) => ({ default: module.OnboardingFlow })));
+const AboutSection = React.lazy(() => import('./components/AboutSection').then((module) => ({ default: module.AboutSection })));
 
 export default function App() {
   // Navigation: HOME | NETWORK | FINANCE | PROFILE | ANALYTICS | AFFILIATE
@@ -338,6 +339,11 @@ export default function App() {
       <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 flex-1 flex flex-col gap-2">
         
         <main className="flex-1 min-w-0 pb-12 w-full">
+          <Suspense fallback={(
+            <div className="min-h-[280px] rounded-3xl border border-slate-200/60 dark:border-slate-800 bg-white/40 dark:bg-slate-950/30 flex items-center justify-center">
+              <span className="text-xs font-semibold text-slate-500">Завантаження розділу…</span>
+            </div>
+          )}>
           {/* =========================================================================
               SECTION 1: HOME (Головна) - 1:1 Premium Design as in Mockup
              ========================================================================= */}
@@ -439,7 +445,7 @@ export default function App() {
               />
             </div>
           )}
-          
+          </Suspense>
         </main>
       </div>
 
@@ -451,6 +457,7 @@ export default function App() {
          ========================================================================= */}
       
       {/* Shelters Modal */}
+      <Suspense fallback={null}>
       {isSheltersModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
           <div className={`relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl p-4 sm:p-6 ${
@@ -512,6 +519,7 @@ export default function App() {
           onComplete={handleCompleteOnboarding}
         />
       )}
+      </Suspense>
 
     </div>
   );

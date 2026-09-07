@@ -201,7 +201,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-slate-800">
                 {displayAvatar ? (
                   <img
-                    src={displayAvatar}
+                    src={displayAvatar || undefined}
                     alt={displayName}
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"

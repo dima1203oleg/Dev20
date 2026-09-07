@@ -98,10 +98,8 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-3 cursor-pointer flex-shrink-0" 
           onClick={() => handleNavClick('HOME')}
         >
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-md transition-colors ${
-            isDark 
-              ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' 
-              : 'bg-blue-600/10 text-blue-600 border border-blue-200'
+          <div className={`w-9 h-9 flex items-center justify-center transition-colors ${
+            isDark ? 'text-slate-300' : 'text-[#6F8593]'
           }`}>
             <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4.93 19.07A10 10 0 0 1 4.93 4.93" />

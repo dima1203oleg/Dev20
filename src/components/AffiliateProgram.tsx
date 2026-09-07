@@ -254,7 +254,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <div className="space-y-2">
                   {l1Nodes.map((node) => (
                     <button key={node.id} type="button" onClick={() => setSelectedPartner(node)} className={`w-full flex items-center gap-3 rounded-xl p-2 text-left transition-colors ${isDark ? 'hover:bg-slate-800' : 'hover:bg-white'}`}>
-                      <img src={node.avatar} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      {node.avatar ? <img src={node.avatar} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" /> : <span className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" />}
                       <span className="min-w-0 flex-1"><span className="block text-xs font-bold truncate">{node.name}</span><span className="block text-[10px] text-slate-500">{node.qualifiedL1Count} кваліфікованих L1</span></span>
                       <span className="text-xs font-black text-blue-600">{node.earnings}</span>
                     </button>
@@ -270,7 +270,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <div className="space-y-2">
                   {l2Nodes.map((node) => (
                     <button key={node.id} type="button" onClick={() => setSelectedPartner(node)} className={`w-full flex items-center gap-3 rounded-xl p-2 text-left transition-colors ${isDark ? 'hover:bg-slate-800' : 'hover:bg-white'}`}>
-                      <img src={node.avatar} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      {node.avatar ? <img src={node.avatar} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" /> : <span className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" />}
                       <span className="min-w-0 flex-1"><span className="block text-xs font-bold truncate">{node.name}</span><span className="block text-[10px] text-slate-500">{node.parentName || 'Гілка не вказана'}</span></span>
                       <span className="text-xs font-black text-purple-600">{node.earnings}</span>
                     </button>
@@ -312,7 +312,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {partnerList.filter((node) => levelFilter === 'ALL' || node.level === levelFilter).map((node) => (
                   <tr key={node.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60" onClick={() => setSelectedPartner(node)}>
-                    <td className="py-3 pr-3"><div className="flex items-center gap-2"><img src={node.avatar} alt="" className="w-7 h-7 rounded-full object-cover" referrerPolicy="no-referrer" /><span className="font-bold">{node.name}</span></div></td>
+                    <td className="py-3 pr-3"><div className="flex items-center gap-2">{node.avatar ? <img src={node.avatar} alt="" className="w-7 h-7 rounded-full object-cover" referrerPolicy="no-referrer" /> : <span className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" />}<span className="font-bold">{node.name}</span></div></td>
                     <td className="py-3 pr-3"><span className={node.level === 'L1' ? 'text-cyan-600 font-bold' : 'text-purple-600 font-bold'}>{node.level}</span></td>
                     <td className="py-3 pr-3"><span className="inline-flex items-center gap-1"><span className={`w-1.5 h-1.5 rounded-full ${node.status === 'ACTIVE' ? 'bg-emerald-500' : node.status === 'NEW' ? 'bg-amber-500' : 'bg-slate-400'}`} />{node.status === 'ACTIVE' ? 'Активний' : node.status === 'NEW' ? 'Новий' : node.status === 'TRIAL' ? 'Trial' : 'Топ'}</span></td>
                     <td className="py-3 pr-3">{node.qualifiedL1Count}</td>
@@ -346,7 +346,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
         </div>
         <div className={`rounded-3xl border p-5 ${isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'}`}>
           <div className="flex items-center justify-between mb-4"><h3 className="text-sm font-bold">Останні події мережі</h3><span className="text-[10px] text-slate-500">{activities.length} у відповіді API</span></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{activities.map((activity) => <div key={activity.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-100 bg-slate-50/70'}`}><img src={activity.partnerAvatar} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" /><div className="min-w-0 flex-1"><div className="text-xs font-bold truncate">{activity.partnerName} · {activity.level}</div><div className="text-[10px] text-slate-500 truncate">{activity.description}</div></div><span className="text-[10px] text-slate-500 whitespace-nowrap">{activity.timestamp}</span></div>)}{!activities.length && <p className="text-xs text-slate-500">Activity stream ще не підключено.</p>}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{activities.map((activity) => <div key={activity.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-100 bg-slate-50/70'}`}>{activity.partnerAvatar ? <img src={activity.partnerAvatar} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" /> : <span className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" />}<div className="min-w-0 flex-1"><div className="text-xs font-bold truncate">{activity.partnerName} · {activity.level}</div><div className="text-[10px] text-slate-500 truncate">{activity.description}</div></div><span className="text-[10px] text-slate-500 whitespace-nowrap">{activity.timestamp}</span></div>)}{!activities.length && <p className="text-xs text-slate-500">Activity stream ще не підключено.</p>}</div>
         </div>
       </div>
     );
@@ -781,7 +781,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                     <div className="relative flex flex-col items-center">
                       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 shadow-xl shadow-blue-500/30 flex items-center justify-center relative">
                         <div className="w-full h-full rounded-full overflow-hidden border-2 border-white">
-                          <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          {node.avatar ? <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <span className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" />}
                         </div>
                         {/* Crown Badge */}
                         <div className="absolute -top-2 bg-amber-400 text-slate-900 rounded-full p-1 shadow-md">
@@ -802,7 +802,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                           : 'w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-tr from-purple-500 to-indigo-400'
                       }`}>
                         <div className="w-full h-full rounded-full overflow-hidden border border-white bg-slate-800">
-                          <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          {node.avatar ? <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <span className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" />}
                         </div>
                         {/* Top Performer Crown */}
                         {node.status === 'TOP' && (
@@ -966,7 +966,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                       {index + 1}
                     </span>
                     <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200">
-                      <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      {p.avatar ? <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <span className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" />}
                     </div>
                     <div>
                       <div className="font-bold leading-tight">{p.name}</div>
@@ -1007,7 +1007,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <div key={r.id} onClick={() => setSelectedPartner(r)} className="flex items-center justify-between cursor-pointer rounded-xl p-1 -mx-1 hover:bg-slate-50 dark:hover:bg-slate-800/60">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full overflow-hidden border border-slate-200">
-                      <img src={r.avatar} alt={r.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      {r.avatar ? <img src={r.avatar} alt={r.name} className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" /> : <span className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" />}
                     </div>
                     <span className="font-semibold">{r.name}</span>
                   </div>
@@ -1171,7 +1171,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
 
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500">
-                <img src={selectedPartner.avatar} alt={selectedPartner.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                {selectedPartner.avatar ? <img src={selectedPartner.avatar} alt={selectedPartner.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <span className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true" />}
               </div>
               <div>
                 <div className="flex items-center gap-2">
