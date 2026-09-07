@@ -40,15 +40,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const [mapMode, setMapMode] = useState<'RENDER' | 'WEBGL'>('RENDER');
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const isDark = theme === 'dark';
-  const dataModeLabel = threatModel?.dataMode === 'DEMO_DATA'
-    ? 'DEMO'
-    : threatModel?.dataMode === 'CACHED'
-      ? 'CACHED'
-      : threatModel?.dataMode === 'STALE'
-        ? 'STALE'
-        : threatModel?.dataMode === 'ERROR'
-          ? 'ERROR'
-          : 'NOT CONNECTED';
   const dataModeMessage = threatModel?.dataMode === 'CACHED'
     ? 'ОСТАННІ ЗБЕРЕЖЕНІ ДАНІ'
     : threatModel?.dataMode === 'STALE'
@@ -57,14 +48,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         ? 'ПОМИЛКА ДЖЕРЕЛА ДАНИХ'
         : 'LIVE DATA НЕ ПІДКЛЮЧЕНО';
   const freshnessLabel = threatModel?.dataMode === 'LIVE'
-    ? `LIVE · Оновлено ${threatModel.timestamp}`
+    ? `LIVE · ${threatModel.timestamp}`
     : threatModel?.dataMode === 'DEMO_DATA'
-      ? `DEMO · Сценарій оновлено ${threatModel.timestamp}`
+      ? `DEMO · ${threatModel.timestamp}`
       : threatModel?.dataMode === 'CACHED'
-        ? `CACHED · Останнє оновлення ${threatModel.timestamp}`
+        ? `CACHED · ${threatModel.timestamp}`
         : threatModel?.dataMode === 'STALE'
-          ? `STALE · Останнє оновлення ${threatModel.timestamp}`
+          ? `STALE · ${threatModel.timestamp}`
           : 'ДАНІ НЕДОСТУПНІ';
+  const freshnessAccessibleLabel = threatModel?.dataMode === 'LIVE'
+    ? `LIVE. Оновлено ${threatModel.timestamp}`
+    : threatModel?.dataMode === 'DEMO_DATA'
+      ? `DEMO. Сценарій оновлено ${threatModel.timestamp}`
+      : threatModel?.dataMode === 'CACHED'
+        ? `CACHED. Останнє збережене оновлення ${threatModel.timestamp}`
+        : threatModel?.dataMode === 'STALE'
+          ? `STALE. Останнє оновлення ${threatModel.timestamp}`
+          : 'Актуальні дані недоступні';
   const freshnessTone = threatModel?.dataMode === 'LIVE'
     ? 'bg-emerald-500/15 text-emerald-300'
     : threatModel?.dataMode === 'DEMO_DATA'
@@ -96,7 +96,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <div className="flex-1 w-full flex flex-col items-start text-left max-w-[620px]">
           
           {/* Top Pill Badge */}
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-3 lg:mb-2 text-[12px] font-extrabold tracking-wide ${
+          <div className={`inline-flex max-w-full flex-wrap items-center gap-2 px-4 py-1.5 rounded-full border mb-3 lg:mb-2 text-[12px] font-extrabold tracking-wide ${
             isDark 
               ? 'bg-[#1B293F] border-[#2E4160] text-blue-400' 
               : 'bg-blue-50 border-blue-200 text-blue-700'
@@ -106,16 +106,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
             </span>
             <span>UA | Платформа безпеки та ситуаційної обізнаності</span>
-            {threatModel?.dataMode !== 'LIVE' && (
-              <span className={`ml-1 rounded-full px-2 py-0.5 text-[9px] font-black tracking-wider ${
-                threatModel?.dataMode === 'DEMO_DATA'
-                  ? 'bg-purple-500/15 text-purple-300'
-                  : 'bg-amber-500/15 text-amber-300'
-              }`}>
-                {dataModeLabel}
-              </span>
-            )}
-            <span role="status" className={`ml-1 rounded-full px-2 py-0.5 text-[9px] font-black tracking-wide ${freshnessTone}`}>
+            <span role="status" aria-label={freshnessAccessibleLabel} title={freshnessAccessibleLabel} className={`ml-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-black tracking-wide ${freshnessTone}`}>
               {freshnessLabel}
             </span>
           </div>
