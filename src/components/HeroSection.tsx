@@ -40,11 +40,28 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const [mapMode, setMapMode] = useState<'RENDER' | 'WEBGL'>('RENDER');
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const isDark = theme === 'dark';
+  const dataModeLabel = threatModel?.dataMode === 'DEMO_DATA'
+    ? 'DEMO'
+    : threatModel?.dataMode === 'CACHED'
+      ? 'CACHED'
+      : threatModel?.dataMode === 'STALE'
+        ? 'STALE'
+        : threatModel?.dataMode === 'ERROR'
+          ? 'ERROR'
+          : 'NOT CONNECTED';
+  const dataModeMessage = threatModel?.dataMode === 'CACHED'
+    ? 'ОСТАННІ ЗБЕРЕЖЕНІ ДАНІ'
+    : threatModel?.dataMode === 'STALE'
+      ? 'ДАНІ ЗАСТАРІЛІ'
+      : threatModel?.dataMode === 'ERROR'
+        ? 'ПОМИЛКА ДЖЕРЕЛА ДАНИХ'
+        : 'LIVE DATA НЕ ПІДКЛЮЧЕНО';
 
   // A live source must never be represented by the decorative preview asset.
   // Switch to the normalized WebGL scene as soon as live data is available.
   useEffect(() => {
     if (threatModel?.dataMode === 'LIVE') setMapMode('WEBGL');
+    if (threatModel?.dataMode !== 'LIVE' && threatModel?.dataMode !== 'DEMO_DATA') setMapMode('RENDER');
   }, [threatModel?.dataMode]);
 
   return (
@@ -81,7 +98,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   ? 'bg-purple-500/15 text-purple-300'
                   : 'bg-amber-500/15 text-amber-300'
               }`}>
-                {threatModel?.dataMode === 'DEMO_DATA' ? 'DEMO' : 'NOT CONNECTED'}
+                {dataModeLabel}
               </span>
             )}
           </div>
@@ -125,6 +142,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </button>
             <button
               onClick={() => {
+                if (threatModel?.dataMode !== 'LIVE' && threatModel?.dataMode !== 'DEMO_DATA') {
+                  setDownloadNotice('Інтерактивна сцена доступна після підключення перевіреного джерела даних.');
+                  playWebAudioSound('click');
+                  window.setTimeout(() => setDownloadNotice(null), 4200);
+                  return;
+                }
                 setMapMode((current) => threatModel?.dataMode === 'LIVE' ? 'WEBGL' : current === 'RENDER' ? 'WEBGL' : 'RENDER');
                 playWebAudioSound('click');
               }}
@@ -244,14 +267,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   }}
                   className="w-full h-auto object-contain max-h-[290px] lg:max-h-[255px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
                 />
-                {threatModel?.dataMode === 'NOT_CONNECTED' && (
+                {threatModel?.dataMode !== 'DEMO_DATA' && threatModel?.dataMode !== 'LIVE' && (
                   <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border px-3 py-2 text-center text-[10px] font-black tracking-[0.12em] backdrop-blur-md ${
                     isDark
                       ? 'border-amber-400/40 bg-slate-950/80 text-amber-200'
                       : 'border-amber-300 bg-white/90 text-amber-700'
                   }`}>
                     <span className="block">ДИЗАЙН-ПРЕВ’Ю</span>
-                    <span className="mt-1 block text-[9px] font-bold tracking-normal opacity-80">LIVE DATA НЕ ПІДКЛЮЧЕНО</span>
+                    <span className="mt-1 block text-[9px] font-bold tracking-normal opacity-80">{dataModeMessage}</span>
                   </div>
                 )}
               </>

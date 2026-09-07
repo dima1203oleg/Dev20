@@ -10,7 +10,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { DashboardSection } from '../types';
+import { DashboardSection, ThreatDataMode } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { profileService, UserProfileData } from '../services/profileService';
 import { DataState } from '../types/dataEnvelope';
@@ -21,7 +21,7 @@ interface HeaderProps {
   onOpenGuide?: () => void;
   onToggleTheme?: () => void;
   theme?: 'light' | 'dark';
-  dataMode?: 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
+  dataMode?: ThreatDataMode;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 

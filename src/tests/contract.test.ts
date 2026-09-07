@@ -141,8 +141,12 @@ export function runAllContractTests(): {
   // use the local illustrative catalog.
   const disconnectedScene = threatServerService.normalizeThreatScene(INITIAL_REGIONS, [], 'odesa', 'NOT_CONNECTED', '—');
   const demoScene = threatServerService.normalizeThreatScene(INITIAL_REGIONS, [], 'odesa', 'DEMO', '—');
+  const cachedScene = threatServerService.normalizeThreatScene(INITIAL_REGIONS, [], 'odesa', 'CACHED', '14:32');
+  const staleScene = threatServerService.normalizeThreatScene(INITIAL_REGIONS, [], 'odesa', 'STALE', '13:10');
   assert(disconnectedScene.nearestShelter === null, s2, 'NOT_CONNECTED threat scene must not expose a fake nearest shelter');
   assert(demoScene.nearestShelter !== null, s2, 'DEMO threat scene may expose an explicitly local shelter catalog');
+  assert(cachedScene.dataMode === 'CACHED' && cachedScene.freshness === 'STABLE', s2, 'CACHED threat scene must remain visibly cached');
+  assert(staleScene.dataMode === 'STALE' && staleScene.freshness === 'STALE', s2, 'STALE threat scene must remain visibly stale');
 
   // --- SUITE 3: BACKWARD COMPATIBILITY & MOCK ISOLATION ---
   const s3 = 'API Backward Compatibility';

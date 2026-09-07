@@ -8,7 +8,7 @@
  * ZERO FAKE LIVE DATA: Never claims LIVE unless verified from upstream ingest.
  */
 
-import { RegionData, AlertEvent, ThreatTrajectory, ThreatSceneModel, Shelter, DataEnvelope, DataState } from '../types';
+import { RegionData, AlertEvent, ThreatTrajectory, ThreatSceneModel, ThreatDataMode, Shelter, DataEnvelope, DataState } from '../types';
 import { INITIAL_REGIONS, INITIAL_ALERTS_FEED } from '../data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from '../data/spatialThreatData';
 import { CacheManager } from '../utils/cacheManager';
@@ -316,14 +316,17 @@ class ThreatServerService {
       }
     }
 
-    let dataMode: 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED' = 'NOT_CONNECTED';
+    let dataMode: ThreatDataMode = 'NOT_CONNECTED';
     if (state === 'LIVE') dataMode = 'LIVE';
     else if (state === 'DEMO') dataMode = 'DEMO_DATA';
-    else dataMode = 'NOT_CONNECTED';
+    else if (state === 'CACHED') dataMode = 'CACHED';
+    else if (state === 'STALE') dataMode = 'STALE';
+    else if (state === 'ERROR') dataMode = 'ERROR';
 
-    let freshness: 'REALTIME' | 'STABLE' | 'DEGRADED' = 'DEGRADED';
+    let freshness: 'REALTIME' | 'STABLE' | 'STALE' | 'DEGRADED' = 'DEGRADED';
     if (state === 'LIVE') freshness = 'REALTIME';
-    else if (state === 'CACHED') freshness = 'STABLE';
+    else if (state === 'DEMO' || state === 'CACHED') freshness = 'STABLE';
+    else if (state === 'STALE') freshness = 'STALE';
 
     return {
       timestamp: updatedAt,

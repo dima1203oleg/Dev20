@@ -190,10 +190,23 @@ export type OrbitalDeviceType =
   | 'ar_vr'
   | 'kiosk';
 
+/**
+ * Truthful state of the safety scene.  A cached or stale scene may still be
+ * useful for orientation, but it must never be presented as current live
+ * intelligence.
+ */
+export type ThreatDataMode =
+  | 'LIVE'
+  | 'DEMO_DATA'
+  | 'CACHED'
+  | 'STALE'
+  | 'NOT_CONNECTED'
+  | 'ERROR';
+
 export interface ThreatSceneModel {
   timestamp: string;
-  freshness: 'REALTIME' | 'STABLE' | 'DEGRADED';
-  dataMode: 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
+  freshness: 'REALTIME' | 'STABLE' | 'STALE' | 'DEGRADED';
+  dataMode: ThreatDataMode;
   activeAlarmsCount: number;
   criticalRegions: string[];
   primaryThreat: ThreatTrajectory | null;

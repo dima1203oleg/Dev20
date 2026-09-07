@@ -38,7 +38,7 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
 }) => {
   if (!region) return null;
 
-  const isUnavailable = dataMode === 'NOT_CONNECTED';
+  const isUnavailable = dataMode !== 'LIVE' && dataMode !== 'DEMO_DATA';
   const effectiveIsAlarm = !isUnavailable && region.isAlarm;
 
   const getThreatBadge = (threat: ThreatType) => {
@@ -82,7 +82,7 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
                 </span>
               )}
               <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${dataMode === 'LIVE' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/40' : dataMode === 'DEMO_DATA' ? 'bg-purple-500/10 text-purple-300 border-purple-500/40' : 'bg-amber-500/10 text-amber-300 border-amber-500/40'}`}>
-                {dataMode === 'LIVE' ? 'LIVE' : dataMode === 'DEMO_DATA' ? 'DEMO' : 'OFFLINE'}
+                {dataMode === 'LIVE' ? 'LIVE' : dataMode === 'DEMO_DATA' ? 'DEMO' : dataMode === 'CACHED' ? 'CACHED' : dataMode === 'STALE' ? 'STALE' : 'OFFLINE'}
               </span>
             </div>
             <p className="text-xs text-slate-400">

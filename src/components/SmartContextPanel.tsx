@@ -28,6 +28,7 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
 }) => {
   const isAlarm = threatModel.myRegionStatus.isAlarm;
   const isDemo = threatModel.dataMode === 'DEMO_DATA';
+  const isUnavailable = threatModel.dataMode !== 'LIVE' && !isDemo;
   const hasShelterData = Boolean(threatModel.nearestShelter);
 
   return (
@@ -47,7 +48,7 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
               ОПЕРАТИВНИЙ СТАН КАНАЛІВ
             </div>
             <div className="text-xs font-mono font-bold text-white truncate mt-0.5">
-              {threatModel.dataMode === 'NOT_CONNECTED'
+              {isUnavailable
                 ? '🟡 Дані каналів недоступні'
                 : isAlarm
                   ? '🔴 Активна тривога в секторі'
@@ -95,7 +96,7 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
               <span className="text-purple-300 font-bold">Вивід →</span>
             </div>
             <div className="text-xs font-mono font-bold text-white truncate mt-0.5">
-              {threatModel.dataMode === 'NOT_CONNECTED' ? 'Фінансові дані недоступні' : isDemo ? 'Демонстраційний партнерський стан' : 'Баланс доступний у фінансовому кабінеті'}
+              {isUnavailable ? 'Фінансові дані недоступні' : isDemo ? 'Демонстраційний партнерський стан' : 'Баланс доступний у фінансовому кабінеті'}
             </div>
             <div className="text-[10px] text-emerald-400 font-mono mt-0.5">
               {threatModel.dataMode === 'LIVE' ? 'Відкрити фінансовий кабінет для деталей' : 'Дані не підтверджені live API'}

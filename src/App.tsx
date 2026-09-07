@@ -16,6 +16,7 @@ import {
   ThreatType,
   UserSettings, 
   ThreatSceneModel,
+  ThreatDataMode,
   DashboardSection 
 } from './types';
 import { 
@@ -274,22 +275,40 @@ export default function App() {
 
   const activeAlarmsCount = displayRegions.filter((r) => r.isAlarm).length;
   const currentTimestamp = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-  const currentDataMode = isDemoMode
+  const currentDataMode: ThreatDataMode = isDemoMode
     ? 'DEMO_DATA'
     : threatDataState === 'LIVE'
       ? 'LIVE'
       : threatDataState === 'DEMO'
         ? 'DEMO_DATA'
-        : 'NOT_CONNECTED';
+        : threatDataState === 'CACHED'
+          ? 'CACHED'
+          : threatDataState === 'STALE'
+            ? 'STALE'
+            : threatDataState === 'ERROR'
+              ? 'ERROR'
+              : 'NOT_CONNECTED';
   const liveScene = currentDataMode === 'LIVE' || currentDataMode === 'DEMO_DATA' ? threatPayload?.threatScene : null;
+  const currentFreshness: ThreatSceneModel['freshness'] = currentDataMode === 'LIVE'
+    ? 'REALTIME'
+    : currentDataMode === 'DEMO_DATA' || currentDataMode === 'CACHED'
+      ? 'STABLE'
+      : currentDataMode === 'STALE'
+        ? 'STALE'
+        : 'DEGRADED';
+  const sceneTimestamp = currentDataMode === 'LIVE' || currentDataMode === 'DEMO_DATA' || currentDataMode === 'CACHED' || currentDataMode === 'STALE'
+    ? (threatUpdatedAt === '—' ? currentTimestamp : threatUpdatedAt)
+    : '—';
 
   const threatSceneModel: ThreatSceneModel = {
-    timestamp: isDemoMode || currentDataMode === 'DEMO_DATA' ? (threatUpdatedAt === '—' ? currentTimestamp : threatUpdatedAt) : currentDataMode === 'LIVE' ? threatUpdatedAt : '—',
-    freshness: isDemoMode || currentDataMode === 'DEMO_DATA' ? 'STABLE' : currentDataMode === 'LIVE' ? 'REALTIME' : 'DEGRADED',
+    timestamp: sceneTimestamp,
+    freshness: currentFreshness,
     dataMode: currentDataMode,
     activeAlarmsCount,
     criticalRegions: displayRegions.filter((r) => r.isAlarm && (r.threatType === 'ballistic' || r.threatType === 'missile')).map((r) => r.id),
-    primaryThreat: sceneTrajectories.find((trajectory) => trajectory.status === 'ACTIVE') || null,
+    // Do not expose cached/offline trajectory records as current scene data.
+    // A non-live scene is intentionally rendered as a truthful preview only.
+    primaryThreat: liveScene?.primaryThreat || null,
     nearestShelter: liveScene?.nearestShelter || null,
     myRegionStatus: {
       id: settings.myRegion,
@@ -479,7 +498,7 @@ export default function App() {
             <SheltersSection
               myRegionId={settings.myRegion}
               regions={displayRegions}
-              dataState={isDemoMode || threatDataState === 'DEMO' ? 'DEMO' : threatDataState === 'LIVE' ? 'LIVE' : 'NOT_CONNECTED'}
+              dataState={currentDataMode === 'DEMO_DATA' ? 'DEMO' : currentDataMode}
             />
           </div>
         </div>
