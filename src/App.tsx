@@ -39,9 +39,46 @@ const SheltersSection = React.lazy(() => import('./components/SheltersSection').
 const OnboardingFlow = React.lazy(() => import('./components/OnboardingFlow').then((module) => ({ default: module.OnboardingFlow })));
 const AboutSection = React.lazy(() => import('./components/AboutSection').then((module) => ({ default: module.AboutSection })));
 
+const sectionByHash: Record<string, DashboardSection> = {
+  home: 'HOME',
+  network: 'NETWORK',
+  finance: 'FINANCE',
+  pricing: 'PRICING',
+  analytics: 'ANALYTICS',
+  shelters: 'SHELTERS',
+  affiliate: 'AFFILIATE',
+  profile: 'PROFILE',
+  about: 'ABOUT',
+};
+
+const sectionFromLocation = (): DashboardSection => {
+  if (typeof window === 'undefined') return 'HOME';
+  const hash = window.location.hash.replace(/^#/, '').toLowerCase();
+  return sectionByHash[hash] || 'HOME';
+};
+
 export default function App() {
   // Navigation: HOME | NETWORK | FINANCE | PROFILE | ANALYTICS | AFFILIATE
-  const [activeSection, setActiveSection] = useState<DashboardSection>('HOME');
+  const [activeSection, setActiveSection] = useState<DashboardSection>(sectionFromLocation);
+
+  const navigateToSection = (section: DashboardSection) => {
+    setActiveSection(section);
+    if (typeof window === 'undefined') return;
+    const nextHash = `#${section.toLowerCase()}`;
+    if (window.location.hash !== nextHash) {
+      window.history.pushState({ section }, '', nextHash);
+    }
+  };
+
+  useEffect(() => {
+    const syncSectionFromLocation = () => setActiveSection(sectionFromLocation());
+    window.addEventListener('popstate', syncSectionFromLocation);
+    window.addEventListener('hashchange', syncSectionFromLocation);
+    return () => {
+      window.removeEventListener('popstate', syncSectionFromLocation);
+      window.removeEventListener('hashchange', syncSectionFromLocation);
+    };
+  }, []);
 
   // Onboarding remains available in the codebase, but it must not block the
   // production landing surface on a fresh browser visit.
@@ -360,13 +397,13 @@ export default function App() {
       <Header
         activeSection={activeSection}
         onOpenFeatures={() => {
-          setActiveSection('HOME');
+          navigateToSection('HOME');
           window.setTimeout(() => {
             document.getElementById('home-features')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }, 0);
         }}
         onSelectSection={(sec) => {
-          setActiveSection(sec);
+          navigateToSection(sec);
           try {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           } catch {
@@ -427,14 +464,14 @@ export default function App() {
 
               {/* Row 2: 4 Feature Navigation Cards (Мережа, Фінанси, Аналітика, Партнерська програма) */}
               <HomeFeaturesGrid
-                onNavigateToTab={(tab) => setActiveSection(tab)}
+                onNavigateToTab={(tab) => navigateToSection(tab)}
                 theme={settings.theme || 'light'}
               />
 
               {/* Row 3: Financial Information Block (Фінансова інформація) */}
               <HomeFinanceSituationRow
-                onNavigateToFinance={() => setActiveSection('FINANCE')}
-                onNavigateToNetwork={() => setActiveSection('NETWORK')}
+                onNavigateToFinance={() => navigateToSection('FINANCE')}
+                onNavigateToNetwork={() => navigateToSection('NETWORK')}
                 theme={settings.theme || 'light'}
               />
 
@@ -452,7 +489,7 @@ export default function App() {
           {activeSection === 'NETWORK' && (
             <div className="animate-in fade-in duration-200">
               <AffiliateProgram
-                onOpenMap={() => setActiveSection('HOME')}
+                onOpenMap={() => navigateToSection('HOME')}
                 onOpenSimulator={() => setIsSimulatorOpen(true)}
                 theme={settings.theme || 'light'}
               />
@@ -465,7 +502,7 @@ export default function App() {
           {activeSection === 'FINANCE' && (
             <div className="animate-in fade-in duration-200">
               <FinanceSection
-                onOpenNetwork={() => setActiveSection('NETWORK')}
+                onOpenNetwork={() => navigateToSection('NETWORK')}
                 theme={settings.theme || 'light'}
               />
             </div>
@@ -476,7 +513,7 @@ export default function App() {
             <PricingSection
               theme={settings.theme || 'light'}
               onStartOnboarding={() => setShowOnboarding(true)}
-              onOpenHome={() => setActiveSection('HOME')}
+              onOpenHome={() => navigateToSection('HOME')}
             />
           )}
 
@@ -514,7 +551,7 @@ export default function App() {
           {activeSection === 'AFFILIATE' && (
             <div className="animate-in fade-in duration-200">
               <AffiliateProgram
-                onOpenMap={() => setActiveSection('HOME')}
+                onOpenMap={() => navigateToSection('HOME')}
                 onOpenSimulator={() => setIsSimulatorOpen(true)}
                 theme={settings.theme || 'light'}
               />
@@ -525,7 +562,7 @@ export default function App() {
             <div className="animate-in fade-in duration-200">
               <AboutSection
                 theme={settings.theme || 'light'}
-                onOpenMap={() => setActiveSection('HOME')}
+                onOpenMap={() => navigateToSection('HOME')}
                 onOpenGuide={() => setIsGuideOpen(true)}
               />
             </div>
