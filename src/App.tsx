@@ -20,6 +20,7 @@ import { INITIAL_TRAJECTORIES } from './data/spatialThreatData';
 import { 
   RegionData, 
   AlertEvent, 
+  ThreatType,
   UserSettings, 
   ThreatSceneModel,
   DashboardSection 
@@ -156,6 +157,67 @@ export default function App() {
     setTimeout(() => setBannerAlert(null), 4000);
   };
 
+  const handleToggleRegionAlarm = (regionId: string, threatType: ThreatType = 'air') => {
+    setIsDemoMode(true);
+    setRegions((current) => current.map((region) => {
+      if (region.id !== regionId) return region;
+      const nextIsAlarm = !region.isAlarm;
+      return {
+        ...region,
+        isAlarm: nextIsAlarm,
+        threatType: nextIsAlarm ? threatType : 'none',
+        startedAt: nextIsAlarm ? new Date().toISOString() : null,
+        durationMinutes: 0,
+      };
+    }));
+  };
+
+  const handleApplyScenario = (
+    scenario: 'massive_drone' | 'ballistic_all' | 'eastern_front' | 'all_clear' | 'central_ukraine'
+  ) => {
+    const droneRegions = new Set(['kyiv_obl', 'kyiv_city', 'chernihiv', 'sumy', 'poltava', 'cherkasy', 'odesa']);
+    const easternRegions = new Set(['sumy', 'kharkiv', 'luhansk', 'donetsk', 'dnipro', 'zaporizhzhia', 'kherson']);
+    const centralRegions = new Set(['kyiv_obl', 'kyiv_city', 'zhytomyr', 'vinnytsia', 'cherkasy', 'poltava', 'kirovohrad']);
+
+    setIsDemoMode(true);
+    setRegions((current) => current.map((region) => {
+      let isAlarm = false;
+      let nextThreatType: ThreatType = 'none';
+
+      if (scenario === 'ballistic_all') {
+        isAlarm = true;
+        nextThreatType = 'ballistic';
+      } else if (scenario === 'massive_drone' && droneRegions.has(region.id)) {
+        isAlarm = true;
+        nextThreatType = 'drone';
+      } else if (scenario === 'eastern_front' && easternRegions.has(region.id)) {
+        isAlarm = true;
+        nextThreatType = 'ballistic';
+      } else if (scenario === 'central_ukraine' && centralRegions.has(region.id)) {
+        isAlarm = true;
+        nextThreatType = 'air';
+      }
+
+      return {
+        ...region,
+        isAlarm,
+        threatType: nextThreatType,
+        startedAt: isAlarm ? new Date().toISOString() : null,
+        durationMinutes: 0,
+      };
+    }));
+
+    const labels = {
+      massive_drone: 'Масований сценарій БпЛА',
+      ballistic_all: 'Масований балістичний сценарій',
+      eastern_front: 'Сценарій східного та південного напрямку',
+      all_clear: 'Демонстраційний повний відбій',
+      central_ukraine: 'Демонстраційний сценарій центрального регіону',
+    };
+    setBannerAlert(`ДЕМО-РЕЖИМ: ${labels[scenario]}`);
+    setTimeout(() => setBannerAlert(null), 4500);
+  };
+
   const safeRegions = regions || INITIAL_REGIONS;
   const myRegionObj = safeRegions.find((r) => r.id === settings.myRegion) || {
     id: 'odesa',
@@ -168,8 +230,8 @@ export default function App() {
 
   const threatSceneModel: ThreatSceneModel = {
     timestamp: '22:14',
-    freshness: 'REALTIME',
-    dataMode: isDemoMode ? 'DEMO_DATA' : 'LIVE',
+    freshness: isDemoMode ? 'STABLE' : 'DEGRADED',
+    dataMode: isDemoMode ? 'DEMO_DATA' : 'NOT_CONNECTED',
     activeAlarmsCount,
     criticalRegions: safeRegions.filter((r) => r.isAlarm && r.threatType === 'ballistic').map((r) => r.id),
     primaryThreat: INITIAL_TRAJECTORIES[0] || null,
@@ -325,6 +387,7 @@ export default function App() {
               <AffiliateProgram
                 onOpenMap={() => setActiveSection('HOME')}
                 onOpenSimulator={() => setIsSimulatorOpen(true)}
+                theme={settings.theme || 'light'}
               />
             </div>
           )}
@@ -342,21 +405,25 @@ export default function App() {
       {/* Shelters Modal */}
       {isSheltersModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white border border-slate-200 shadow-2xl p-4 sm:p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+          <div className={`relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl p-4 sm:p-6 ${
+            settings.theme === 'dark'
+              ? 'bg-[#0B171F] border border-[#2D4A55]'
+              : 'bg-white border border-slate-200'
+          }`}>
+            <div className={`flex items-center justify-between pb-3 mb-4 border-b ${settings.theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-slate-900">Карта укриттів та безпечні маршрути</h3>
+                <h3 className={`text-lg font-bold ${settings.theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>Карта укриттів та безпечні маршрути</h3>
               </div>
               <button
                 onClick={() => setIsSheltersModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                className={`p-1.5 rounded-xl transition-colors cursor-pointer ${settings.theme === 'dark' ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'}`}
               >
                 ✕
               </button>
             </div>
             <SheltersSection
               myRegionId={settings.myRegion}
-              onClose={() => setIsSheltersModalOpen(false)}
+              regions={safeRegions}
             />
           </div>
         </div>
@@ -373,8 +440,8 @@ export default function App() {
         isOpen={isSimulatorOpen}
         onClose={() => setIsSimulatorOpen(false)}
         regions={safeRegions}
-        onApplyScenario={() => {}}
-        onToggleRegionAlarm={() => {}}
+        onApplyScenario={handleApplyScenario}
+        onToggleRegionAlarm={handleToggleRegionAlarm}
         onPlayAllClear={handlePlayAllClear}
       />
 
@@ -384,12 +451,9 @@ export default function App() {
           region={selectedRegion}
           onClose={() => setSelectedRegion(null)}
           isMyRegion={selectedRegion.id === settings.myRegion}
-          onSetAsMyRegion={() => handleUpdateSettings({ myRegion: selectedRegion.id })}
-          onNavigateToShelters={() => {
-            setSelectedRegion(null);
-            setIsSheltersModalOpen(true);
-          }}
-          nearestShelter={threatSceneModel.nearestShelter}
+          onSetMyRegion={(regionId) => handleUpdateSettings({ myRegion: regionId })}
+          onTestSiren={handleToggleTestSiren}
+          isSirenPlaying={isSirenPlaying}
         />
       )}
 

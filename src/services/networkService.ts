@@ -514,10 +514,10 @@ class NetworkService {
 
     return {
       data: summary,
-      state: 'LIVE',
-      source: 'AFFILIATE_NETWORK_LEDGER',
+      state: 'DEMO',
+      source: 'LOCAL_DEMO_NETWORK_DATA',
       updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      isRealData: true,
+      isRealData: false,
     };
   }
 
@@ -530,10 +530,10 @@ class NetworkService {
         nodes: AUTHORITATIVE_PARTNER_NODES,
         edges: AUTHORITATIVE_EDGES,
       },
-      state: 'LIVE',
-      source: 'AFFILIATE_TOPOLOGY_API',
+      state: 'DEMO',
+      source: 'LOCAL_DEMO_NETWORK_DATA',
       updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      isRealData: true,
+      isRealData: false,
     };
   }
 
@@ -552,10 +552,10 @@ class NetworkService {
 
     return {
       data: filtered,
-      state: 'LIVE',
-      source: 'AFFILIATE_PARTNER_ROSTER',
+      state: 'DEMO',
+      source: 'LOCAL_DEMO_NETWORK_DATA',
       updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      isRealData: true,
+      isRealData: false,
     };
   }
 
@@ -565,10 +565,10 @@ class NetworkService {
   public async getNetworkActivity(): Promise<DataEnvelope<NetworkActivity[]>> {
     return {
       data: AUTHORITATIVE_ACTIVITIES,
-      state: 'LIVE',
-      source: 'AFFILIATE_ACTIVITY_FEED',
+      state: 'DEMO',
+      source: 'LOCAL_DEMO_NETWORK_DATA',
       updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      isRealData: true,
+      isRealData: false,
     };
   }
 
@@ -578,10 +578,10 @@ class NetworkService {
   public async getBranchStats(): Promise<DataEnvelope<NetworkBranchStats[]>> {
     return {
       data: AUTHORITATIVE_BRANCHES,
-      state: 'LIVE',
-      source: 'AFFILIATE_BRANCH_AGGREGATOR',
+      state: 'DEMO',
+      source: 'LOCAL_DEMO_NETWORK_DATA',
       updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      isRealData: true,
+      isRealData: false,
     };
   }
 }

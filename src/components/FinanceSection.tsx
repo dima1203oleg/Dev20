@@ -42,6 +42,7 @@ import { calculateRankByL1, getNextTierInfo } from '../services/referralEngine';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 import { ContextDrawer } from './ContextDrawer';
 import { InfoTooltip } from './InfoTooltip';
+import { DataState } from '../types/dataEnvelope';
 
 interface FinanceSectionProps {
   onOpenWithdrawModal?: () => void;
@@ -60,6 +61,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
   const [showFaqDrawer, setShowFaqDrawer] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [summary, setSummary] = useState<PartnerFinancialSummary>(DEFAULT_FINANCIAL_SUMMARY);
+  const [dataState, setDataState] = useState<DataState>('LOADING');
   const [ledger, setLedger] = useState<LedgerTransaction[]>(() => financialService.getLedgerTransactions());
   const [payoutMethods, setPayoutMethods] = useState<PayoutMethodConfig[]>(() => financialService.getPayoutMethods());
   const [selectedMethodId, setSelectedMethodId] = useState<string>(() => financialService.getPayoutMethods()[0]?.id || 'pm-1');
@@ -77,6 +79,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
 
   useEffect(() => {
     financialService.getPartnerFinancialSummary().then((res) => {
+      setDataState(res.state);
       if (res.data) {
         setSummary(res.data);
         setWithdrawAmount(String(res.data.availableBalance));
@@ -188,7 +191,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
         <div className="relative w-72 h-52 flex items-center justify-center flex-shrink-0 select-none">
           
           <div className="absolute -top-4 -right-4 hidden lg:block z-20">
-            <DataFreshnessIndicator state="synced" theme={theme} />
+            <DataFreshnessIndicator state={dataState} theme={theme} />
           </div>
 
           {/* Ambient Glow */}

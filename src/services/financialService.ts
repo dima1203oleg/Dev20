@@ -29,7 +29,7 @@ export const DEFAULT_FINANCIAL_SUMMARY: PartnerFinancialSummary = {
   sparkline: [1350, 1520, 1780, 2100, 1950, 2310, 2840],
   qualifiedL1: 154,
   updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-  status: 'LIVE',
+  status: 'DEMO',
 };
 
 const INITIAL_PAYOUT_METHODS: PayoutMethodConfig[] = [
@@ -216,15 +216,15 @@ class FinancialService {
     const baselineData: PartnerFinancialSummary = {
       ...this.summary,
       updatedAt: nowTime,
-      status: 'LIVE',
+      status: 'DEMO',
     };
 
     return {
       data: baselineData,
-      state: 'LIVE',
-      source: 'LOCAL_AUTHENTICATED_LEDGER',
+      state: 'DEMO',
+      source: 'LOCAL_DEMO_FINANCIAL_DATA',
       updatedAt: nowTime,
-      isRealData: true,
+      isRealData: false,
     };
   }
 

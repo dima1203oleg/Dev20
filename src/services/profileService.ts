@@ -77,10 +77,10 @@ class ProfileService {
 
     return {
       data,
-      state: 'LIVE',
-      source: 'USER_IDENTITY_SERVICE',
+      state: 'DEMO',
+      source: 'LOCAL_DEMO_PROFILE_DATA',
       updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      isRealData: true,
+      isRealData: false,
     };
   }
 

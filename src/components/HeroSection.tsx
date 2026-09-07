@@ -64,6 +64,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
             </span>
             <span>UA | Платформа безпеки та ситуаційної обізнаності</span>
+            {threatModel?.dataMode !== 'LIVE' && (
+              <span className={`ml-1 rounded-full px-2 py-0.5 text-[9px] font-black tracking-wider ${
+                threatModel?.dataMode === 'DEMO_DATA'
+                  ? 'bg-purple-500/15 text-purple-300'
+                  : 'bg-amber-500/15 text-amber-300'
+              }`}>
+                {threatModel?.dataMode === 'DEMO_DATA' ? 'DEMO' : 'NOT CONNECTED'}
+              </span>
+            )}
           </div>
 
           {/* Heading */}
@@ -112,6 +121,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             >
               <Play className="w-3.5 h-3.5 fill-current text-blue-600" />
               <span>Дивитись демо</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onNavigateToShelters?.();
+                playWebAudioSound('click');
+              }}
+              className={`w-full sm:w-auto px-5 py-3.5 rounded-full border font-bold text-[13px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                isDark
+                  ? 'border-[#2E4160] text-[#B9D8E2] hover:bg-[#182335]'
+                  : 'bg-white/80 border-[#CBD6E2] text-[#416B7C] hover:bg-white shadow-sm'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <span>Найближче укриття</span>
             </button>
           </div>
 

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, ArrowUpRight, BarChart3, CheckCircle2, Clock3, Users } from 'lucide-react';
 import { networkService, NetworkSummary } from '../services/networkService';
+import { DataState } from '../types/dataEnvelope';
+import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 
 interface AnalyticsSectionProps {
   theme?: 'light' | 'dark';
@@ -11,10 +13,12 @@ const monthlyActivity = [42, 56, 51, 72, 68, 84, 96, 88, 108, 121, 116, 134];
 export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'light' }) => {
   const isDark = theme === 'dark';
   const [summary, setSummary] = useState<NetworkSummary | null>(null);
+  const [dataState, setDataState] = useState<DataState>('LOADING');
 
   useEffect(() => {
     let active = true;
     networkService.getNetworkSummary().then((response) => {
+      setDataState(response.state);
       if (active && response.data) setSummary(response.data);
     });
     return () => { active = false; };
@@ -43,8 +47,8 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'lig
             </p>
           </div>
           <div className={`flex items-center gap-2 text-xs font-semibold ${isDark ? 'text-[#A8CCD8]' : 'text-[#4D788A]'}`}>
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            Оновлено щойно · джерело: партнерська статистика
+            <DataFreshnessIndicator state={dataState} theme={theme} />
+            <span>джерело: партнерська статистика</span>
           </div>
         </div>
 

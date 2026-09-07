@@ -22,7 +22,8 @@ import {
   BarChart2,
   PieChart,
   ShieldCheck,
-  Award
+  Award,
+  Sliders
 } from 'lucide-react';
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { networkService, NetworkNode, NetworkSummary, NetworkActivity, NetworkBranchStats } from '../services/networkService';
@@ -30,6 +31,7 @@ import { DataEnvelope } from '../types/dataEnvelope';
 import { InfoTooltip } from './InfoTooltip';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 import { ContextDrawer } from './ContextDrawer';
+import { DataState } from '../types/dataEnvelope';
 
 interface AffiliateProgramProps {
   onOpenMap?: () => void;
@@ -54,6 +56,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   const isDark = theme === 'dark';
 
   const [networkSummary, setNetworkSummary] = useState<NetworkSummary | null>(null);
+  const [dataState, setDataState] = useState<DataState>('LOADING');
   const [partnerNodes, setPartnerNodes] = useState<NetworkNode[]>([]);
   const [edges, setEdges] = useState<{ from: string; to: string; level: 'L1' | 'L2' }[]>([]);
   const [activities, setActivities] = useState<NetworkActivity[]>([]);
@@ -111,6 +114,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
 
   useEffect(() => {
     networkService.getNetworkSummary().then(res => {
+      setDataState(res.state);
       if (res.data) setNetworkSummary(res.data);
     });
     networkService.getNetworkGraph().then(res => {
@@ -173,7 +177,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
-            <div className={`flex items-center rounded-xl border p-0.5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div className={`flex items-center rounded-xl border p-0.5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
               <button
                 onClick={handleCopyLink}
                 className={`px-3 py-2 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -211,7 +215,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
         <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-3 relative">
           
           <div className="absolute -top-12 right-0 hidden lg:block">
-             <DataFreshnessIndicator state="synced" theme={theme} />
+             <DataFreshnessIndicator state={dataState} theme={theme} />
           </div>
 
           {/* Card 1: Усього в мережі */}
@@ -377,6 +381,22 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <span className="text-base font-black leading-tight">2 847</span>
                 <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Всього</span>
               </div>
+
+              {onOpenSimulator && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenSimulator();
+                    playWebAudioSound('click');
+                  }}
+                  className={`px-3 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    isDark ? 'border-slate-800 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Симулятор</span>
+                </button>
+              )}
             </div>
 
             {/* Legend breakdown */}
