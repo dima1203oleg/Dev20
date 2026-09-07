@@ -4,6 +4,7 @@
 
 - The UI is a Vite production build with code-split dashboard surfaces.
 - The home surface matches the approved SIREN UA light/dark visual direction: hero, Ukraine spatial visual, feature cards, financial summary and device ecosystem.
+- The public pricing surface exposes the `$1/month` target and 30-day trial policy; the trial CTA calls the canonical `/api/subscription/trial` boundary and never activates a client-only subscription.
 - The WebGL demo is lazy-loaded and has a static visual fallback.
 - API adapters normalize Dev15 responses and preserve explicit `LIVE`, `DEMO_DATA`, `STALE`, `NOT_CONNECTED` and `ERROR` states.
 - Contract tests cover referral rules, QCB/cap calculations, threat shapes, shelter safety and data-state boundaries.
@@ -43,7 +44,7 @@ Dev15 `/api/ready` must return `200` with the required integrations connected. A
 
 1. `pnpm check` passes.
 2. Production artifact opens through `vite preview` or the deployed host.
-3. Home, partner, finance, analytics, profile, about, shelters and guide surfaces are reachable.
+3. Home, pricing, partner, finance, analytics, profile, about, shelters and guide surfaces are reachable.
 4. WebGL demo initializes; static fallback remains usable when WebGL is unavailable.
 5. Mobile 390×844 and tablet 1024×1366 have no horizontal overflow.
 6. Console has no runtime errors on the tested surfaces.

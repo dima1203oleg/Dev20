@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowRight, Check, Clock3, CreditCard, Database, ShieldCheck, Sparkles } from 'lucide-react';
+import { subscriptionService } from '../services/subscriptionService';
 
 interface PricingSectionProps {
   theme?: 'light' | 'dark';
@@ -18,6 +19,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
   onOpenHome,
 }) => {
   const [notice, setNotice] = useState<string | null>(null);
+  const [trialPending, setTrialPending] = useState(false);
   const isDark = theme === 'dark';
   const panel = isDark
     ? 'bg-slate-900/80 border-slate-800 text-white'
@@ -25,8 +27,22 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
   const muted = isDark ? 'text-slate-400' : 'text-slate-600';
 
   const handleStart = () => {
-    setNotice('Ознайомлення відкрито. Платіж не створюється: billing API ще не підключено.');
     onStartOnboarding?.();
+  };
+
+  const handleTrial = async () => {
+    setTrialPending(true);
+    setNotice(null);
+    const response = await subscriptionService.startTrial();
+    setTrialPending(false);
+    if (response.data) {
+      const endDate = response.data.trialEndsAt
+        ? new Date(response.data.trialEndsAt).toLocaleDateString('uk-UA')
+        : 'після підтвердження provider';
+      setNotice(`Trial активовано до ${endDate}. Платіж не створено.`);
+      return;
+    }
+    setNotice(response.error || 'Trial тимчасово недоступний.');
   };
 
   return (
@@ -45,8 +61,11 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
               Один зрозумілий простір для карти, підтверджених подій, прогнозних напрямків, хронології та інформації про укриття.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <button type="button" onClick={handleStart} className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
-                Ознайомитися з Premium <ArrowRight className="h-4 w-4" />
+              <button type="button" onClick={handleTrial} disabled={trialPending} className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">
+                {trialPending ? 'Перевіряємо доступ…' : 'Почати 30-денний trial'} <ArrowRight className="h-4 w-4" />
+              </button>
+              <button type="button" onClick={handleStart} className={`inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition ${isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-50'}`}>
+                Ознайомитися
               </button>
               <button type="button" onClick={onOpenHome} className={`inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition ${isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-50'}`}>
                 Відкрити карту
