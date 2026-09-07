@@ -359,6 +359,12 @@ export default function App() {
       {/* 1. Header with Navigation */}
       <Header
         activeSection={activeSection}
+        onOpenFeatures={() => {
+          setActiveSection('HOME');
+          window.setTimeout(() => {
+            document.getElementById('home-features')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 0);
+        }}
         onSelectSection={(sec) => {
           setActiveSection(sec);
           try {
@@ -420,7 +426,7 @@ export default function App() {
               />
 
               {/* Row 2: 4 Feature Navigation Cards (Мережа, Фінанси, Аналітика, Партнерська програма) */}
-              <HomeFeaturesGrid 
+              <HomeFeaturesGrid
                 onNavigateToTab={(tab) => setActiveSection(tab)}
                 theme={settings.theme || 'light'}
               />

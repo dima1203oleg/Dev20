@@ -18,6 +18,7 @@ import { DataState } from '../types/dataEnvelope';
 interface HeaderProps {
   activeSection: DashboardSection;
   onSelectSection: (section: DashboardSection) => void;
+  onOpenFeatures?: () => void;
   onOpenGuide?: () => void;
   onToggleTheme?: () => void;
   theme?: 'light' | 'dark';
@@ -27,6 +28,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ 
   activeSection,
   onSelectSection,
+  onOpenFeatures,
   onOpenGuide,
   onToggleTheme,
   theme = 'light',
@@ -74,6 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleMobileNavClick = (item: { id: string; section: DashboardSection }) => {
     setActiveTab(item.id as typeof activeTab);
+    if (item.id === 'features') onOpenFeatures?.();
     handleNavClick(item.section);
     if (item.id === 'how') onOpenGuide?.();
     setMobileMenuOpen(false);
@@ -81,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems = [
     { id: 'home', label: 'Головна', section: 'HOME' as DashboardSection },
-    { id: 'features', label: 'Можливості', section: 'NETWORK' as DashboardSection },
+    { id: 'features', label: 'Можливості', section: 'HOME' as DashboardSection },
     { id: 'how', label: 'Як це працює', section: 'HOME' as DashboardSection },
     { id: 'pricing', label: 'Тарифи', section: 'PRICING' as DashboardSection },
     { id: 'about', label: 'Про нас', section: 'ABOUT' as DashboardSection },
@@ -138,6 +141,7 @@ export const Header: React.FC<HeaderProps> = ({
                 key={item.id}
                 onClick={() => {
                   setActiveTab(item.id as any);
+                  if (item.id === 'features') onOpenFeatures?.();
                   handleNavClick(item.section as DashboardSection);
                   if (item.id === 'how') onOpenGuide?.();
                 }}

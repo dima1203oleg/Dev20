@@ -98,7 +98,7 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
   ];
 
   return (
-    <div className="w-full my-0">
+    <div id="home-features" className="w-full my-0 scroll-mt-24">
       <div className="siren-home-features-grid grid grid-cols-1 md:grid-cols-2 gap-3">
         {cards.map((card) => (
           <button
