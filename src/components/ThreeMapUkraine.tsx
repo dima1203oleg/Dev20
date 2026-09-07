@@ -96,6 +96,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [viewAngle, setViewAngle] = useState<'3D' | 'TOP'>('3D');
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [webglUnavailable, setWebglUnavailable] = useState(false);
 
   // Region meshes map for raycasting & material updates
   const regionMeshesRef = useRef<Map<string, { mesh: THREE.Mesh; defaultY: number; regionData: RegionData }>>(new Map());
@@ -108,6 +109,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
 
     const width = container.clientWidth || 600;
     const height = container.clientHeight || (variant === 'hero' ? 380 : 320);
+    setWebglUnavailable(false);
 
     // 1. Scene, Camera & WebGL Renderer
     const scene = new THREE.Scene();
@@ -119,7 +121,13 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
+    } catch {
+      setWebglUnavailable(true);
+      return;
+    }
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -535,6 +543,55 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     cameraRef.current.lookAt(0, 0, 0);
     controlsTargetRef.current = { rotX: -0.22, rotY: 0.05, zoom: 1 };
   };
+
+  if (webglUnavailable) {
+    const fallbackRegions = (regions || INITIAL_REGIONS)
+      .filter((region) => region.isAlarm || region.id === selectedRegionId)
+      .slice(0, 6);
+
+    return (
+      <div
+        className={`relative flex h-full w-full flex-col justify-center overflow-hidden rounded-3xl border p-4 ${
+          isDark ? 'border-cyan-900/70 bg-slate-950/80 text-white' : 'border-blue-100 bg-slate-50 text-slate-900'
+        } ${className}`}
+        role="img"
+        aria-label="2.5D карта безпеки України: WebGL недоступний, доступний спрощений режим"
+      >
+        <div className="pointer-events-none absolute inset-0 opacity-40" style={{
+          backgroundImage: `linear-gradient(135deg, ${isDark ? 'rgba(34,211,238,.16)' : 'rgba(37,99,235,.12)'} 1px, transparent 1px), linear-gradient(45deg, ${isDark ? 'rgba(34,211,238,.10)' : 'rgba(37,99,235,.08)'} 1px, transparent 1px)`,
+          backgroundSize: '28px 28px',
+        }} />
+        <div className="relative z-10 flex items-center justify-between gap-3">
+          <div>
+            <div className={`text-[10px] font-black tracking-[0.16em] ${isDark ? 'text-cyan-300' : 'text-blue-700'}`}>2.5D SAFETY MODE</div>
+            <div className="mt-1 text-sm font-black">Спрощена просторова карта</div>
+            <div className={`mt-1 text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>WebGL недоступний. Критичні дані та вибір регіону залишаються доступними.</div>
+          </div>
+          <Layers className={`h-7 w-7 shrink-0 ${isDark ? 'text-cyan-300' : 'text-blue-600'}`} aria-hidden="true" />
+        </div>
+        <div className="relative z-10 mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {fallbackRegions.length > 0 ? fallbackRegions.map((region) => (
+            <button
+              key={region.id}
+              type="button"
+              aria-label={`Вибрати регіон ${region.name}`}
+              onClick={() => onSelectRegion?.(region)}
+              className={`min-h-11 rounded-xl border px-3 py-2 text-left text-xs font-bold transition-colors ${
+                isDark ? 'border-rose-900/70 bg-rose-950/30 text-rose-100 hover:bg-rose-900/50' : 'border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100'
+              }`}
+            >
+              <span className="block truncate">{region.name}</span>
+              <span className="mt-0.5 block text-[10px] font-semibold opacity-75">{region.isAlarm ? 'Статус: тривога' : 'Обраний регіон'}</span>
+            </button>
+          )) : (
+            <div className={`col-span-full rounded-xl border px-3 py-3 text-xs font-semibold ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
+              Актуальні регіональні дані поки не передані джерелом.
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
