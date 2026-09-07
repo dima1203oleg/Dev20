@@ -56,6 +56,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       : threatModel?.dataMode === 'ERROR'
         ? 'ПОМИЛКА ДЖЕРЕЛА ДАНИХ'
         : 'LIVE DATA НЕ ПІДКЛЮЧЕНО';
+  const freshnessLabel = threatModel?.dataMode === 'LIVE'
+    ? `LIVE · Оновлено ${threatModel.timestamp}`
+    : threatModel?.dataMode === 'DEMO_DATA'
+      ? `DEMO · Сценарій оновлено ${threatModel.timestamp}`
+      : threatModel?.dataMode === 'CACHED'
+        ? `CACHED · Останнє оновлення ${threatModel.timestamp}`
+        : threatModel?.dataMode === 'STALE'
+          ? `STALE · Останнє оновлення ${threatModel.timestamp}`
+          : 'ДАНІ НЕДОСТУПНІ';
+  const freshnessTone = threatModel?.dataMode === 'LIVE'
+    ? 'bg-emerald-500/15 text-emerald-300'
+    : threatModel?.dataMode === 'DEMO_DATA'
+      ? 'bg-purple-500/15 text-purple-300'
+      : 'bg-amber-500/15 text-amber-300';
 
   // A live source must never be represented by the decorative preview asset.
   // Switch to the normalized WebGL scene as soon as live data is available.
@@ -101,6 +115,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 {dataModeLabel}
               </span>
             )}
+            <span role="status" className={`ml-1 rounded-full px-2 py-0.5 text-[9px] font-black tracking-wide ${freshnessTone}`}>
+              {freshnessLabel}
+            </span>
           </div>
 
           {/* Heading */}
