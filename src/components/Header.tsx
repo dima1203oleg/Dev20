@@ -58,6 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
     { label: 'Фінанси та виплати', section: 'FINANCE' },
     { label: 'Тарифи Premium', section: 'PRICING' },
     { label: 'Аналітика', section: 'ANALYTICS' },
+    { label: 'Укриття та маршрути', section: 'SHELTERS' },
     { label: 'Партнерська програма', section: 'AFFILIATE' },
     { label: 'Про SIREN UA', section: 'ABOUT' },
     { label: 'Профіль і безпека', section: 'PROFILE' },

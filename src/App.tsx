@@ -459,6 +459,17 @@ export default function App() {
             <AnalyticsSection theme={settings.theme || 'light'} />
           )}
 
+          {/* SECTION 5b: SHELTERS (Укриття) */}
+          {activeSection === 'SHELTERS' && (
+            <div className="animate-in fade-in duration-200">
+              <SheltersSection
+                myRegionId={settings.myRegion}
+                regions={displayRegions}
+                dataState={currentDataMode === 'DEMO_DATA' ? 'DEMO' : currentDataMode}
+              />
+            </div>
+          )}
+
           {/* =========================================================================
               SECTION 6: AFFILIATE (Партнерська програма)
              ========================================================================= */}

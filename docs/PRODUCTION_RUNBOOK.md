@@ -6,6 +6,7 @@
 - The home surface matches the approved SIREN UA light/dark visual direction: hero, Ukraine spatial visual, feature cards, financial summary and device ecosystem.
 - The public pricing surface exposes the `$1/month` target and 30-day trial policy; the trial CTA calls the canonical `/api/subscription/trial` boundary and never activates a client-only subscription.
 - The WebGL demo is lazy-loaded and has a static visual fallback.
+- The shelters experience is available as a standalone searchable section and as a contextual modal action; demo/unknown shelter records remain explicitly labelled.
 - API adapters normalize Dev15 responses and preserve explicit `LIVE`, `DEMO_DATA`, `STALE`, `NOT_CONNECTED` and `ERROR` states.
 - Contract tests cover referral rules, QCB/cap calculations, threat shapes, shelter safety and data-state boundaries.
 

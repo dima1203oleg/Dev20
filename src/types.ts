@@ -245,7 +245,7 @@ export interface OrbitalDeviceConfig {
   keyFeatures: string[];
 }
 
-export type DashboardSection = 'HOME' | 'NETWORK' | 'FINANCE' | 'PRICING' | 'ANALYTICS' | 'AFFILIATE' | 'PROFILE' | 'ABOUT';
+export type DashboardSection = 'HOME' | 'NETWORK' | 'FINANCE' | 'PRICING' | 'ANALYTICS' | 'SHELTERS' | 'AFFILIATE' | 'PROFILE' | 'ABOUT';
 
 export type MainWorkspaceMode = 'SAFETY' | 'NETWORK';
 
