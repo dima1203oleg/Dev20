@@ -353,15 +353,35 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
       });
     }
 
-    // 8. Raycasting Mouse Interactivity (Hover & Click detection on individual Oblasts)
+    // 8. Pointer interactivity (mouse, touch and pen selection on oblast meshes)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let currentHoveredMesh: THREE.Mesh | null = null;
 
-    const handlePointerMove = (e: MouseEvent) => {
+    const updatePointerPosition = (clientX: number, clientY: number) => {
       const rect = container.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+      mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -(((clientY - rect.top) / rect.height) * 2 - 1);
+    };
+
+    const clearHover = () => {
+      if (currentHoveredMesh) {
+        const prevEntry = regionMeshes.get(currentHoveredMesh.userData.regionId);
+        if (prevEntry) currentHoveredMesh.position.y = prevEntry.defaultY;
+        currentHoveredMesh = null;
+      }
+      setHoveredRegion(null);
+      setTooltipPos(null);
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      updatePointerPosition(e.clientX, e.clientY);
+
+      // Touch and pen have no hover state. Their final pointer position is
+      // retained for the following click/pointerup hit-test instead.
+      if (e.pointerType === 'touch' || e.pointerType === 'pen') return;
+
+      const rect = container.getBoundingClientRect();
 
       // Mouse Parallax Rotation
       controlsTargetRef.current.rotY = mouse.x * 0.18 + 0.05;
@@ -387,15 +407,13 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
         }
         setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
       } else {
-        if (currentHoveredMesh) {
-          const prevEntry = regionMeshes.get(currentHoveredMesh.userData.regionId);
-          if (prevEntry) {
-            currentHoveredMesh.position.y = prevEntry.defaultY;
-          }
-          currentHoveredMesh = null;
-        }
-        setHoveredRegion(null);
-        setTooltipPos(null);
+        clearHover();
+      }
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+        updatePointerPosition(e.clientX, e.clientY);
       }
     };
 
@@ -411,7 +429,9 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
       }
     };
 
-    container.addEventListener('mousemove', handlePointerMove);
+    container.addEventListener('pointermove', handlePointerMove);
+    container.addEventListener('pointerup', handlePointerUp);
+    container.addEventListener('pointerleave', clearHover);
     container.addEventListener('click', handlePointerClick);
 
     // 9. Animation Render Loop
@@ -473,7 +493,9 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
-      container.removeEventListener('mousemove', handlePointerMove);
+      container.removeEventListener('pointermove', handlePointerMove);
+      container.removeEventListener('pointerup', handlePointerUp);
+      container.removeEventListener('pointerleave', clearHover);
       container.removeEventListener('click', handlePointerClick);
       if (renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
@@ -517,7 +539,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
   return (
     <div 
       ref={containerRef} 
-      className={`relative w-full h-full select-none cursor-grab active:cursor-grabbing ${className}`}
+      className={`relative w-full h-full select-none cursor-grab active:cursor-grabbing touch-pan-y ${className}`}
     >
       {/* 3D Map Floating Interactive Tooltip */}
       {hoveredRegion && tooltipPos && (
