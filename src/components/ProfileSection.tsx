@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   User, 
   Mail, 
@@ -41,6 +41,8 @@ import { playWebAudioSound } from '../utils/sirenAudio';
 import { InfoTooltip } from './InfoTooltip';
 import { ContextDrawer } from './ContextDrawer';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
+import { profileService, UserProfileData } from '../services/profileService';
+import { DataState } from '../types/dataEnvelope';
 
 interface ProfileSectionProps {
   theme?: 'light' | 'dark';
@@ -52,6 +54,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isEditingData, setIsEditingData] = useState(false);
+  const [profileData, setProfileData] = useState<UserProfileData | null>(null);
+  const [profileState, setProfileState] = useState<DataState>('LOADING');
   const [notifications, setNotifications] = useState({
     push: true,
     email: true,
@@ -65,15 +69,47 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
 
   const isDark = theme === 'dark';
 
+  useEffect(() => {
+    let mounted = true;
+    profileService.getProfile().then((response) => {
+      if (!mounted) return;
+      setProfileState(response.state);
+      if (response.data) setProfileData(response.data);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const profile = profileData;
+  const displayName = profile?.fullName || 'Олександр Кравчук';
+  const displayFirstName = profile?.firstName || 'Олександр';
+  const displayLastName = profile?.lastName || 'Кравчук';
+  const displayPartnerId = profile?.partnerId || 'SRN-849201';
+  const displayCode = profile?.partnerCode || 'OLEKSANDR25';
+  const displayEmail = profile?.email || 'o.kravchuk@gmail.com';
+  const displayPhone = profile?.phone || '+380 (67) 842-19-44';
+  const displayCity = profile?.city || 'Одеса';
+  const displayRegistrationDate = profile?.registrationDate || '12 квітня 2024';
+  const displayRank = profile?.currentRank.badgeLabel || 'Gold Partner';
+  const displayRate = profile?.currentRank.l1Percent ?? 20;
+  const displayQualifiedL1 = profile?.qualifiedL1 ?? 154;
+  const displayNetworkCount = profile?.totalNetworkCount ?? 2847;
+  const displayNextRank = profile?.nextRank?.name || 'Platinum';
+  const displayRemainingL1 = profile?.remainingL1ToNextRank ?? 46;
+  const displayRankProgress = profile?.rankProgressPercent ?? 63;
+  const displayAvatar = profile?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
+  const displayReferralUrl = `https://siren.ua/r/${displayCode}`;
+
   const handleCopyCode = () => {
-    navigator.clipboard.writeText('OLEKSANDR25');
+    navigator.clipboard.writeText(displayCode);
     setCopiedCode(true);
     playWebAudioSound('click');
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText('https://siren.ua/r/OLEKSANDR25');
+    navigator.clipboard.writeText(displayReferralUrl);
     setCopiedLink(true);
     playWebAudioSound('click');
     setTimeout(() => setCopiedLink(false), 2000);
@@ -109,7 +145,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             }`}>
               Мій профіль
             </h1>
-            <DataFreshnessIndicator state="DEMO" theme={theme} />
+            <DataFreshnessIndicator state={profileState === 'LOADING' ? 'DEMO' : profileState} theme={theme} />
           </div>
 
           <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -126,8 +162,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-blue-600 to-cyan-400 shadow-xl relative">
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-slate-800">
                 <img 
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" 
-                  alt="Олександр Кравчук" 
+                  src={displayAvatar}
+                  alt={displayName}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -151,33 +187,33 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           {/* User Details Column */}
           <div className="space-y-1.5 text-center sm:text-left text-xs">
             <div className="flex items-center justify-center sm:justify-start gap-1.5">
-              <h2 className="text-xl font-black">{`Олександр Кравчук`}</h2>
-              <InfoTooltip text="Верифікований користувач із підтвердженою особою (KYC).">
+              <h2 className="text-xl font-black">{displayName}</h2>
+              <InfoTooltip text="Статус профілю та KYC підтверджуються підключеним auth-сервісом.">
                 <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500 text-white" />
               </InfoTooltip>
             </div>
             
             <div className={`text-[11px] font-mono flex items-center justify-center sm:justify-start gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Partner ID: <span className="font-bold text-blue-600">SRN-125678</span>
+              Partner ID: <span className="font-bold text-blue-600">{displayPartnerId}</span>
               <InfoTooltip text="Ваш унікальний ідентифікатор у мережі SIREN UA. Використовується для реферальних нарахувань та служби підтримки." />
             </div>
 
             <div className={`space-y-1 pt-1 text-slate-600 dark:text-slate-300 text-[11px]`}>
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
-                <span>oleksandr@example.com</span>
+                <span>{displayEmail}</span>
               </div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <Phone className="w-3.5 h-3.5 text-slate-400" />
-                <span>+380 67 123 45 67</span>
+                <span>{displayPhone}</span>
               </div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                <span>Україна, Одеса</span>
+                <span>Україна, {displayCity}</span>
               </div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>У системі з 02.09.2026</span>
+                <span>У системі з {displayRegistrationDate}</span>
               </div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -220,9 +256,9 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           }`}>
             <div className="flex items-center justify-between">
               <span className="font-bold flex items-center gap-1 text-amber-500">
-                <Crown className="w-3.5 h-3.5 fill-amber-500" /> Gold Partner
+                <Crown className="w-3.5 h-3.5 fill-amber-500" /> {displayRank}
               </span>
-              <span className="text-[10px] text-slate-400">Ставка: 20%</span>
+              <span className="text-[10px] text-slate-400">Ставка: {displayRate}%</span>
             </div>
             <div className="flex items-center justify-between text-[10px] text-slate-500">
               <span className="flex items-center gap-1 text-emerald-600"><ShieldCheck className="w-3 h-3" /> Верифікований</span>
@@ -274,19 +310,19 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Ім'я</span>
-                <span className="font-semibold">Олександр</span>
+                <span className="font-semibold">{displayFirstName}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Прізвище</span>
-                <span className="font-semibold">Кравчук</span>
+                <span className="font-semibold">{displayLastName}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Email</span>
-                <span className="font-semibold">oleksandr@example.com</span>
+                <span className="font-semibold">{displayEmail}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Телефон</span>
-                <span className="font-semibold">+380 67 123 45 67</span>
+                <span className="font-semibold">{displayPhone}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Країна</span>
@@ -294,7 +330,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Місто</span>
-                <span className="font-semibold">Одеса</span>
+                <span className="font-semibold">{displayCity}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Мова</span>
@@ -302,11 +338,11 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-400">Дата реєстрації</span>
-                <span className="font-semibold">02.09.2026</span>
+                <span className="font-semibold">{displayRegistrationDate}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Partner ID</span>
-                <span className="font-mono font-bold text-blue-600">SRN-125678</span>
+                <span className="font-mono font-bold text-blue-600">{displayPartnerId}</span>
               </div>
             </div>
           </div>
@@ -333,20 +369,20 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <Crown className="w-6 h-6 fill-amber-500" />
               </div>
               <div>
-                <div className="text-base font-black">Gold Partner</div>
-                <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ставка: <span className="font-bold text-slate-900 dark:text-white">20%</span></div>
+                <div className="text-base font-black">{displayRank}</div>
+                <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ставка: <span className="font-bold text-slate-900 dark:text-white">{displayRate}%</span></div>
               </div>
             </div>
 
             {/* Progress to Platinum */}
             <div className="my-3 space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>До наступного рівня: <span className="font-bold text-slate-800 dark:text-slate-200">Platinum</span></span>
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>До наступного рівня: <span className="font-bold text-slate-800 dark:text-slate-200">{displayNextRank}</span></span>
               </div>
               <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full" style={{ width: '57%' }} />
+                <div className="h-full bg-blue-600 rounded-full" style={{ width: `${displayRankProgress}%` }} />
               </div>
-              <div className="text-right text-[10px] font-mono text-slate-400">2 847 / 5 000</div>
+              <div className="text-right text-[10px] font-mono text-slate-400">{displayRemainingL1} L1 до {displayNextRank}</div>
             </div>
 
             {/* 6 Rank Tier Steps Visualizer (1:1 with Screenshot 2) */}
@@ -372,15 +408,15 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             }`}>
               <div>
                 <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Активні реферали</div>
-                <div className="text-sm font-black mt-0.5">482</div>
+                <div className="text-sm font-black mt-0.5">{displayQualifiedL1}</div>
               </div>
               <div>
                 <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Особиста мережа</div>
-                <div className="text-sm font-black mt-0.5">2 365</div>
+                <div className="text-sm font-black mt-0.5">{displayNetworkCount}</div>
               </div>
               <div>
                 <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Оновлено статус</div>
-                <div className="text-xs font-semibold mt-0.5">12.08.2026</div>
+                <div className="text-xs font-semibold mt-0.5">{profile?.registrationDate || '—'}</div>
               </div>
             </div>
           </div>
@@ -413,7 +449,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <div className={`p-2.5 rounded-2xl border flex items-center justify-between ${
                   isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
                 }`}>
-                  <span className="text-sm font-mono font-bold">OLEKSANDR25</span>
+                  <span className="text-sm font-mono font-bold">{displayCode}</span>
                   <button onClick={handleCopyCode} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer">
                     {copiedCode ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                   </button>
@@ -425,7 +461,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <div className={`p-2.5 rounded-2xl border flex items-center justify-between ${
                   isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
                 }`}>
-                  <span className="text-xs font-mono truncate mr-2">https://siren.ua/r/OLEKSANDR25</span>
+                  <span className="text-xs font-mono truncate mr-2">{displayReferralUrl}</span>
                   <button onClick={handleCopyLink} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer">
                     {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                   </button>
@@ -513,7 +549,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                   <CreditCard className="w-4 h-4 text-sky-500" />
                   <div>
                     <div className="font-bold leading-tight">PayPal</div>
-                    <div className="text-[10px] text-slate-400">oleksandr@example.com</div>
+                    <div className="text-[10px] text-slate-400">{displayEmail}</div>
                   </div>
                 </div>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
@@ -691,7 +727,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <div className="w-8 h-8 rounded-full bg-amber-400 text-slate-900 mx-auto flex items-center justify-center mb-1">
                   👑
                 </div>
-                <div className="font-bold">Gold Partner</div>
+                <div className="font-bold">{displayRank}</div>
               </div>
               <div className={`p-2.5 rounded-2xl border ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-emerald-50/50 border-emerald-100'}`}>
                 <div className="w-8 h-8 rounded-full bg-emerald-500 text-white mx-auto flex items-center justify-center mb-1">

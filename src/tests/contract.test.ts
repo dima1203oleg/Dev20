@@ -11,6 +11,7 @@
 import { calculateRankByL1, calculateCommissions, REFERRAL_TIERS } from '../services/referralEngine';
 import { INITIAL_REGIONS } from '../data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from '../data/spatialThreatData';
+import { calculateCompensation, calculateQcb } from '../services/compensationEngine';
 
 export interface ContractTestResult {
   suite: string;
@@ -91,6 +92,30 @@ export function runAllContractTests(): {
   // The same QCB should never produce different results for the same rank.
   const repeatGoldCalc = calculateCommissions(80, 10000, 10000);
   assert(JSON.stringify(goldCalc) === JSON.stringify(repeatGoldCalc), s1, 'Commission calculation must be deterministic');
+
+  // QCB and hard cap must be calculated before ledger integration.
+  const qcb = calculateQcb({
+    grossMinorUnits: 100,
+    platformCostsMinorUnits: 10,
+    processingCostsMinorUnits: 5,
+  });
+  assert(qcb.qcbMinorUnits === 85, s1, 'QCB must subtract configured non-commissionable deductions');
+
+  const platinumCap = calculateCompensation({
+    qcbMinorUnits: 100,
+    directRank: 'PLATINUM',
+    secondLevelRank: 'PLATINUM',
+  });
+  assert(platinumCap.status === 'OK', s1, 'Platinum + Platinum must pass the 50% cap');
+  assert(platinumCap.totalAllocationMinorUnits === 50, s1, 'Platinum + Platinum must allocate exactly 50% of QCB');
+
+  const failedCap = calculateCompensation({
+    qcbMinorUnits: 100,
+    directRank: 'PLATINUM',
+    secondLevelRank: 'PLATINUM',
+    promoAllocationBps: 500,
+  });
+  assert(failedCap.status === 'CAP_VALIDATION_FAILED', s1, 'Allocations above 50% must not produce commission entries');
 
   // --- SUITE 2: THREATSERVER API CONTRACTS ---
   const s2 = 'ThreatServer API Contracts';
