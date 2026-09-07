@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { HomeFeaturesGrid } from './components/HomeFeaturesGrid';
@@ -110,6 +110,7 @@ export default function App() {
   const [threatUpdatedAt, setThreatUpdatedAt] = useState('—');
   const [threatPayload, setThreatPayload] = useState<LiveThreatsPayload | null>(null);
   const [sceneTrajectories, setSceneTrajectories] = useState<typeof INITIAL_TRAJECTORIES>([]);
+  const previousThreatStateRef = useRef<DataState>('LOADING');
 
   useEffect(() => {
     let mounted = true;
@@ -118,6 +119,12 @@ export default function App() {
       const response = await threatServerService.fetchLiveThreats(settings.myRegion);
       if (!mounted) return;
 
+      const previousState = previousThreatStateRef.current;
+      if ((previousState === 'NOT_CONNECTED' || previousState === 'STALE' || previousState === 'ERROR') && response.state === 'LIVE') {
+        setBannerAlert('З’єднання відновлено. Оновлюємо дані…');
+        window.setTimeout(() => setBannerAlert(null), 4000);
+      }
+      previousThreatStateRef.current = response.state;
       setThreatDataState(response.state);
       setThreatUpdatedAt(response.updatedAt || '—');
       if (response.data) {
@@ -344,7 +351,7 @@ export default function App() {
 
       {/* 2. Critical Alert Banner if Active */}
       {bannerAlert && (
-        <div className="bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 text-white px-4 py-2 shadow-md text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-40">
+        <div role="status" aria-live="polite" className="bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 text-white px-4 py-2 shadow-md text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-40">
           <span>{bannerAlert}</span>
           <button
             onClick={() => setBannerAlert(null)}
