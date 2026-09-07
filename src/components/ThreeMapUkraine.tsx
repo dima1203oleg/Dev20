@@ -575,8 +575,10 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
       {enableControls && (
         <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-30">
           <button
+            type="button"
+            aria-label="Збільшити карту"
             onClick={() => handleZoom(0.15)}
-            className={`p-1.5 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer ${
+            className={`min-h-11 min-w-11 p-2 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer flex items-center justify-center ${
               isDark 
                 ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700' 
                 : 'bg-white/90 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
@@ -586,8 +588,10 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
+            aria-label="Зменшити карту"
             onClick={() => handleZoom(-0.15)}
-            className={`p-1.5 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer ${
+            className={`min-h-11 min-w-11 p-2 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer flex items-center justify-center ${
               isDark 
                 ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700' 
                 : 'bg-white/90 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
@@ -597,8 +601,10 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
+            aria-label="Перемкнути 3D та 2D ракурс"
             onClick={handleToggleView}
-            className={`p-1.5 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer ${
+            className={`min-h-11 min-w-11 p-2 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer flex items-center justify-center ${
               viewAngle === 'TOP' 
                 ? 'bg-blue-600 text-white border-blue-500' 
                 : (isDark ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700' : 'bg-white/90 hover:bg-white text-slate-600 border-slate-200/80')
@@ -608,8 +614,10 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
             <Layers className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
+            aria-label="Скинути ракурс карти"
             onClick={handleResetView}
-            className={`p-1.5 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer ${
+            className={`min-h-11 min-w-11 p-2 rounded-xl border shadow-xs backdrop-blur-sm transition-all cursor-pointer flex items-center justify-center ${
               isDark 
                 ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700' 
                 : 'bg-white/90 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
@@ -625,12 +633,14 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
       {variant === 'hero' && (
         <>
           {/* Kyiv Node */}
-          <div 
+          <button
+            type="button"
+            aria-label="Вибрати регіон Київ"
             onClick={() => {
               const reg = (regions || INITIAL_REGIONS).find(r => r.id === 'kyiv_obl' || r.id === 'kyiv_city');
               if (reg && onSelectRegion) onSelectRegion(reg);
             }}
-            className="absolute top-[32%] left-[47%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
+            className="absolute top-[32%] left-[47%] -translate-x-1/2 -translate-y-1/2 min-h-11 px-2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform bg-transparent border-0"
           >
             <div className="relative flex items-center justify-center w-5 h-5">
               {kyivIsAlarm ? <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" /> : null}
@@ -641,15 +651,17 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
             }`}>
               Київ
             </span>
-          </div>
+          </button>
 
           {/* Kharkiv Node */}
-          <div 
+          <button
+            type="button"
+            aria-label="Вибрати регіон Харків"
             onClick={() => {
               const reg = (regions || INITIAL_REGIONS).find(r => r.id === 'kharkiv');
               if (reg && onSelectRegion) onSelectRegion(reg);
             }}
-            className="absolute top-[36%] left-[73%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
+            className="absolute top-[36%] left-[73%] -translate-x-1/2 -translate-y-1/2 min-h-11 px-2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform bg-transparent border-0"
           >
             <div className="relative flex items-center justify-center w-4 h-4">
               <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400 border-2 border-white shadow-md" />
@@ -659,15 +671,17 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
             }`}>
               Харків
             </span>
-          </div>
+          </button>
 
           {/* Dnipro Node */}
-          <div 
+          <button
+            type="button"
+            aria-label="Вибрати регіон Дніпро"
             onClick={() => {
               const reg = (regions || INITIAL_REGIONS).find(r => r.id === 'dnipro');
               if (reg && onSelectRegion) onSelectRegion(reg);
             }}
-            className="absolute top-[55%] left-[67%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
+            className="absolute top-[55%] left-[67%] -translate-x-1/2 -translate-y-1/2 min-h-11 px-2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform bg-transparent border-0"
           >
             <div className="relative flex items-center justify-center w-6 h-6">
               {dniproIsAlarm ? <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" /> : null}
@@ -680,15 +694,17 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
             }`}>
               Дніпро
             </span>
-          </div>
+          </button>
 
           {/* Odesa Node */}
-          <div 
+          <button
+            type="button"
+            aria-label="Вибрати регіон Одеса"
             onClick={() => {
               const reg = (regions || INITIAL_REGIONS).find(r => r.id === 'odesa');
               if (reg && onSelectRegion) onSelectRegion(reg);
             }}
-            className="absolute top-[68%] left-[44%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
+            className="absolute top-[68%] left-[44%] -translate-x-1/2 -translate-y-1/2 min-h-11 px-2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform bg-transparent border-0"
           >
             <div className="relative flex items-center justify-center w-4 h-4">
               <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500 border-2 border-white shadow-md" />
@@ -698,7 +714,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
             }`}>
               Одеса
             </span>
-          </div>
+          </button>
         </>
       )}
     </div>
