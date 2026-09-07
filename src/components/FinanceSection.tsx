@@ -166,7 +166,9 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
           </h1>
 
           <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            Заробляй, розвивай мережу та підтримуй важливу справу. Прозора статистика, автоматичні виплати, повний контроль.
+            {dataState === 'LIVE'
+              ? 'Заробляй, розвивай мережу та підтримуй важливу справу. Прозора статистика, автоматичні виплати, повний контроль.'
+              : 'Демонстраційний фінансовий кабінет: структура доходу, ledger і payout flow готові до підключення production billing API.'}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -814,15 +816,21 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             </button>
 
             <h3 className="text-lg font-black mb-1">Виведення коштів</h3>
-            <p className="text-xs text-slate-400 mb-4">Доступно до виводу: ₴ 8 460</p>
+            <p className="text-xs text-slate-400 mb-4">Доступно до виводу: ₴ {summary.availableBalance.toLocaleString('uk-UA')}</p>
+
+            {dataState !== 'LIVE' && (
+              <div className={`mb-4 rounded-2xl border px-3 py-2 text-[11px] ${isDark ? 'border-purple-900/50 bg-purple-950/30 text-purple-200' : 'border-purple-200 bg-purple-50 text-purple-700'}`}>
+                DEMO: payout provider не підключений. Нижче можна пройти локальний сценарій без реального переказу коштів.
+              </div>
+            )}
 
             {withdrawSuccess ? (
               <div className="py-8 text-center space-y-2">
                 <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
                   <Check className="w-8 h-8" />
                 </div>
-                <h4 className="text-base font-black">Заявку успішно створено!</h4>
-                <p className="text-xs text-slate-400">Кошти будуть зараховані на вашу картку протягом 15 хвилин.</p>
+                <h4 className="text-base font-black">{dataState === 'LIVE' ? 'Заявку успішно створено!' : 'DEMO-заявку створено'}</h4>
+                <p className="text-xs text-slate-400">{dataState === 'LIVE' ? 'Кошти будуть зараховані після підтвердження payout provider.' : 'Реального переказу не виконано. Підключіть payout provider для production-виплат.'}</p>
               </div>
             ) : (
               <form onSubmit={handleWithdraw} className="space-y-4">
@@ -832,13 +840,13 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                     type="number"
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
-                    max="8460"
-                    min="1000"
+                    max={summary.availableBalance}
+                    min={summary.minimumPayout}
                     className={`w-full px-4 py-2.5 rounded-2xl border text-base font-bold outline-none ${
                       isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   />
-                  <div className="text-[10px] text-slate-400 mt-1">Мінімальна сума: ₴ 1 000</div>
+                  <div className="text-[10px] text-slate-400 mt-1">Мінімальна сума: ₴ {summary.minimumPayout.toLocaleString('uk-UA')}</div>
                 </div>
 
                 <div>
@@ -848,7 +856,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   }`}>
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs font-bold">Картка **** 4242 (Основна)</span>
+                      <span className="text-xs font-bold">{selectedMethod?.title || 'Платіжний метод не підключений'} {selectedMethod?.accountMasked ? `(${selectedMethod.accountMasked})` : ''}</span>
                     </div>
                     <Check className="w-4 h-4 text-blue-600" />
                   </div>
@@ -858,7 +866,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   type="submit"
                   className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-2"
                 >
-                  <span>Підтвердити виведення ₴ {withdrawAmount}</span>
+                  <span>{dataState === 'LIVE' ? 'Підтвердити' : 'Запустити DEMO'} виплату ₴ {withdrawAmount}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </form>
