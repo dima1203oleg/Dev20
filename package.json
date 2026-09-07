@@ -10,7 +10,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test:contracts": "tsx src/tests/run-contract-tests.ts",
-    "test": "pnpm test:contracts"
+    "test": "pnpm test:contracts",
+    "check": "pnpm lint && pnpm test && pnpm build"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
