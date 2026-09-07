@@ -25,6 +25,8 @@ interface HeaderProps {
   dataMode?: ThreatDataMode;
 }
 
+type PublicNavTab = 'home' | 'features' | 'how' | 'pricing' | 'about';
+
 export const Header: React.FC<HeaderProps> = ({ 
   activeSection,
   onSelectSection,
@@ -36,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'home' | 'features' | 'how' | 'pricing' | 'about'>('home');
+  const [activeTab, setActiveTab] = useState<PublicNavTab>('home');
   const [lang, setLang] = useState('UK');
   const [languageOpen, setLanguageOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -69,15 +71,26 @@ export const Header: React.FC<HeaderProps> = ({
     item.label.toLocaleLowerCase('uk-UA').includes(searchQuery.trim().toLocaleLowerCase('uk-UA'))
   );
 
-  const handleNavClick = (section: DashboardSection) => {
+  const handleNavClick = (section: DashboardSection, tabId?: PublicNavTab) => {
+    if (tabId) {
+      setActiveTab(tabId);
+    } else if (section === 'HOME') {
+      setActiveTab('home');
+    } else if (section === 'PRICING') {
+      setActiveTab('pricing');
+    } else if (section === 'ABOUT') {
+      setActiveTab('about');
+    }
     onSelectSection(section);
     playWebAudioSound('click');
   };
 
   const handleMobileNavClick = (item: { id: string; section: DashboardSection }) => {
-    setActiveTab(item.id as typeof activeTab);
     if (item.id === 'features') onOpenFeatures?.();
-    handleNavClick(item.section);
+    const publicTab = ['home', 'features', 'how', 'pricing', 'about'].includes(item.id)
+      ? item.id as PublicNavTab
+      : undefined;
+    handleNavClick(item.section, publicTab);
     if (item.id === 'how') onOpenGuide?.();
     setMobileMenuOpen(false);
   };
@@ -117,7 +130,13 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Left: Logo with double signal wave */}
         <div 
           className="flex items-center gap-3 cursor-pointer flex-shrink-0" 
-          onClick={() => handleNavClick('HOME')}
+          onClick={() => handleNavClick('HOME', 'home')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') handleNavClick('HOME', 'home');
+          }}
+          aria-label="Відкрити головну сторінку"
         >
           <div className={`w-9 h-9 flex items-center justify-center transition-colors ${
             isDark ? 'text-slate-300' : 'text-[#6F8593]'
@@ -148,9 +167,8 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={item.id}
                 onClick={() => {
-                  setActiveTab(item.id as any);
                   if (item.id === 'features') onOpenFeatures?.();
-                  handleNavClick(item.section as DashboardSection);
+                  handleNavClick(item.section as DashboardSection, item.id as PublicNavTab);
                   if (item.id === 'how') onOpenGuide?.();
                 }}
                 className={`text-[13.5px] font-semibold transition-colors cursor-pointer py-1 relative ${
@@ -314,7 +332,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Profile capsule: identity and rank come from auth/profile API, never a static production fallback. */}
           <button
             type="button"
-            onClick={() => handleNavClick('PROFILE')}
+              onClick={() => handleNavClick('PROFILE')}
             aria-label={profileData ? `Відкрити профіль ${profileData.firstName}` : 'Відкрити профіль'}
             className={`hidden min-[1120px]:flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full cursor-pointer border transition-all ${
               isDark 
