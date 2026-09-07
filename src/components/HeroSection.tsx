@@ -38,7 +38,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const isDark = theme === 'dark';
 
   return (
-    <div className={`siren-panel siren-hero w-full rounded-[30px] p-6 sm:p-8 lg:p-6 border relative overflow-hidden transition-all duration-300 ${
+    <div className={`siren-panel siren-hero w-full rounded-[30px] p-5 sm:p-7 lg:p-4 border relative overflow-hidden transition-all duration-300 ${
       isDark 
         ? 'bg-[#10232B] border-[#2D4A55] text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]'
         : 'bg-[#F7FAFC] border-[#D9E2E8] text-[#0F172A] shadow-[0_20px_70px_rgba(42,68,83,0.08)]'
@@ -49,13 +49,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         isDark ? 'bg-blue-600/15' : 'bg-blue-200/40'
       }`} />
 
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-10 relative z-10 w-full min-h-[430px] lg:min-h-[390px]">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-7 relative z-10 w-full min-h-[330px] lg:min-h-[290px]">
         
         {/* Left: Text Content & Sub-Block */}
         <div className="flex-1 w-full flex flex-col items-start text-left max-w-[620px]">
           
           {/* Top Pill Badge */}
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6 lg:mb-4 text-[12px] font-extrabold tracking-wide ${
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-3 lg:mb-2 text-[12px] font-extrabold tracking-wide ${
             isDark 
               ? 'bg-[#1B293F] border-[#2E4160] text-blue-400' 
               : 'bg-blue-50 border-blue-200 text-blue-700'
@@ -77,7 +77,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           {/* Heading */}
-          <h1 className={`text-4xl sm:text-5xl lg:text-[38px] font-black tracking-tight leading-[1.08] ${
+          <h1 className={`text-4xl sm:text-5xl lg:text-[36px] font-black tracking-tight leading-[1.06] ${
             isDark ? 'text-white' : 'text-[#0F172A]'
           }`}>
             Розумій ситуацію.<br />
@@ -85,14 +85,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </h1>
           
           {/* Subtitle */}
-          <p className={`mt-5 lg:mt-3 text-[14px] sm:text-[15px] leading-relaxed font-medium ${
+          <p className={`mt-3 lg:mt-2 text-[14px] sm:text-[15px] lg:text-[13px] lg:leading-[1.35] leading-relaxed font-medium ${
             isDark ? 'text-slate-300' : 'text-[#5A6A80]'
           }`}>
             SIREN UA — на карті повітряної ситуації, напрями загроз, прогнозні траєкторії, орієнтовний час, хронологія подій та інформація про укриття — в одному застосунку.
           </p>
           
           {/* Primary & Secondary Buttons */}
-          <div className="mt-7 lg:mt-5 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
+          <div className="mt-5 lg:mt-3 flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <button
               onClick={() => {
                 if (runtimeConfig.appStoreUrl) {
@@ -103,7 +103,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 playWebAudioSound('click');
                 window.setTimeout(() => setDownloadNotice(null), 4200);
               }}
-              className={`w-full sm:w-auto px-7 py-3.5 rounded-full font-bold text-[14px] flex items-center justify-center gap-2.5 transition-all shadow-md hover:shadow-lg cursor-pointer ${
+              className={`w-full sm:w-auto px-6 py-2.5 rounded-full font-bold text-[13px] flex items-center justify-center gap-2.5 transition-all shadow-md hover:shadow-lg cursor-pointer ${
                 isDark
                   ? 'bg-[#73AFC7] hover:bg-[#8BC2D7] active:bg-[#5E9BB4] text-[#07151C] shadow-[0_10px_28px_rgba(115,175,199,0.25)]'
                   : 'bg-[#6D9FB8] hover:bg-[#5E8EA7] active:bg-[#4F7D96] text-white shadow-[0_10px_28px_rgba(80,128,153,0.20)]'
@@ -118,7 +118,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 setMapMode((current) => current === 'RENDER' ? 'WEBGL' : 'RENDER');
                 playWebAudioSound('click');
               }}
-              className={`w-full sm:w-auto px-7 py-3.5 rounded-full border font-bold text-[14px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              className={`w-full sm:w-auto px-6 py-2.5 rounded-full border font-bold text-[13px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 isDark 
                   ? 'bg-[#182335] border-[#2E4160] text-white hover:bg-[#202E46]' 
                   : 'bg-white border-[#CBD6E2] text-[#0F172A] hover:bg-slate-50 shadow-sm'
@@ -133,7 +133,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onNavigateToShelters?.();
                 playWebAudioSound('click');
               }}
-              className={`w-full sm:w-auto px-5 py-3.5 rounded-full border font-bold text-[13px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              className={`w-full sm:w-auto lg:hidden px-5 py-2.5 rounded-full border font-bold text-[13px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 isDark
                   ? 'border-[#2E4160] text-[#B9D8E2] hover:bg-[#182335]'
                   : 'bg-white/80 border-[#CBD6E2] text-[#416B7C] hover:bg-white shadow-sm'
@@ -153,11 +153,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           )}
 
           {/* Sub-block: QR Code, App Store Pill & Checkmarks */}
-          <div className={`mt-9 lg:mt-5 pt-7 lg:pt-4 border-t w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 ${
+          <div className={`mt-4 lg:mt-2 pt-3 lg:pt-2 border-t w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
             isDark ? 'border-[#24344D]' : 'border-[#DBE4EC]'
           }`}>
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 border ${
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 border ${
                 isDark ? 'bg-[#182335] border-[#2E4160] text-white' : 'bg-white border-[#CBD6E2] text-slate-800 shadow-sm'
               }`}>
                 <QrCode className="w-6 h-6 text-blue-600" />
@@ -184,11 +184,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 "Покриття всієї України",
                 "Оновлення в реальному часі"
               ].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center flex-shrink-0">
+                <div key={idx} className="flex items-center gap-1.5">
+                  <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center flex-shrink-0">
                     <Check className="w-2.5 h-2.5 stroke-[3]" />
                   </div>
-                  <span className={`text-[12px] font-semibold ${isDark ? 'text-slate-200' : 'text-[#334155]'}`}>
+                  <span className={`text-[11px] font-semibold ${isDark ? 'text-slate-200' : 'text-[#334155]'}`}>
                     {item}
                   </span>
                 </div>
@@ -199,8 +199,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
 
         {/* Right: 3D Ukraine Map matching screenshots 1:1 with pins & arcs */}
-        <div className="flex-1 w-full flex items-center justify-center relative min-h-[380px] lg:min-h-[350px]">
-          <div className={`relative w-full max-w-[620px] aspect-[16/10] flex items-center justify-center rounded-[24px] ${
+        <div className="flex-1 w-full flex items-center justify-center relative min-h-[280px] lg:min-h-[270px]">
+          <div className={`relative w-full max-w-[620px] aspect-[16/10] lg:aspect-auto lg:h-[250px] flex items-center justify-center rounded-[24px] ${
             isDark ? 'bg-[radial-gradient(circle_at_50%_48%,rgba(89,145,165,0.12),transparent_66%)]' : 'bg-[radial-gradient(circle_at_50%_48%,rgba(154,192,209,0.22),transparent_66%)]'
           }`}>
             {mapMode === 'WEBGL' ? (
@@ -225,7 +225,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 src={isDark ? "/src/assets/images/ukraine_3d_cutout_dark.png" : "/src/assets/images/ukraine_3d_cutout.png"}
                 alt="3D Карта України SIREN UA"
                 referrerPolicy="no-referrer"
-                className="w-full h-auto object-contain max-h-[380px] lg:max-h-[340px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
+                style={{
+                  filter: isDark
+                    ? 'saturate(0.46) brightness(0.72) contrast(0.94)'
+                    : 'saturate(0.42) brightness(1.1) contrast(0.94)'
+                }}
+                className="w-full h-auto object-contain max-h-[290px] lg:max-h-[255px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
               />
             )}
 
@@ -280,14 +285,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <svg className="w-5 h-5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" viewBox="0 0 24 24" fill="none">
                     <defs>
                       <linearGradient id={`pinGrad-${idx}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#7DD3FC" />
-                        <stop offset="100%" stopColor="#0284C7" />
+                        <stop offset="0%" stopColor={isDark ? '#B8D5DF' : '#A8C8D8'} />
+                        <stop offset="100%" stopColor={isDark ? '#557A88' : '#6D9FB8'} />
                       </linearGradient>
                     </defs>
                     <path 
                       d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
                       fill={`url(#pinGrad-${idx})`} 
-                      stroke="#FFFFFF" 
+                      stroke={isDark ? '#D8E9EE' : '#FFFFFF'}
                       strokeWidth="1.2"
                     />
                     <circle cx="12" cy="9" r="2.5" fill="#FFFFFF" />

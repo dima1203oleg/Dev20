@@ -29,7 +29,7 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
   ];
 
   return (
-    <div className={`siren-panel siren-device-panel w-full rounded-[28px] p-6 sm:p-8 border relative overflow-hidden my-6 transition-all duration-300 ${
+    <div className={`siren-panel siren-device-panel w-full rounded-[28px] p-6 sm:p-8 lg:p-4 lg:h-[160px] border relative overflow-hidden my-2 transition-all duration-300 ${
       isDark 
         ? 'bg-[#10232B] border-[#2D4A55] text-white shadow-[0_20px_70px_rgba(0,0,0,0.22)]'
         : 'bg-[#F7FAFC] border-[#D9E2E8] text-[#0F172A] shadow-[0_16px_60px_rgba(42,68,83,0.07)]'
@@ -40,20 +40,20 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
         isDark ? 'bg-blue-600/10' : 'bg-blue-100/60'
       }`} />
 
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10 w-full">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-4 relative z-10 w-full h-full">
         
         {/* Left Headline */}
-        <div className="space-y-2.5 max-w-[280px]">
+        <div className="space-y-2.5 lg:space-y-1 max-w-[280px] lg:max-w-[245px] shrink-0">
           <div className="flex flex-col">
             <span className="text-[13px] font-extrabold text-[#2563EB] tracking-wider uppercase">
               SIREN UA
             </span>
-            <h2 className={`text-[28px] sm:text-[32px] font-black tracking-tight leading-[1.1] mt-1 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+            <h2 className={`text-[28px] sm:text-[32px] lg:text-[22px] font-black tracking-tight leading-[1.1] mt-1 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
               На всіх пристроях
             </h2>
           </div>
           
-          <p className={`text-[13px] font-medium leading-relaxed ${isDark ? 'text-slate-300' : 'text-[#5A6A80]'}`}>
+          <p className={`text-[13px] lg:text-[10px] font-medium leading-relaxed lg:leading-tight ${isDark ? 'text-slate-300' : 'text-[#5A6A80]'}`}>
             Вдома, в дорозі або на роботі — єдина інтелектуальна екосистема сповіщень.
           </p>
 
@@ -64,7 +64,7 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
                 playWebAudioSound('click');
               }}
               aria-expanded={showDetails}
-              className={`px-6 py-2.5 rounded-full border text-[13px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-6 py-2.5 lg:px-4 lg:py-1.5 rounded-full border text-[13px] lg:text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 isDark 
                   ? 'bg-[#182335] border-[#2E4160] text-blue-400 hover:bg-[#202E46]' 
                   : 'bg-blue-50 border-blue-100 text-[#2563EB] hover:bg-blue-100 shadow-sm'
@@ -84,19 +84,19 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
         </div>
 
         {/* Center: Devices Image & Pedestal Platform */}
-        <div className="flex-1 min-w-0 w-full flex flex-col items-center">
-          <div className="relative w-full max-w-2xl min-h-[180px] aspect-[21/9] flex items-center justify-center">
+        <div className="flex-1 min-w-0 w-full flex flex-col items-center justify-center h-full">
+          <div className="relative w-full max-w-2xl min-h-[180px] lg:min-h-0 lg:h-[112px] lg:aspect-auto flex items-center justify-center">
             {/* Devices 3D Render Image */}
             <img
               src={isDark ? "/src/assets/images/devices_3d_cutout_dark.png" : "/src/assets/images/devices_3d_cutout.png"}
               alt="SIREN UA на всіх пристроях"
               referrerPolicy="no-referrer"
-              className="w-full h-full object-contain drop-shadow-[0_15px_30px_rgba(37,99,235,0.18)]"
+              className="w-full h-full object-cover object-center drop-shadow-[0_15px_30px_rgba(37,99,235,0.18)]"
             />
           </div>
 
           {/* Labels Below Pedestal */}
-          <div className="flex items-center justify-center gap-5 mt-2 hidden sm:flex flex-wrap">
+          <div className="flex items-center justify-center gap-5 lg:gap-3 mt-2 lg:mt-0 hidden sm:flex flex-wrap">
             {devices.map((device, idx) => (
               <div 
                 key={device.id} 
@@ -106,10 +106,10 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
                   playWebAudioSound('click');
                 }}
               >
-                <span className={`text-[11px] font-extrabold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+                <span className={`text-[11px] lg:text-[8px] font-extrabold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
                   {device.name}
                 </span>
-                <span className={`text-[9px] font-semibold mt-0.5 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
+                <span className={`text-[9px] lg:text-[7px] font-semibold mt-0.5 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
                   {device.sub}
                 </span>
               </div>
@@ -117,7 +117,7 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
           </div>
           
           {/* Pagination Dots */}
-          <div className="flex items-center gap-1.5 justify-center mt-4">
+          <div className="flex items-center gap-1.5 justify-center mt-4 lg:mt-1">
             {devices.map((_, idx) => (
               <div
                 key={idx}
@@ -136,13 +136,13 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
         </div>
 
         {/* Right Slogan and Features List */}
-        <div className="max-w-[280px]">
-          <h3 className={`text-[16px] font-black leading-snug ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+        <div className="max-w-[280px] lg:max-w-[235px]">
+          <h3 className={`text-[16px] lg:text-[14px] font-black leading-snug ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
             Одна платформа.<br />
             На всіх пристроях.
           </h3>
 
-          <div className="mt-3.5 space-y-2.5">
+          <div className="mt-3.5 lg:mt-2 space-y-2.5 lg:space-y-1.5">
             {[
               "Синхронізація в реальному часі",
               "Єдина налаштованість на всіх пристроях",
@@ -150,10 +150,10 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
               "Завжди на зв'язку"
             ].map((feature, i) => (
               <div key={i} className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-[#2563EB] text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                <div className="w-4 h-4 lg:w-3 lg:h-3 rounded-full bg-[#2563EB] text-white flex items-center justify-center flex-shrink-0 shadow-sm">
                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                 </div>
-                <span className={`text-[12px] font-semibold leading-tight ${isDark ? 'text-slate-200' : 'text-[#334155]'}`}>
+                <span className={`text-[12px] lg:text-[10px] font-semibold leading-tight ${isDark ? 'text-slate-200' : 'text-[#334155]'}`}>
                   {feature}
                 </span>
               </div>

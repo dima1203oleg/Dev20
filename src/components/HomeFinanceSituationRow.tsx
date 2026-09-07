@@ -51,7 +51,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
     : 0;
 
   return (
-    <div className="w-full my-6 space-y-4">
+    <div className="w-full my-0 space-y-2">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-1">
         <div>
@@ -79,27 +79,29 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className={`rounded-[24px] border p-3 lg:p-2.5 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 ${
+        isDark ? 'bg-[#10232B]/80 border-[#2D4A55]' : 'bg-white/70 border-[#D9E2E8]'
+      }`}>
         
         {/* Card 1: Зароблено */}
-        <div className={`rounded-[22px] p-5 border flex flex-col justify-between transition-all duration-200 ${
+        <div className={`rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] shadow-sm'
         }`}>
           <div>
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+              <div className={`w-10 h-10 lg:w-8 lg:h-8 rounded-2xl flex items-center justify-center flex-shrink-0 ${
                 isDark ? 'bg-[#182335] text-blue-400 border border-[#2E4160]' : 'bg-blue-50 text-[#2563EB] border border-blue-100'
               }`}>
-                <Wallet className="w-5 h-5" />
+                <Wallet className="w-5 h-5 lg:w-4 lg:h-4" />
               </div>
               <div>
                 <div className={`text-[12px] font-medium ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
                   Зароблено
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+                    <span className={`text-xl lg:text-[16px] font-black tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
                     ₴ {summary.earnedThisMonth.toLocaleString('uk-UA')}
                   </span>
                   <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 text-[10px] font-bold flex items-center gap-0.5">
@@ -109,23 +111,23 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
               </div>
             </div>
           </div>
-          <div className={`text-[12px] font-medium mt-4 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
+          <div className={`text-[12px] font-medium mt-4 lg:mt-2 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
             Всього за час
           </div>
         </div>
 
         {/* Card 2: Баланс */}
-        <div className={`rounded-[22px] p-5 border flex flex-col justify-between transition-all duration-200 ${
+        <div className={`rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] shadow-sm'
         }`}>
           <div>
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+              <div className={`w-10 h-10 lg:w-8 lg:h-8 rounded-2xl flex items-center justify-center flex-shrink-0 ${
                 isDark ? 'bg-[#182335] text-emerald-400 border border-[#2E4160]' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
               }`}>
-                <Database className="w-5 h-5" />
+                <Database className="w-5 h-5 lg:w-4 lg:h-4" />
               </div>
               <div>
                 <div className={`text-[12px] font-medium ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
@@ -137,29 +139,29 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
               </div>
             </div>
           </div>
-          <div className={`text-[12px] font-medium mt-4 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
+          <div className={`text-[12px] font-medium mt-4 lg:mt-2 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
             Доступно: <strong className={isDark ? 'text-white' : 'text-[#0F172A]'}>₴ {summary.availableBalance.toLocaleString('uk-UA')}</strong>
           </div>
         </div>
 
         {/* Card 3: Доступно до виводу */}
-        <div className={`rounded-[22px] p-5 border flex flex-col justify-between transition-all duration-200 ${
+        <div className={`rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] shadow-sm'
         }`}>
           <div>
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+              <div className={`w-10 h-10 lg:w-8 lg:h-8 rounded-2xl flex items-center justify-center flex-shrink-0 ${
                 isDark ? 'bg-[#182335] text-amber-400 border border-[#2E4160]' : 'bg-amber-50 text-amber-600 border border-amber-100'
               }`}>
-                <Clock className="w-5 h-5" />
+                <Clock className="w-5 h-5 lg:w-4 lg:h-4" />
               </div>
               <div>
                 <div className={`text-[12px] font-medium ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
                   Доступна до виводу
                 </div>
-                <div className={`text-xl font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+                <div className={`text-xl lg:text-[16px] font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
                   ₴ {summary.availableBalance.toLocaleString('uk-UA')}
                 </div>
               </div>
@@ -170,7 +172,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
               if (onNavigateToFinance) onNavigateToFinance();
               playWebAudioSound('click');
             }}
-            className={`w-full mt-3 py-2 rounded-xl text-[12px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer border ${
+            className={`w-full mt-3 lg:mt-2 py-2 rounded-xl text-[12px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer border ${
               isDark 
                 ? 'bg-[#182335] border-[#2E4160] text-blue-400 hover:bg-[#202E46]' 
                 : 'bg-blue-50 border-blue-100 text-[#2563EB] hover:bg-blue-100'
@@ -182,7 +184,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
         </div>
 
         {/* Card 4: Виплачено */}
-        <div className={`rounded-[22px] p-5 border flex flex-col justify-between transition-all duration-200 ${
+        <div className={`rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] shadow-sm'
@@ -190,16 +192,16 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
           <div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                <div className={`w-10 h-10 lg:w-8 lg:h-8 rounded-2xl flex items-center justify-center flex-shrink-0 ${
                   isDark ? 'bg-[#182335] text-blue-400 border border-[#2E4160]' : 'bg-blue-50 text-blue-600 border border-blue-100'
                 }`}>
-                  <BarChart2 className="w-5 h-5" />
+                  <BarChart2 className="w-5 h-5 lg:w-4 lg:h-4" />
                 </div>
                 <div>
                   <div className={`text-[12px] font-medium ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
                     Виплачено
                   </div>
-                  <div className={`text-xl font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+                  <div className={`text-xl lg:text-[16px] font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
                     ₴ {summary.lifetimePaid.toLocaleString('uk-UA')}
                   </div>
                 </div>
@@ -215,7 +217,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
               </div>
             </div>
           </div>
-          <div className={`text-[12px] font-medium mt-4 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
+          <div className={`text-[12px] font-medium mt-4 lg:mt-2 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
             Всього виплат
           </div>
         </div>
@@ -228,29 +230,29 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
             if (onNavigateToNetwork) onNavigateToNetwork();
             playWebAudioSound('click');
           }}
-          className={`w-full text-left rounded-[22px] p-5 border flex flex-col justify-between cursor-pointer group transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+          className={`w-full text-left rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between cursor-pointer group transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white hover:border-[#334768] shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] hover:border-blue-300 shadow-sm'
         }`}>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+              <div className={`w-10 h-10 lg:w-8 lg:h-8 rounded-2xl flex items-center justify-center flex-shrink-0 ${
                 isDark ? 'bg-[#182335] text-amber-400 border border-[#2E4160]' : 'bg-amber-50 text-amber-600 border border-amber-100'
               }`}>
-                <Users className="w-5 h-5" />
+                <Users className="w-5 h-5 lg:w-4 lg:h-4" />
               </div>
               <div>
-                <div className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
+                <div className={`text-[10px] lg:text-[9px] font-medium leading-tight ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
                   Ваша партнерська програма
                 </div>
                 <div className="flex items-center gap-1 mt-0.5">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  <span className={`text-[14px] font-black ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+                  <span className={`text-[14px] lg:text-[13px] font-black ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
                     Gold Partner
                   </span>
                 </div>
-                <div className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-slate-300' : 'text-[#334155]'}`}>
+                <div className={`text-[10px] lg:text-[9px] font-medium leading-tight mt-0.5 ${isDark ? 'text-slate-300' : 'text-[#334155]'}`}>
                   <strong className="font-extrabold">{summary.qualifiedL1 ?? 0}</strong> кваліфікація L1
                 </div>
               </div>
@@ -258,11 +260,11 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
             <ArrowRight className={`w-4 h-4 mt-1 transition-transform group-hover:translate-x-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
           </div>
           
-          <div className="mt-3">
+          <div className="mt-2 lg:mt-1">
             <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
               <div className="h-full bg-[#2563EB] rounded-full" style={{ width: '75%' }}></div>
             </div>
-            <div className={`text-[10px] font-medium mt-1.5 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
+            <div className={`text-[9px] font-medium mt-1 lg:mt-0.5 leading-none ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
               До Platinum: {Math.max(0, 200 - (summary.qualifiedL1 ?? 0))} / 200
             </div>
           </div>

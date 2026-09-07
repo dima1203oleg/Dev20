@@ -299,14 +299,14 @@ export default function App() {
       )}
 
       {/* 3. Main Container */}
-      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex-1 flex flex-col gap-6">
+      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 flex-1 flex flex-col gap-2">
         
         <main className="flex-1 min-w-0 pb-12 w-full">
           {/* =========================================================================
               SECTION 1: HOME (Головна) - 1:1 Premium Design as in Mockup
              ========================================================================= */}
           {activeSection === 'HOME' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="space-y-2 animate-in fade-in duration-200">
               
               {/* Row 1: Hero Section with 3D Map of Ukraine & Floating Threat Info */}
               <HeroSection
