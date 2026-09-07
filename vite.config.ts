@@ -5,8 +5,11 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   const devProxyTarget = process.env.SIREN_DEV_PROXY_TARGET;
+  const configuredBase = process.env.VITE_BASE_PATH?.trim() || '/';
+  const base = configuredBase.endsWith('/') ? configuredBase : `${configuredBase}/`;
 
   return {
+    base,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
