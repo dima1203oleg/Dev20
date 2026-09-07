@@ -3,6 +3,7 @@
  */
 
 import { DataEnvelope } from '../types/dataEnvelope';
+import { getJson, isJsonObject } from './apiClient';
 
 export interface KycVerificationData {
   status: 'VERIFIED' | 'PENDING' | 'DOCUMENTS_REQUIRED' | 'UNVERIFIED';
@@ -19,16 +20,16 @@ export interface KycVerificationData {
 }
 
 const DEFAULT_KYC: KycVerificationData = {
-  status: 'VERIFIED',
+  status: 'UNVERIFIED',
   method: 'DIIA_SIGN',
-  verifiedAt: '14.04.2024, 15:42',
+  verifiedAt: '',
   documentType: 'ID_CARD',
-  documentNumberMasked: '•••••••• 4819',
-  taxIdMasked: '3481••••92',
+  documentNumberMasked: '',
+  taxIdMasked: '',
   limits: {
-    maxSingleWithdrawalUah: 150000,
-    monthlyLimitUah: 1000000,
-    unlimitedPayouts: true,
+    maxSingleWithdrawalUah: 0,
+    monthlyLimitUah: 0,
+    unlimitedPayouts: false,
   },
 };
 
@@ -36,12 +37,32 @@ class KycService {
   private kyc: KycVerificationData = DEFAULT_KYC;
 
   public async getKycStatus(): Promise<DataEnvelope<KycVerificationData>> {
+    const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+
+    try {
+      const remote = await getJson<unknown>('/api/v1/kyc/status', 2500);
+      if (!isJsonObject(remote) || typeof remote.status !== 'string' || !isJsonObject(remote.limits)) {
+        throw new Error('KYC payload has invalid shape');
+      }
+
+      return {
+        data: remote as unknown as KycVerificationData,
+        state: 'LIVE',
+        source: 'SIREN_UA_KYC_PROVIDER',
+        updatedAt,
+        isRealData: true,
+      };
+    } catch {
+      // Never claim verified KYC without a provider response.
+    }
+
     return {
       data: this.kyc,
-      state: 'LIVE',
-      source: 'KYC_GOV_VERIFICATION_SERVICE',
-      updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      isRealData: true,
+      state: 'NOT_CONNECTED',
+      source: 'KYC_PROVIDER_UNAVAILABLE',
+      updatedAt,
+      isRealData: false,
+      error: 'KYC не підтверджено підключеним провайдером',
     };
   }
 }

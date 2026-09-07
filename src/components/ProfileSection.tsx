@@ -40,6 +40,7 @@ import { playWebAudioSound } from '../utils/sirenAudio';
 
 import { InfoTooltip } from './InfoTooltip';
 import { ContextDrawer } from './ContextDrawer';
+import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 
 interface ProfileSectionProps {
   theme?: 'light' | 'dark';
@@ -102,15 +103,18 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             <span>Разом будуємо безпечну Україну</span>
           </div>
 
-          <h1 className={`text-3xl sm:text-4xl font-black tracking-tight leading-tight ${
-            isDark ? 'text-white' : 'text-slate-900'
-          }`}>
-            Мій профіль
-          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className={`text-3xl sm:text-4xl font-black tracking-tight leading-tight ${
+              isDark ? 'text-white' : 'text-slate-900'
+            }`}>
+              Мій профіль
+            </h1>
+            <DataFreshnessIndicator state="DEMO" theme={theme} />
+          </div>
 
           <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             <span className="font-bold text-slate-700 dark:text-slate-200">Більше, ніж акаунт. Це твій внесок у безпечне завтра.</span><br />
-            Керуй своїми даними, безпекою, партнерським статусом та відкривай нові можливості разом із SIREN UA.
+            Керуй своїми даними, безпекою, партнерським статусом та відкривай нові можливості разом із SIREN UA. Дані профілю демонстраційні до підключення auth API.
           </p>
         </div>
 

@@ -15,13 +15,16 @@ import {
 } from 'lucide-react';
 import { Shelter, RegionData } from '../types';
 import { INITIAL_SHELTERS } from '../data/spatialThreatData';
+import { DataState } from '../types/dataEnvelope';
+import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 
 interface SheltersSectionProps {
   myRegionId: string;
   regions: RegionData[];
+  dataState?: DataState;
 }
 
-export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, regions }) => {
+export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, regions, dataState = 'DEMO' }) => {
   const [shelters, setShelters] = useState<Shelter[]>(INITIAL_SHELTERS);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'METRO' | 'GENERATOR' | 'WIFI' | 'ACCESSIBLE'>('ALL');
@@ -52,13 +55,18 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-2">
             <Shield className="w-3.5 h-3.5" />
-            <span>Захисні Споруди Цивільного Захисту</span>
+            <span>{dataState === 'LIVE' ? 'Захисні споруди цивільного захисту' : 'Каталог укриттів'}</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-100">
-            Перевірені Укриття та Маршрутизація
-          </h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-100">
+              {dataState === 'LIVE' ? 'Перевірені укриття та маршрутизація' : 'Укриття та маршрутизація'}
+            </h2>
+            <DataFreshnessIndicator state={dataState} theme="dark" />
+          </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Швидкий пошук бомбосховищ, станцій метро та підземних паркінгів із резервним живленням та зв'язком.
+            {dataState === 'LIVE'
+              ? 'Швидкий пошук укриттів із актуальними даними джерела та маршрутом до обраної точки.'
+              : 'Показано демонстраційний каталог. Актуальні дані та доступність будуть показані після підключення джерела укриттів.'}
           </p>
         </div>
 
@@ -132,8 +140,8 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
                         }`}>
                           {shelter.type === 'metro' ? 'МЕТРОПОЛІТЕН' : shelter.type === 'bunker' ? 'СПЕЦСХОВИЩЕ' : 'ПАРКІНГ / ПІДВАЛ'}
                         </span>
-                        <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> ДСНС ПЕРЕВІРЕНО
+                        <span className={`text-[10px] flex items-center gap-1 ${dataState === 'LIVE' ? 'text-emerald-400' : 'text-purple-300'}`}>
+                          <CheckCircle2 className="w-3 h-3" /> {dataState === 'LIVE' ? 'ДСНС ПЕРЕВІРЕНО' : 'ДЕМО-ДАНІ'}
                         </span>
                       </div>
                       <h4 className="text-sm font-bold text-slate-100 mt-1.5">{shelter.name}</h4>
@@ -205,7 +213,7 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800/60">
                   <span className="text-slate-400">Статус верифікації:</span>
-                  <span className="text-emerald-400 font-bold">Офіційний реєстр ДСНС</span>
+                  <span className={`${dataState === 'LIVE' ? 'text-emerald-400' : 'text-purple-300'} font-bold`}>{dataState === 'LIVE' ? 'Офіційний реєстр ДСНС' : 'Демонстраційний запис'}</span>
                 </div>
               </div>
 

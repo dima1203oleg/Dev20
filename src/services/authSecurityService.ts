@@ -3,6 +3,7 @@
  */
 
 import { DataEnvelope } from '../types/dataEnvelope';
+import { getJson, isJsonObject } from './apiClient';
 
 export interface UserSecuritySession {
   id: string;
@@ -53,12 +54,37 @@ class AuthSecurityService {
   private security: UserSecurityData = DEFAULT_SECURITY;
 
   public async getSecurityStatus(): Promise<DataEnvelope<UserSecurityData>> {
+    const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+
+    try {
+      const remote = await getJson<unknown>('/api/v1/auth/security', 2000);
+      if (!isJsonObject(remote) || typeof remote.twoFactorEnabled !== 'boolean' || !Array.isArray(remote.activeSessions)) {
+        throw new Error('Security payload has invalid shape');
+      }
+
+      return {
+        data: remote as unknown as UserSecurityData,
+        state: 'LIVE',
+        source: 'SIREN_UA_AUTH_SECURITY',
+        updatedAt,
+        isRealData: true,
+      };
+    } catch {
+      // A local browser cannot prove account security state.
+    }
+
     return {
-      data: this.security,
-      state: 'LIVE',
-      source: 'AUTH_SECURITY_VAULT',
-      updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      isRealData: true,
+      data: {
+        ...this.security,
+        twoFactorEnabled: false,
+        activeSessions: [],
+        securityScorePercent: 0,
+      },
+      state: 'NOT_CONNECTED',
+      source: 'AUTH_SECURITY_API_UNAVAILABLE',
+      updatedAt,
+      isRealData: false,
+      error: 'Стан безпеки акаунта не підтверджено сервером',
     };
   }
 

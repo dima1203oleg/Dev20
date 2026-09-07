@@ -9,6 +9,7 @@
 
 import { DataEnvelope, DataState } from '../types/dataEnvelope';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
+import { getJson, isJsonObject } from './apiClient';
 
 export interface NetworkNode {
   id: string;
@@ -473,50 +474,98 @@ class NetworkService {
   private monthlyEarnings = 12460;
   private referralCode = 'OLEKSANDR25';
 
-  /**
-   * Returns unified summary data envelope
-   */
-  public async getNetworkSummary(): Promise<DataEnvelope<NetworkSummary>> {
-    const currentTier = calculateRankByL1(this.qualifiedL1);
-    const progression = getNextTierInfo(currentTier, this.qualifiedL1);
+  private buildSummary(overrides: Partial<NetworkSummary> = {}): NetworkSummary {
+    const qualifiedL1 = Number.isFinite(overrides.qualifiedL1) ? Number(overrides.qualifiedL1) : this.qualifiedL1;
+    const currentTier = calculateRankByL1(qualifiedL1);
+    const progression = getNextTierInfo(currentTier, qualifiedL1);
+    const defaultTrafficSources = [
+      { name: 'TikTok', percent: 38, count: 1082, color: '#2563EB' },
+      { name: 'Instagram', percent: 24, count: 683, color: '#8B5CF6' },
+      { name: 'YouTube', percent: 16, count: 456, color: '#EF4444' },
+      { name: 'Telegram', percent: 12, count: 342, color: '#38BDF8' },
+      { name: 'Інше', percent: 10, count: 284, color: '#94A3B8' },
+    ];
 
-    const summary: NetworkSummary = {
-      totalNetworkSize: this.totalNetworkSize,
-      activeL1Count: this.activeL1Count,
-      activeL2Count: this.activeL2Count,
-      new30DaysCount: this.new30DaysCount,
-      conversionRatePercent: this.conversionRate,
-      monthlyNetworkIncomeUah: this.monthlyEarnings,
-      qualifiedL1: this.qualifiedL1,
+    return {
+      totalNetworkSize: overrides.totalNetworkSize ?? this.totalNetworkSize,
+      activeL1Count: overrides.activeL1Count ?? this.activeL1Count,
+      activeL2Count: overrides.activeL2Count ?? this.activeL2Count,
+      new30DaysCount: overrides.new30DaysCount ?? this.new30DaysCount,
+      conversionRatePercent: overrides.conversionRatePercent ?? this.conversionRate,
+      monthlyNetworkIncomeUah: overrides.monthlyNetworkIncomeUah ?? this.monthlyEarnings,
+      qualifiedL1,
       currentTier,
       nextTier: progression.nextTier,
-      remainingToNextRank: progression.remainingL1, // 46 for Gold -> Platinum (200 threshold)
+      remainingToNextRank: progression.remainingL1,
       rankProgressPercent: progression.progressPercent,
-      ambassador: {
+      ambassador: overrides.ambassador ?? {
         status: 'CANDIDATE',
         criteria: {
-          minL1: 100,
-          currentL1: this.qualifiedL1,
+          minL1: 500,
+          currentL1: qualifiedL1,
           communityVerified: true,
           educationalContentCreated: true,
         },
       },
-      referralCode: this.referralCode,
-      referralUrl: `https://siren.ua/r/${this.referralCode}`,
-      trafficSources: [
-        { name: 'TikTok', percent: 38, count: 1082, color: '#2563EB' },
-        { name: 'Instagram', percent: 24, count: 683, color: '#8B5CF6' },
-        { name: 'YouTube', percent: 16, count: 456, color: '#EF4444' },
-        { name: 'Telegram', percent: 12, count: 342, color: '#38BDF8' },
-        { name: 'Інше', percent: 10, count: 284, color: '#94A3B8' },
-      ],
+      referralCode: overrides.referralCode ?? this.referralCode,
+      referralUrl: overrides.referralUrl ?? `https://siren.ua/r/${this.referralCode}`,
+      trafficSources: overrides.trafficSources ?? defaultTrafficSources,
     };
+  }
+
+  /**
+   * Returns unified summary data envelope
+   */
+  public async getNetworkSummary(): Promise<DataEnvelope<NetworkSummary>> {
+    const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+
+    try {
+      const remote = await getJson<unknown>('/api/v1/partner/summary', 2000);
+      if (!isJsonObject(remote)) throw new Error('Partner summary has invalid shape');
+
+      const requiredNumericFields = [
+        'totalNetworkSize',
+        'activeL1Count',
+        'activeL2Count',
+        'new30DaysCount',
+        'conversionRatePercent',
+        'monthlyNetworkIncomeUah',
+        'qualifiedL1',
+      ];
+      if (requiredNumericFields.some((field) => typeof remote[field] !== 'number' || !Number.isFinite(remote[field]))) {
+        throw new Error('Partner summary is missing required numeric fields');
+      }
+
+      const remoteSummary = this.buildSummary({
+        totalNetworkSize: remote.totalNetworkSize as number,
+        activeL1Count: remote.activeL1Count as number,
+        activeL2Count: remote.activeL2Count as number,
+        new30DaysCount: remote.new30DaysCount as number,
+        conversionRatePercent: remote.conversionRatePercent as number,
+        monthlyNetworkIncomeUah: remote.monthlyNetworkIncomeUah as number,
+        qualifiedL1: remote.qualifiedL1 as number,
+        referralCode: typeof remote.referralCode === 'string' ? remote.referralCode : undefined,
+        referralUrl: typeof remote.referralUrl === 'string' ? remote.referralUrl : undefined,
+      });
+
+      return {
+        data: remoteSummary,
+        state: 'LIVE',
+        source: 'SIREN_UA_PARTNER_SUMMARY',
+        updatedAt,
+        isRealData: true,
+      };
+    } catch {
+      // The UI remains useful, but explicitly labels the local dataset as DEMO.
+    }
+
+    const summary = this.buildSummary();
 
     return {
       data: summary,
       state: 'DEMO',
       source: 'LOCAL_DEMO_NETWORK_DATA',
-      updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+      updatedAt,
       isRealData: false,
     };
   }

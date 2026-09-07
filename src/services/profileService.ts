@@ -9,6 +9,7 @@
 
 import { DataEnvelope } from '../types/dataEnvelope';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
+import { getJson, isJsonObject } from './apiClient';
 
 export interface UserProfileData {
   id: string;
@@ -64,9 +65,38 @@ class ProfileService {
   private profile: UserProfileData = DEFAULT_PROFILE;
 
   public async getProfile(): Promise<DataEnvelope<UserProfileData>> {
+    const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+
+    try {
+      const remote = await getJson<unknown>('/api/v1/profile/me', 2000);
+      if (!isJsonObject(remote) || typeof remote.id !== 'string' || typeof remote.fullName !== 'string' || typeof remote.qualifiedL1 !== 'number') {
+        throw new Error('Profile payload has invalid shape');
+      }
+
+      const currentRank = calculateRankByL1(remote.qualifiedL1);
+      const progression = getNextTierInfo(currentRank, remote.qualifiedL1);
+      const data: UserProfileData = {
+        ...this.profile,
+        ...remote,
+        currentRank,
+        nextRank: progression.nextTier,
+        remainingL1ToNextRank: progression.remainingL1,
+        rankProgressPercent: progression.progressPercent,
+      } as UserProfileData;
+
+      return {
+        data,
+        state: 'LIVE',
+        source: 'SIREN_UA_PROFILE_API',
+        updatedAt,
+        isRealData: true,
+      };
+    } catch {
+      // Keep the profile surface available while explicitly marking its local dataset.
+    }
+
     const currentRank = calculateRankByL1(this.profile.qualifiedL1);
     const progression = getNextTierInfo(currentRank, this.profile.qualifiedL1);
-
     const data: UserProfileData = {
       ...this.profile,
       currentRank,
@@ -79,7 +109,7 @@ class ProfileService {
       data,
       state: 'DEMO',
       source: 'LOCAL_DEMO_PROFILE_DATA',
-      updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+      updatedAt,
       isRealData: false,
     };
   }

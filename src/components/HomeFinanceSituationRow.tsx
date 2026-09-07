@@ -10,11 +10,14 @@ import {
   Star
 } from 'lucide-react';
 import { playWebAudioSound } from '../utils/sirenAudio';
+import { DataFreshnessIndicator } from './DataFreshnessIndicator';
+import { DataState } from '../types/dataEnvelope';
 
 interface HomeFinanceSituationRowProps {
   onNavigateToFinance?: () => void;
   onNavigateToNetwork?: () => void;
   theme?: 'light' | 'dark';
+  dataState?: DataState;
   [key: string]: any;
 }
 
@@ -22,6 +25,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
   onNavigateToFinance,
   onNavigateToNetwork,
   theme = 'light',
+  dataState = 'DEMO',
 }) => {
   const isDark = theme === 'dark';
 
@@ -30,11 +34,14 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-1">
         <div>
-          <h2 className={`text-xl sm:text-[22px] font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-            Фінансова інформація
-          </h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className={`text-xl sm:text-[22px] font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+              Фінансова інформація
+            </h2>
+            <DataFreshnessIndicator state={dataState} theme={theme} />
+          </div>
           <p className={`text-[13px] font-medium mt-0.5 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-            Ваш дохід. Ваш розвиток. Більше можливостей.
+            {dataState === 'LIVE' ? 'Ваш дохід. Ваш розвиток. Більше можливостей.' : 'Демонстраційний стан до підключення фінансового API.'}
           </p>
         </div>
         <button

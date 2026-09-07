@@ -47,6 +47,11 @@ export function runAllContractTests(): {
   assert(starterRank.l2Percent === 0, s1, 'STARTER L2 percent must be 0%');
   assert(starterRank.isL2Unlocked === false, s1, 'STARTER must have L2 locked');
 
+  // Boundary: zero and threshold transitions must be deterministic.
+  assert(calculateRankByL1(0).id === 'STARTER', s1, '0 L1 should remain STARTER without negative rank state');
+  assert(calculateRankByL1(9).id === 'STARTER', s1, '9 L1 should remain STARTER');
+  assert(calculateRankByL1(10).id === 'BRONZE', s1, '10 L1 should upgrade to BRONZE');
+
   // Rule 2: Bronze (10-29 L1) -> 10% L1, 10% L2, L2 unlocked
   const bronzeRank = calculateRankByL1(15);
   assert(bronzeRank.id === 'BRONZE', s1, '15 L1 should yield BRONZE rank');
@@ -82,6 +87,10 @@ export function runAllContractTests(): {
   assert(goldCalc.l1Commission === 2000, s1, 'GOLD 20% on 10000 = 2000');
   assert(goldCalc.l2Commission === 2000, s1, 'GOLD 20% on 10000 = 2000');
   assert(goldCalc.totalCommission === 4000, s1, 'GOLD total = 4000');
+
+  // The same QCB should never produce different results for the same rank.
+  const repeatGoldCalc = calculateCommissions(80, 10000, 10000);
+  assert(JSON.stringify(goldCalc) === JSON.stringify(repeatGoldCalc), s1, 'Commission calculation must be deterministic');
 
   // --- SUITE 2: THREATSERVER API CONTRACTS ---
   const s2 = 'ThreatServer API Contracts';

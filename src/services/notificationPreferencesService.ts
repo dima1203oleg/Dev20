@@ -85,10 +85,10 @@ class NotificationPreferencesService {
   public async getPreferences(): Promise<DataEnvelope<UserNotificationPreferences>> {
     return {
       data: this.preferences,
-      state: 'LIVE',
-      source: 'USER_PREFERENCES_SERVICE',
+      state: 'DEMO',
+      source: 'LOCAL_BROWSER_PREFERENCES',
       updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      isRealData: true,
+      isRealData: false,
     };
   }
 

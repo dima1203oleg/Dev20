@@ -10,7 +10,7 @@ import {
 import { DataEnvelope } from '../types/dataEnvelope';
 import { calculateRankByL1, getNextTierInfo } from './referralEngine';
 import { CacheManager } from '../utils/cacheManager';
-import { apiUrl } from '../config/runtime';
+import { getJson } from './apiClient';
 
 const CACHE_KEY_FINANCE = 'sirenua_financial_summary_cache';
 
@@ -175,10 +175,10 @@ class FinancialService {
     const nowTime = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
     
     try {
-      const res = await fetch(apiUrl('/api/partner/finance/summary'), { signal: AbortSignal.timeout(2000) });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await getJson<Partial<PartnerFinancialSummary>>('/api/partner/finance/summary', 2000);
+      if (data && typeof data === 'object') {
         const payload: PartnerFinancialSummary = {
+          ...this.summary,
           ...data,
           updatedAt: nowTime,
           status: 'LIVE',

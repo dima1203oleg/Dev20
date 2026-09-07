@@ -227,14 +227,15 @@ export default function App() {
   };
 
   const activeAlarmsCount = safeRegions.filter((r) => r.isAlarm).length;
+  const currentTimestamp = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
   const threatSceneModel: ThreatSceneModel = {
-    timestamp: '22:14',
+    timestamp: isDemoMode ? currentTimestamp : '—',
     freshness: isDemoMode ? 'STABLE' : 'DEGRADED',
     dataMode: isDemoMode ? 'DEMO_DATA' : 'NOT_CONNECTED',
     activeAlarmsCount,
     criticalRegions: safeRegions.filter((r) => r.isAlarm && r.threatType === 'ballistic').map((r) => r.id),
-    primaryThreat: INITIAL_TRAJECTORIES[0] || null,
+    primaryThreat: isDemoMode ? (INITIAL_TRAJECTORIES[0] || null) : null,
     nearestShelter: {
       id: 'sh-1',
       name: 'Станція метро «Золоті Ворота»',
@@ -258,7 +259,7 @@ export default function App() {
       id: settings.myRegion,
       name: myRegionObj.name || 'Одеська область',
       isAlarm: myRegionObj.isAlarm || false,
-      etaMinutes: 18,
+        etaMinutes: myRegionObj.isAlarm && isDemoMode ? 18 : 0,
       riskLevel: myRegionObj.isAlarm ? 'HIGH' : 'LOW',
     },
     partnerModeActive: activeSection === 'NETWORK' || activeSection === 'FINANCE',
@@ -424,6 +425,7 @@ export default function App() {
             <SheltersSection
               myRegionId={settings.myRegion}
               regions={safeRegions}
+              dataState={isDemoMode ? 'DEMO' : 'NOT_CONNECTED'}
             />
           </div>
         </div>
