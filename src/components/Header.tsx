@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
                 playWebAudioSound('click');
               }}
               title="Переключити тему"
-              className={`p-2 rounded-full transition-colors cursor-pointer border ${
+              className={`min-h-11 min-w-11 p-2 rounded-full flex items-center justify-center transition-colors cursor-pointer border ${
                 isDark 
                   ? 'bg-[#182335] text-amber-400 border-[#24344D] hover:bg-[#202E46]' 
                   : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
@@ -222,7 +222,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label={mobileMenuOpen ? 'Закрити меню' : 'Відкрити меню'}
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen((open) => !open)}
-            className={`md:hidden p-2 rounded-full transition-colors cursor-pointer border ${
+            className={`md:hidden min-h-11 min-w-11 p-2 rounded-full flex items-center justify-center transition-colors cursor-pointer border ${
               isDark
                 ? 'bg-[#182335] text-slate-300 border-[#24344D] hover:bg-[#202E46]'
                 : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
@@ -235,7 +235,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className={`p-2 rounded-full relative transition-colors cursor-pointer border ${
+              className={`min-h-11 min-w-11 p-2 rounded-full relative flex items-center justify-center transition-colors cursor-pointer border ${
                 isDark 
                   ? 'bg-[#182335] text-slate-300 border-[#24344D] hover:bg-[#202E46]' 
                   : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
@@ -271,7 +271,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Language Selector Dropdown */}
           <div className="relative hidden sm:block">
-          <button onClick={() => setLanguageOpen((open) => !open)} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer transition-colors border ${
+          <button onClick={() => setLanguageOpen((open) => !open)} className={`min-h-11 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer transition-colors border ${
             isDark 
               ? 'bg-[#182335] text-slate-300 border-[#24344D] hover:bg-[#202E46]' 
               : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
