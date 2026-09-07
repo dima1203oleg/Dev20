@@ -118,13 +118,13 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
 
     if (result.success && result.transaction) {
       setCompletedTransaction(result.transaction);
-      setSummary(prev => ({
-        ...prev,
-        availableBalance: prev.availableBalance - amount,
-        totalBalance: prev.totalBalance - amount,
-        lifetimePaid: prev.lifetimePaid + amount,
-      }));
-      setLedger(financialService.getLedgerTransactions());
+      // The local DEMO path never mutates balance or ledger. Production
+      // providers must return authoritative post-payout data via API refresh.
+      if (dataState === 'LIVE') {
+        const refreshed = await financialService.getPartnerFinancialSummary();
+        if (refreshed.data) setSummary(refreshed.data);
+        setLedger(financialService.getLedgerTransactions());
+      }
       setWithdrawSuccess(true);
       playWebAudioSound('ping');
     } else {

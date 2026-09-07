@@ -40,7 +40,7 @@ const INITIAL_PAYOUT_METHODS: PayoutMethodConfig[] = [
     id: 'pm-1',
     type: 'MONOBANK',
     title: 'Monobank Black Card',
-    account: '4441 1144 8833 2291',
+    account: '•••• 2291',
     accountMasked: '•••• 2291',
     feePercent: 0,
     fixedFeeUah: 0,
@@ -51,7 +51,7 @@ const INITIAL_PAYOUT_METHODS: PayoutMethodConfig[] = [
     id: 'pm-2',
     type: 'PRIVATBANK',
     title: 'ПриватБанк Gold',
-    account: '5168 7573 9920 1104',
+    account: '•••• 1104',
     accountMasked: '•••• 1104',
     feePercent: 1.0,
     fixedFeeUah: 5,
@@ -62,7 +62,7 @@ const INITIAL_PAYOUT_METHODS: PayoutMethodConfig[] = [
     id: 'pm-3',
     type: 'USDT_TRC20',
     title: 'Tether USDT (TRC-20)',
-    account: 'TYDzsYUEWcwtKkgnD96z3Q3n8xH96oE49s',
+    account: 'TYDz...E49s',
     accountMasked: 'TYDz...E49s',
     feePercent: 0,
     fixedFeeUah: 42, // ~1 USDT fixed
@@ -125,7 +125,7 @@ const INITIAL_PAYOUT_HISTORY: PayoutTransaction[] = [
     netAmount: 4230,
     currency: 'UAH',
     method: 'MONOBANK',
-    targetAccount: '4441 1144 8833 2291',
+    targetAccount: '•••• 2291',
     targetAccountMasked: '•••• 2291',
     requestedAt: '02.09.2024, 18:15',
     completedAt: '02.09.2024, 18:30',
@@ -148,7 +148,7 @@ const INITIAL_PAYOUT_HISTORY: PayoutTransaction[] = [
     netAmount: 5100,
     currency: 'UAH',
     method: 'MONOBANK',
-    targetAccount: '4441 1144 8833 2291',
+    targetAccount: '•••• 2291',
     targetAccountMasked: '•••• 2291',
     requestedAt: '15.08.2024, 10:20',
     completedAt: '15.08.2024, 10:45',
@@ -268,8 +268,9 @@ class FinancialService {
   }
 
   /**
-   * Full Real Transaction State Machine for Payout Requests
-   * Lifecycle: REQUESTED -> VALIDATING -> KYC_CHECK -> RISK_CHECK -> LOCKED_FOR_PAYOUT -> PROCESSING -> PAID
+   * Production payout requests are delegated to the configured provider API.
+   * Without an API base, only a clearly labelled local DEMO request is created;
+   * no provider success, balance mutation, or ledger entry is simulated.
    */
   public async executeWithdrawal(
     amount: number,
@@ -313,12 +314,14 @@ class FinancialService {
       }
     }
 
-    const fee = selectedMethod.feePercent > 0 
-      ? Math.round((amount * selectedMethod.feePercent) / 100) 
+    // Without a configured backend, keep the interaction useful for QA but do
+    // not emulate a bank/provider success, mutate balances, or append a fake
+    // ledger entry. The UI labels this request as DEMO explicitly.
+    const fee = selectedMethod.feePercent > 0
+      ? Math.round((amount * selectedMethod.feePercent) / 100)
       : selectedMethod.fixedFeeUah;
     const netAmount = amount - fee;
-
-    const txId = `PAY-${Math.floor(100000 + Math.random() * 900000)}`;
+    const txId = `DEMO-PAY-${Date.now()}`;
     const now = new Date();
 
     const transaction: PayoutTransaction = {
@@ -328,7 +331,7 @@ class FinancialService {
       netAmount,
       currency: selectedMethod.type === 'USDT_TRC20' ? 'USDT' : 'UAH',
       method: selectedMethod.type,
-      targetAccount: selectedMethod.account,
+      targetAccount: selectedMethod.accountMasked,
       targetAccountMasked: selectedMethod.accountMasked,
       requestedAt: now.toLocaleString('uk-UA'),
       status: 'REQUESTED',
@@ -337,54 +340,7 @@ class FinancialService {
         { step: 'Запит на виведення коштів створено', timestamp: now.toLocaleTimeString('uk-UA'), status: 'COMPLETED' },
       ],
     };
-
-    const steps: { name: string; status: PayoutLifecycleStatus; delayMs: number }[] = [
-      { name: 'Перевірка платіжних реквізитів', status: 'VALIDATING', delayMs: 400 },
-      { name: 'Верифікація KYC статусу', status: 'KYC_CHECK', delayMs: 500 },
-      { name: 'Автоматичний фінансовий моніторинг', status: 'RISK_CHECK', delayMs: 500 },
-      { name: 'Блокування коштів для виплати', status: 'LOCKED_FOR_PAYOUT', delayMs: 400 },
-      { name: 'Передача у банківський процесинг', status: 'PROCESSING', delayMs: 600 },
-      { name: 'Успішно виплачено', status: 'PAID', delayMs: 400 },
-    ];
-
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      await new Promise(r => setTimeout(r, step.delayMs));
-      
-      transaction.status = step.status;
-      transaction.statusStepIndex = i + 1;
-      transaction.auditTrail.push({
-        step: step.name,
-        timestamp: new Date().toLocaleTimeString('uk-UA'),
-        status: 'COMPLETED',
-      });
-
-      if (onProgress) {
-        onProgress(step.name, step.status, i + 1);
-      }
-    }
-
-    transaction.completedAt = new Date().toLocaleString('uk-UA');
-
-    // Deduct available balance and add to lifetime paid
-    this.summary.availableBalance -= amount;
-    this.summary.totalBalance -= amount;
-    this.summary.lifetimePaid += amount;
-
-    // Add to ledger
-    this.ledgerTransactions.unshift({
-      id: `tx-${Date.now()}`,
-      type: 'PAYOUT_WITHDRAWAL',
-      description: `Виплата на ${selectedMethod.title} (${selectedMethod.accountMasked})`,
-      amount,
-      direction: 'DEBIT',
-      timestamp: 'Щойно',
-      referenceId: txId,
-      balanceAfter: this.summary.totalBalance,
-    });
-
-    this.payoutHistory.unshift(transaction);
-
+    onProgress?.('DEMO-заявку створено локально. Provider не викликався.', 'REQUESTED', 0);
     return { success: true, transaction };
   }
 }
