@@ -156,6 +156,12 @@ export default function App() {
     setThreatRefreshNonce((current) => current + 1);
   };
 
+  const handleExitDemo = () => {
+    setIsDemoMode(false);
+    setThreatDataState('LOADING');
+    setThreatRefreshNonce((current) => current + 1);
+  };
+
   // Sync to LocalStorage
   useEffect(() => {
     try {
@@ -571,6 +577,7 @@ export default function App() {
         regions={safeRegions}
         onApplyScenario={handleApplyScenario}
         onToggleRegionAlarm={handleToggleRegionAlarm}
+        onExitDemo={handleExitDemo}
         onPlayAllClear={handlePlayAllClear}
       />
 

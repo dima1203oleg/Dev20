@@ -44,7 +44,7 @@ export const subscriptionService = {
         source: 'SIREN_UA_SUBSCRIPTION_API',
         updatedAt,
         isRealData: false,
-        error: 'Не вдалося активувати trial: потрібні authenticated identity та subscription provider.',
+        error: 'Не вдалося активувати trial: потрібні автентифікований профіль і підключений платіжний сервіс.',
       };
     }
   },

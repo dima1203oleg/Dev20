@@ -10,6 +10,7 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test:contracts": "tsx src/tests/run-contract-tests.ts",
+    "test:integration": "node scripts/verify-local-integration.mjs",
     "test": "pnpm test:contracts",
     "check": "pnpm lint && pnpm test && pnpm build"
   },

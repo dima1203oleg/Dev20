@@ -20,6 +20,7 @@ interface SimulatorModalProps {
   regions: RegionData[];
   onApplyScenario: (scenarioType: 'massive_drone' | 'ballistic_all' | 'eastern_front' | 'all_clear' | 'central_ukraine') => void;
   onToggleRegionAlarm: (regionId: string, threatType?: ThreatType) => void;
+  onExitDemo?: () => void;
 }
 
 export const SimulatorModal: React.FC<SimulatorModalProps> = ({
@@ -28,6 +29,7 @@ export const SimulatorModal: React.FC<SimulatorModalProps> = ({
   regions,
   onApplyScenario,
   onToggleRegionAlarm,
+  onExitDemo,
 }) => {
   if (!isOpen) return null;
 
@@ -180,6 +182,18 @@ export const SimulatorModal: React.FC<SimulatorModalProps> = ({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800 mt-5">
+          {onExitDemo && (
+            <button
+              type="button"
+              onClick={() => {
+                onExitDemo();
+                onClose();
+              }}
+              className="mr-auto rounded-xl border border-cyan-700/60 px-4 py-2 text-xs font-semibold text-cyan-300 transition-colors hover:bg-cyan-950/50"
+            >
+              Повернутися до джерела даних
+            </button>
+          )}
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"

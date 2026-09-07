@@ -20,6 +20,16 @@ pnpm preview --host 127.0.0.1 --port 4173
 
 `pnpm check` runs TypeScript validation, contract tests and the production Vite build.
 
+For the local Dev15 ↔ Dev20 integration boundary, run:
+
+```bash
+pnpm test:integration
+```
+
+This checks threat, partner, ledger, payout and readiness payload shapes. A
+local `DEMO_DATA` source and `/api/ready` `503 not_ready` are reported as safe
+non-production states, not promoted to live claims.
+
 ## Runtime configuration
 
 Set `VITE_API_BASE_URL` to the authenticated API origin in a deployed environment. If the API is same-origin, leave it empty and route `/api/*` through the production reverse proxy.
