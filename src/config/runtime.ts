@@ -17,7 +17,9 @@ export const runtimeConfig = {
   apiBaseUrl: trimTrailingSlash(viteEnv.VITE_API_BASE_URL?.trim() || ''),
   appStoreUrl: viteEnv.VITE_APP_STORE_URL?.trim() || null,
   googlePlayUrl: viteEnv.VITE_GOOGLE_PLAY_URL?.trim() || null,
-  telegramUrl: viteEnv.VITE_TELEGRAM_URL?.trim() || 'https://t.me/siren_ua',
+  // Do not invent a public channel URL. Social links are rendered only when
+  // the deployment explicitly provides a verified destination.
+  telegramUrl: viteEnv.VITE_TELEGRAM_URL?.trim() || null,
   youtubeUrl: viteEnv.VITE_YOUTUBE_URL?.trim() || null,
   facebookUrl: viteEnv.VITE_FACEBOOK_URL?.trim() || null,
   instagramUrl: viteEnv.VITE_INSTAGRAM_URL?.trim() || null,
