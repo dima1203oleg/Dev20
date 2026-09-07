@@ -510,6 +510,7 @@ export default function App() {
           onSetMyRegion={(regionId) => handleUpdateSettings({ myRegion: regionId })}
           onTestSiren={handleToggleTestSiren}
           isSirenPlaying={isSirenPlaying}
+          dataMode={currentDataMode}
         />
       )}
 

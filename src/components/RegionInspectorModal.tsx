@@ -15,7 +15,7 @@ import {
   Plane,
   HeartHandshake
 } from 'lucide-react';
-import { RegionData, ThreatType } from '../types';
+import { RegionData, ThreatSceneModel, ThreatType } from '../types';
 
 interface RegionInspectorModalProps {
   region: RegionData | null;
@@ -24,6 +24,7 @@ interface RegionInspectorModalProps {
   isMyRegion: boolean;
   onTestSiren: () => void;
   isSirenPlaying: boolean;
+  dataMode?: ThreatSceneModel['dataMode'];
 }
 
 export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
@@ -33,8 +34,12 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
   isMyRegion,
   onTestSiren,
   isSirenPlaying,
+  dataMode = 'NOT_CONNECTED',
 }) => {
   if (!region) return null;
+
+  const isUnavailable = dataMode === 'NOT_CONNECTED';
+  const effectiveIsAlarm = !isUnavailable && region.isAlarm;
 
   const getThreatBadge = (threat: ThreatType) => {
     switch (threat) {
@@ -53,7 +58,9 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
     }
   };
 
-  const badge = getThreatBadge(region.threatType);
+  const badge = isUnavailable
+    ? { label: 'Актуальні дані недоступні', bg: 'bg-amber-950/80', text: 'text-amber-300', border: 'border-amber-600', icon: ShieldAlert }
+    : getThreatBadge(region.threatType);
   const Icon = badge.icon;
 
   return (
@@ -74,6 +81,9 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
                   Мій регіон
                 </span>
               )}
+              <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${dataMode === 'LIVE' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/40' : dataMode === 'DEMO_DATA' ? 'bg-purple-500/10 text-purple-300 border-purple-500/40' : 'bg-amber-500/10 text-amber-300 border-amber-500/40'}`}>
+                {dataMode === 'LIVE' ? 'LIVE' : dataMode === 'DEMO_DATA' ? 'DEMO' : 'OFFLINE'}
+              </span>
             </div>
             <p className="text-xs text-slate-400">
               {region.englishName} • {region.rayonsCount} районів
@@ -90,7 +100,7 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
 
         {/* Current Alarm Status Hero Card */}
         <div className={`p-4 rounded-xl border mb-5 transition-all ${
-          region.isAlarm
+          effectiveIsAlarm
             ? 'bg-red-950/40 border-red-800/80 text-red-200 shadow-lg shadow-red-950/40'
             : 'bg-emerald-950/30 border-emerald-800/60 text-emerald-200'
         }`}>
@@ -100,7 +110,7 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
               {badge.label}
             </span>
 
-            {region.isAlarm && (
+            {effectiveIsAlarm && (
               <span className="flex items-center gap-1.5 text-xs font-mono font-bold text-red-400">
                 <Clock className="w-3.5 h-3.5" />
                 Триває: {region.durationMinutes} хв
@@ -108,20 +118,24 @@ export const RegionInspectorModal: React.FC<RegionInspectorModalProps> = ({
             )}
           </div>
 
-          {region.threatDetails ? (
+          {isUnavailable ? (
+            <p className="text-xs sm:text-sm text-amber-200 leading-relaxed bg-amber-950/30 p-2.5 rounded-lg border border-amber-700/40 mt-2">
+              Актуальні дані стану області тимчасово недоступні. Локальна географія не є підтвердженням загрози.
+            </p>
+          ) : region.threatDetails ? (
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed bg-black/30 p-2.5 rounded-lg border border-white/5 mt-2">
               🚨 <strong>Оперативне повідомлення:</strong> {region.threatDetails}
             </p>
           ) : (
             <p className="text-xs text-slate-300 mt-1">
-              {region.isAlarm 
+              {effectiveIsAlarm
                 ? 'Пройдіть в укриття до сигналу відбою!' 
                 : 'Повітряна тривога в області відсутня. Ситуація під контролем.'}
             </p>
           )}
 
           {/* Active Rayons if partial */}
-          {region.activeRayons && region.activeRayons.length > 0 && (
+          {!isUnavailable && region.activeRayons && region.activeRayons.length > 0 && (
             <div className="mt-3 pt-2 border-t border-red-800/40">
               <span className="text-[11px] font-semibold text-red-300 block mb-1">
                 Райони підвищеної небезпеки:
