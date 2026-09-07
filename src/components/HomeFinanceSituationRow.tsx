@@ -15,6 +15,7 @@ import { DataState } from '../types/dataEnvelope';
 import { financialService, DEFAULT_FINANCIAL_SUMMARY, UNAVAILABLE_FINANCIAL_SUMMARY } from '../services/financialService';
 import { PartnerFinancialSummary } from '../types/finance';
 import { calculateRankByL1, getNextTierInfo } from '../services/referralEngine';
+import { runtimeConfig } from '../config/runtime';
 
 interface HomeFinanceSituationRowProps {
   onNavigateToFinance?: () => void;
@@ -28,10 +29,10 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
   onNavigateToFinance,
   onNavigateToNetwork,
   theme = 'light',
-  dataState = 'DEMO',
+  dataState = runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED',
 }) => {
   const isDark = theme === 'dark';
-  const [summary, setSummary] = React.useState<PartnerFinancialSummary>(DEFAULT_FINANCIAL_SUMMARY);
+  const [summary, setSummary] = React.useState<PartnerFinancialSummary>(runtimeConfig.allowDemoData ? DEFAULT_FINANCIAL_SUMMARY : UNAVAILABLE_FINANCIAL_SUMMARY);
   const [summaryState, setSummaryState] = React.useState<DataState>(dataState);
 
   React.useEffect(() => {

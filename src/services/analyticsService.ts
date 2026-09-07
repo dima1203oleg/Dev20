@@ -46,6 +46,17 @@ class AnalyticsService {
   async getPartnerAnalytics(): Promise<DataEnvelope<PartnerAnalytics>> {
     const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
+    if (!runtimeConfig.apiBaseUrl && !runtimeConfig.allowDemoData) {
+      return {
+        data: null,
+        state: 'NOT_CONNECTED',
+        source: 'SIREN_UA_PARTNER_ANALYTICS',
+        updatedAt,
+        isRealData: false,
+        error: 'Partner analytics API не підключений',
+      };
+    }
+
     if (runtimeConfig.apiBaseUrl) {
       try {
         const remote = await getJsonFromPaths<unknown>([

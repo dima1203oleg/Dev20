@@ -3,6 +3,7 @@
  */
 
 import { DataEnvelope } from '../types/dataEnvelope';
+import { runtimeConfig } from '../config/runtime';
 
 export interface UserNotificationPreferences {
   push: boolean;
@@ -83,6 +84,16 @@ class NotificationPreferencesService {
   private notifications: InAppNotification[] = INITIAL_NOTIFICATIONS;
 
   public async getPreferences(): Promise<DataEnvelope<UserNotificationPreferences>> {
+    if (!runtimeConfig.allowDemoData) {
+      return {
+        data: null,
+        state: 'NOT_CONNECTED',
+        source: 'SIREN_UA_NOTIFICATION_API',
+        updatedAt: new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+        isRealData: false,
+        error: 'Notification API не підключений',
+      };
+    }
     return {
       data: this.preferences,
       state: 'DEMO',
@@ -98,7 +109,7 @@ class NotificationPreferencesService {
   }
 
   public getInAppNotifications(): InAppNotification[] {
-    return this.notifications;
+    return runtimeConfig.allowDemoData ? this.notifications : [];
   }
 
   public markAsRead(id: string): void {

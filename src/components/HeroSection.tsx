@@ -11,7 +11,6 @@ import {
 import { RegionData, ThreatSceneModel, ThreatTrajectory } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { runtimeConfig } from '../config/runtime';
-import ukraine3dCutout from '../assets/images/ukraine_3d_cutout.webp';
 import ukraine3dCutoutDark from '../assets/images/ukraine_3d_cutout_dark.webp';
 
 const ThreeMapUkraine = React.lazy(() => import('./ThreeMapUkraine').then((module) => ({
@@ -143,7 +142,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           
           {/* Subtitle */}
           <p className={`mt-3 lg:mt-2 text-[14px] sm:text-[15px] lg:text-[13px] lg:leading-[1.35] leading-relaxed font-medium ${
-            isDark ? 'text-slate-300' : 'text-[#5A6A80]'
+            isDark ? 'text-slate-300' : 'text-[#46566B]'
           }`}>
             SIREN UA — на карті повітряної ситуації, напрями загроз, прогнозні траєкторії, орієнтовний час, хронологія подій та інформація про укриття — в одному застосунку.
           </p>
@@ -185,7 +184,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               }`}
             >
               <Play className="w-3.5 h-3.5 fill-current text-blue-600" />
-              <span>Дивитись демо</span>
+              <span>{onOpenDemo ? 'Дивитись демо' : 'Відкрити карту'}</span>
             </button>
             <button
               type="button"
@@ -256,12 +255,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Right: 3D Ukraine Map matching screenshots 1:1 with pins & arcs */}
         <div className="flex-1 w-full flex items-center justify-center relative min-h-[280px] lg:min-h-[270px]">
-          <div className={`relative w-full max-w-[620px] aspect-[16/10] lg:aspect-auto lg:h-[250px] flex items-center justify-center rounded-[24px] ${
-            isDark ? 'bg-[radial-gradient(circle_at_50%_48%,rgba(89,145,165,0.12),transparent_66%)]' : 'bg-[radial-gradient(circle_at_50%_48%,rgba(154,192,209,0.22),transparent_66%)]'
+          <div className={`siren-hero-map relative w-full max-w-[620px] aspect-[16/10] lg:aspect-auto lg:h-[250px] flex items-center justify-center ${
+            isDark ? 'siren-hero-map--dark' : 'siren-hero-map--light'
           }`}>
             {mapMode === 'WEBGL' ? (
               <Suspense fallback={(
-                <div className={`absolute inset-0 flex items-center justify-center rounded-[24px] text-xs font-semibold ${isDark ? 'text-[#9BC7D7]' : 'text-[#5E87A0]'}`}>
+                <div className={`absolute inset-0 flex items-center justify-center text-xs font-semibold ${isDark ? 'text-[#9BC7D7]' : 'text-[#5E87A0]'}`}>
                   Завантаження інтерактивної 3D-сцени…
                 </div>
               )}>
@@ -280,15 +279,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             ) : (
               <>
                 <img
-                  src={isDark ? ukraine3dCutoutDark : ukraine3dCutout}
+                  // The light cutout has an opaque canvas baked into the asset.
+                  // Use the alpha-preserving asset in both themes so the map
+                  // floats directly on the hero surface instead of sitting in a
+                  // rectangular image tile.
+                  src={ukraine3dCutoutDark}
                   alt="3D Карта України SIREN UA — дизайн-прев’ю"
                   decoding="async"
                   referrerPolicy="no-referrer"
                   style={{
-                    opacity: isDark ? 0.92 : 0.78,
+                    opacity: isDark ? 0.92 : 0.96,
                     filter: isDark
                       ? 'saturate(0.38) brightness(0.76) contrast(0.92)'
-                      : 'saturate(0.20) brightness(1.34) contrast(0.84)'
+                      : 'saturate(0.28) brightness(1.18) contrast(1.04)'
                   }}
                   className="w-full h-auto object-contain max-h-[290px] lg:max-h-[255px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
                 />

@@ -20,6 +20,17 @@ class ShelterService {
   public async getShelters(regionId: string): Promise<DataEnvelope<Shelter[]>> {
     const updatedAt = nowTime();
 
+    if (!runtimeConfig.apiBaseUrl && !runtimeConfig.allowDemoData) {
+      return {
+        data: null,
+        state: 'NOT_CONNECTED',
+        source: 'SIREN_UA_SHELTER_REGISTRY',
+        updatedAt,
+        isRealData: false,
+        error: 'Реєстр укриттів не підключений',
+      };
+    }
+
     if (runtimeConfig.apiBaseUrl) {
       try {
         const remote = await getJsonFromPaths<unknown>([
@@ -55,12 +66,14 @@ class ShelterService {
           };
         }).filter((item): item is Shelter => item !== null);
         if (!mapped.length && !sourceItems.length) throw new Error('Shelter payload has invalid shape');
+        const state = inferDataState(remote);
+        if (state === 'DEMO' && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
         return {
           data: mapped,
-          state: inferDataState(remote),
+          state,
           source: 'SIREN_UA_SHELTER_REGISTRY',
           updatedAt,
-          isRealData: inferDataState(remote) === 'LIVE',
+          isRealData: state === 'LIVE',
         };
       } catch {
         return {

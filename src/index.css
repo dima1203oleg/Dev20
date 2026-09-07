@@ -49,14 +49,15 @@ body {
    cool, paper-like surface in light mode. Components opt into this shell
    without losing their existing responsive layout. */
 .siren-app {
-  --siren-shell-bg: #eaeff5;
+  --siren-shell-bg: #edf2f7;
   --siren-shell-text: #111827;
-  --siren-panel-bg: rgba(255, 255, 255, 0.78);
-  --siren-panel-border: rgba(217, 226, 232, 0.95);
-  --siren-ink-soft: #5a6a80;
-  --siren-accent: #6d9fb8;
+  --siren-panel-bg: rgba(255, 255, 255, 0.9);
+  --siren-panel-border: rgba(202, 215, 226, 0.98);
+  --siren-ink-soft: #46566b;
+  --siren-accent: #557f98;
   background:
-    radial-gradient(circle at 78% 7%, rgba(142, 190, 210, 0.17), transparent 28rem),
+    radial-gradient(circle at 78% 7%, rgba(130, 181, 205, 0.2), transparent 28rem),
+    radial-gradient(circle at 8% 35%, rgba(255, 255, 255, 0.72), transparent 30rem),
     var(--siren-shell-bg);
 }
 
@@ -81,6 +82,21 @@ body {
 .siren-app--light .siren-panel {
   background-color: var(--siren-panel-bg);
   border-color: var(--siren-panel-border);
+  box-shadow: 0 16px 42px rgba(56, 78, 96, 0.08), 0 2px 8px rgba(56, 78, 96, 0.05);
+}
+
+.siren-app--light .siren-hero {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(247, 250, 252, 0.92));
+  border-color: #cbd8e2;
+  box-shadow: 0 24px 70px rgba(42, 68, 83, 0.11), 0 2px 8px rgba(42, 68, 83, 0.06);
+}
+
+.siren-app--light .siren-hero h1 {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.siren-app--light .siren-hero-map--light::before {
+  background: radial-gradient(ellipse at center, rgba(78, 139, 171, 0.2), rgba(78, 139, 171, 0) 68%);
 }
 
 .siren-app button {
@@ -99,6 +115,31 @@ body {
 .siren-device-panel img {
   user-select: none;
   -webkit-user-drag: none;
+}
+
+/* The hero map is a floating spatial object, not a card inside the hero.
+   Keep the illumination organic so light mode never shows a rectangular
+   image/canvas behind Ukraine. */
+.siren-hero-map {
+  isolation: isolate;
+}
+
+.siren-hero-map::before {
+  position: absolute;
+  inset: 14% 8%;
+  z-index: -1;
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+  filter: blur(28px);
+}
+
+.siren-hero-map--light::before {
+  background: radial-gradient(ellipse at center, rgba(91, 151, 180, 0.16), rgba(91, 151, 180, 0) 68%);
+}
+
+.siren-hero-map--dark::before {
+  background: radial-gradient(ellipse at center, rgba(89, 145, 165, 0.13), rgba(89, 145, 165, 0) 68%);
 }
 
 @media (min-width: 1160px) {

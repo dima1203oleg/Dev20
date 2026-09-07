@@ -11,6 +11,7 @@ import { DashboardSection } from '../types';
 import { financialService, DEFAULT_FINANCIAL_SUMMARY, UNAVAILABLE_FINANCIAL_SUMMARY } from '../services/financialService';
 import { networkService, NetworkSummary } from '../services/networkService';
 import { DataState } from '../types/dataEnvelope';
+import { runtimeConfig } from '../config/runtime';
 
 interface HomeFeaturesGridProps {
   onNavigateToTab?: (tab: DashboardSection) => void;
@@ -22,10 +23,10 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
   theme = 'light'
 }) => {
   const isDark = theme === 'dark';
-  const [financeSummary, setFinanceSummary] = useState(DEFAULT_FINANCIAL_SUMMARY);
-  const [financeState, setFinanceState] = useState<DataState>('LOADING');
+  const [financeSummary, setFinanceSummary] = useState(runtimeConfig.allowDemoData ? DEFAULT_FINANCIAL_SUMMARY : UNAVAILABLE_FINANCIAL_SUMMARY);
+  const [financeState, setFinanceState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
   const [networkSummary, setNetworkSummary] = useState<NetworkSummary | null>(null);
-  const [networkState, setNetworkState] = useState<DataState>('LOADING');
+  const [networkState, setNetworkState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
 
   useEffect(() => {
     let mounted = true;

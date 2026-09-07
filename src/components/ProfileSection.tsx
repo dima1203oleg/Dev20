@@ -45,6 +45,7 @@ import { profileService, UserProfileData } from '../services/profileService';
 import { DataState } from '../types/dataEnvelope';
 import { kycService, KycVerificationData } from '../services/kycService';
 import { authSecurityService, UserSecurityData } from '../services/authSecurityService';
+import { runtimeConfig } from '../config/runtime';
 
 interface ProfileSectionProps {
   theme?: 'light' | 'dark';
@@ -57,11 +58,11 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [isEditingData, setIsEditingData] = useState(false);
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
-  const [profileState, setProfileState] = useState<DataState>('LOADING');
+  const [profileState, setProfileState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
   const [kycData, setKycData] = useState<KycVerificationData | null>(null);
-  const [kycState, setKycState] = useState<DataState>('LOADING');
+  const [kycState, setKycState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : 'NOT_CONNECTED');
   const [securityData, setSecurityData] = useState<UserSecurityData | null>(null);
-  const [securityState, setSecurityState] = useState<DataState>('LOADING');
+  const [securityState, setSecurityState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : 'NOT_CONNECTED');
   const [activeDrawer, setActiveDrawer] = useState<'rank' | 'payments' | 'kyc' | 'security' | 'achievements' | 'support' | null>(null);
   const [profileNotice, setProfileNotice] = useState<string | null>(null);
   const [notifications, setNotifications] = useState({

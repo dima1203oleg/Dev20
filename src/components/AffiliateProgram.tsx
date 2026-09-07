@@ -32,6 +32,7 @@ import { InfoTooltip } from './InfoTooltip';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 import { ContextDrawer } from './ContextDrawer';
 import { DataState } from '../types/dataEnvelope';
+import { runtimeConfig } from '../config/runtime';
 
 interface AffiliateProgramProps {
   onOpenMap?: () => void;
@@ -60,14 +61,14 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   const isDark = theme === 'dark';
 
   const [networkSummary, setNetworkSummary] = useState<NetworkSummary | null>(null);
-  const [dataState, setDataState] = useState<DataState>('LOADING');
+  const [dataState, setDataState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
   const [partnerNodes, setPartnerNodes] = useState<NetworkNode[]>([]);
   const [edges, setEdges] = useState<{ from: string; to: string; level: 'L1' | 'L2' }[]>([]);
   const [activities, setActivities] = useState<NetworkActivity[]>([]);
   const [branches, setBranches] = useState<NetworkBranchStats[]>([]);
-  const [graphState, setGraphState] = useState<DataState>('LOADING');
-  const [activityState, setActivityState] = useState<DataState>('LOADING');
-  const [branchState, setBranchState] = useState<DataState>('LOADING');
+  const [graphState, setGraphState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
+  const [activityState, setActivityState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
+  const [branchState, setBranchState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
 
   const demoSummary: NetworkSummary = {
     totalNetworkSize: 2847,
@@ -156,7 +157,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
     referralUrl: '',
     trafficSources: [],
   };
-  const summary: NetworkSummary = networkSummary || (dataState === 'NOT_CONNECTED' ? unavailableSummary : demoSummary);
+  const summary: NetworkSummary = networkSummary || (dataState === 'NOT_CONNECTED' || !runtimeConfig.allowDemoData ? unavailableSummary : demoSummary);
   const referralCode = dataState === 'LIVE'
     ? summary.referralCode || '—'
     : dataState === 'NOT_CONNECTED'

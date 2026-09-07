@@ -204,6 +204,17 @@ class FinancialService {
    */
   public async getPartnerFinancialSummary(): Promise<DataEnvelope<PartnerFinancialSummary>> {
     const nowTime = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+
+    if (!runtimeConfig.apiBaseUrl && !runtimeConfig.allowDemoData) {
+      return {
+        data: null,
+        state: 'NOT_CONNECTED',
+        source: 'SIREN_UA_FINANCE_LEDGER',
+        updatedAt: nowTime,
+        isRealData: false,
+        error: 'Financial API не підключений',
+      };
+    }
     
     try {
       const remote = await getJsonFromPaths<unknown>([
@@ -239,6 +250,7 @@ class FinancialService {
 
       if (data && typeof data === 'object') {
         const state = inferDataState(remote);
+        if (state === 'DEMO' && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
         const isDashboardPayload = isJsonObject(remote) && isJsonObject(remote.wallet);
         const payload: PartnerFinancialSummary = {
           ...this.summary,
@@ -269,7 +281,7 @@ class FinancialService {
         };
       }
     } catch {
-      if (runtimeConfig.apiBaseUrl) {
+      if (runtimeConfig.apiBaseUrl || !runtimeConfig.allowDemoData) {
         return {
           data: null,
           state: 'NOT_CONNECTED',
@@ -284,7 +296,7 @@ class FinancialService {
 
     // Check cached entry
     const cached = CacheManager.get<PartnerFinancialSummary>(CACHE_KEY_FINANCE);
-    if (cached.data) {
+    if (cached.data && cached.data.status !== 'DEMO' && cached.data.status !== 'NOT_CONNECTED') {
       const cachedData = {
         ...cached.data,
         status: cached.state,
@@ -320,7 +332,7 @@ class FinancialService {
    * Returns saved payout methods
    */
   public getPayoutMethods(): PayoutMethodConfig[] {
-    return this.payoutMethods;
+    return runtimeConfig.allowDemoData ? this.payoutMethods : [];
   }
 
   /**
@@ -342,14 +354,14 @@ class FinancialService {
    * Returns recent ledger transactions
    */
   public getLedgerTransactions(): LedgerTransaction[] {
-    return this.ledgerTransactions;
+    return runtimeConfig.allowDemoData ? this.ledgerTransactions : [];
   }
 
   /**
    * Returns payout request history
    */
   public getPayoutHistory(): PayoutTransaction[] {
-    return this.payoutHistory;
+    return runtimeConfig.allowDemoData ? this.payoutHistory : [];
   }
 
   /** Read the canonical immutable-ledger projection when the backend is connected. */
@@ -374,9 +386,10 @@ class FinancialService {
         };
       });
       const state = inferDataState(remote, remote.integrityCheck === 'ZERO_SUM_VERIFIED' ? 'DEMO' : 'LIVE');
+      if (state === 'DEMO' && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
       return { data: entries, state, source: 'SIREN_UA_PARTNER_LEDGER', updatedAt, isRealData: state === 'LIVE' };
     } catch {
-      return { data: null, state: runtimeConfig.apiBaseUrl ? 'NOT_CONNECTED' : 'DEMO', source: 'SIREN_UA_PARTNER_LEDGER', updatedAt, isRealData: false };
+      return { data: null, state: runtimeConfig.apiBaseUrl || !runtimeConfig.allowDemoData ? 'NOT_CONNECTED' : 'DEMO', source: 'SIREN_UA_PARTNER_LEDGER', updatedAt, isRealData: false };
     }
   }
 
@@ -408,7 +421,7 @@ class FinancialService {
       const state = inferDataState(remote);
       return { data: payouts, state, source: 'SIREN_UA_PARTNER_PAYOUTS', updatedAt, isRealData: state === 'LIVE' };
     } catch {
-      return { data: null, state: runtimeConfig.apiBaseUrl ? 'NOT_CONNECTED' : 'DEMO', source: 'SIREN_UA_PARTNER_PAYOUTS', updatedAt, isRealData: false };
+      return { data: null, state: runtimeConfig.apiBaseUrl || !runtimeConfig.allowDemoData ? 'NOT_CONNECTED' : 'DEMO', source: 'SIREN_UA_PARTNER_PAYOUTS', updatedAt, isRealData: false };
     }
   }
 
@@ -461,6 +474,10 @@ class FinancialService {
           error: 'Не вдалося передати payout-запит у production provider. Кошти не списано.',
         };
       }
+    }
+
+    if (!runtimeConfig.allowDemoData) {
+      return { success: false, error: 'Payout provider не підключений. Кошти не списано.' };
     }
 
     // Without a configured backend, keep the interaction useful for QA but do

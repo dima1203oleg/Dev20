@@ -606,6 +606,7 @@ class NetworkService {
       });
 
       const state = inferDataState(remote);
+      if (state === 'DEMO' && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
       return {
         data: remoteSummary,
         state,
@@ -614,7 +615,7 @@ class NetworkService {
         isRealData: state === 'LIVE',
       };
     } catch {
-      if (runtimeConfig.apiBaseUrl) return this.notConnected<NetworkSummary>('SIREN_UA_PARTNER_SUMMARY');
+      if (runtimeConfig.apiBaseUrl || !runtimeConfig.allowDemoData) return this.notConnected<NetworkSummary>('SIREN_UA_PARTNER_SUMMARY');
       // Local development remains useful, but explicitly labels the local dataset as DEMO.
     }
 
@@ -670,23 +671,27 @@ class NetworkService {
             { from: 'me', to: 'l1-aggregate', level: 'L1' },
             { from: 'me', to: 'l2-aggregate', level: 'L2' },
           ];
+          const state = inferDataState(remote);
+          if (state === 'DEMO' && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
           return {
             data: { nodes, edges },
-            state: inferDataState(remote),
+            state,
             source: 'SIREN_UA_PARTNER_NETWORK_AGGREGATE',
             updatedAt: this.now(),
-            isRealData: inferDataState(remote) === 'LIVE',
+            isRealData: state === 'LIVE',
           };
         }
+        const state = inferDataState(remote);
+        if (state === 'DEMO' && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
         return {
           data: { nodes: remote.nodes as NetworkNode[], edges: remote.edges as NetworkEdge[] },
-          state: inferDataState(remote),
+          state,
           source: 'SIREN_UA_PARTNER_NETWORK',
           updatedAt: this.now(),
-          isRealData: inferDataState(remote) === 'LIVE',
+          isRealData: state === 'LIVE',
         };
     } catch {
-      if (runtimeConfig.apiBaseUrl) return this.notConnected<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>('SIREN_UA_PARTNER_NETWORK');
+      if (runtimeConfig.apiBaseUrl || !runtimeConfig.allowDemoData) return this.notConnected<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>('SIREN_UA_PARTNER_NETWORK');
     }
 
     return {
@@ -743,15 +748,17 @@ class NetworkService {
             qualifiedL1Count: 0,
           };
         });
+        const state = inferDataState(remote);
+        if (state === 'DEMO' && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
         return {
           data: nodes,
-          state: inferDataState(remote),
+          state,
           source: 'SIREN_UA_PARTNER_NETWORK_PARTNERS',
           updatedAt: this.now(),
-          isRealData: inferDataState(remote) === 'LIVE',
+          isRealData: state === 'LIVE',
         };
     } catch {
-      if (runtimeConfig.apiBaseUrl) return this.notConnected<NetworkNode[]>('SIREN_UA_PARTNER_NETWORK_PARTNERS');
+      if (runtimeConfig.apiBaseUrl || !runtimeConfig.allowDemoData) return this.notConnected<NetworkNode[]>('SIREN_UA_PARTNER_NETWORK_PARTNERS');
     }
 
     let filtered = AUTHORITATIVE_PARTNER_NODES.filter(n => n.level !== 'ME');
@@ -776,7 +783,7 @@ class NetworkService {
    * Returns real-time activity stream
    */
   public async getNetworkActivity(): Promise<DataEnvelope<NetworkActivity[]>> {
-    if (runtimeConfig.apiBaseUrl) {
+    if (runtimeConfig.apiBaseUrl || !runtimeConfig.allowDemoData) {
       try {
         const remote = await getJsonFromPaths<unknown>([
           '/api/partner/activity',
@@ -808,7 +815,7 @@ class NetworkService {
    * Returns branch breakdown
    */
   public async getBranchStats(): Promise<DataEnvelope<NetworkBranchStats[]>> {
-    if (runtimeConfig.apiBaseUrl) {
+    if (runtimeConfig.apiBaseUrl || !runtimeConfig.allowDemoData) {
       try {
         const remote = await getJsonFromPaths<unknown>([
           '/api/partner/branches',

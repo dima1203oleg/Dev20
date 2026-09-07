@@ -68,6 +68,17 @@ class ProfileService {
   public async getProfile(): Promise<DataEnvelope<UserProfileData>> {
     const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
+    if (!runtimeConfig.apiBaseUrl && !runtimeConfig.allowDemoData) {
+      return {
+        data: null,
+        state: 'NOT_CONNECTED',
+        source: 'SIREN_UA_PROFILE_API',
+        updatedAt,
+        isRealData: false,
+        error: 'Профільний API не підключений',
+      };
+    }
+
     try {
       const remote = await getJsonFromPaths<unknown>([
         '/api/profile/me',
@@ -135,7 +146,7 @@ class ProfileService {
         isRealData: true,
       };
     } catch {
-      if (runtimeConfig.apiBaseUrl) {
+      if (runtimeConfig.apiBaseUrl || !runtimeConfig.allowDemoData) {
         return {
           data: null,
           state: 'NOT_CONNECTED',

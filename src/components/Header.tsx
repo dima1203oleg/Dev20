@@ -14,6 +14,7 @@ import { DashboardSection, ThreatDataMode } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { profileService, UserProfileData } from '../services/profileService';
 import { DataState } from '../types/dataEnvelope';
+import { runtimeConfig } from '../config/runtime';
 
 interface HeaderProps {
   activeSection: DashboardSection;
@@ -43,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [languageOpen, setLanguageOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
-  const [profileState, setProfileState] = useState<DataState>('LOADING');
+  const [profileState, setProfileState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
 
   useEffect(() => {
     let active = true;

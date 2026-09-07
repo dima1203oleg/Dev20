@@ -8,6 +8,7 @@ import { Footer } from './components/Footer';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { threatServerService, LiveThreatsPayload } from './services/threatServerService';
 import { DataState } from './types/dataEnvelope';
+import { runtimeConfig } from './config/runtime';
 
 import { INITIAL_REGIONS, INITIAL_ALERTS_FEED } from './data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from './data/spatialThreatData';
@@ -57,6 +58,18 @@ const sectionFromLocation = (): DashboardSection => {
   return sectionByHash[hash] || 'HOME';
 };
 
+const clearRegionThreatState = (region: RegionData): RegionData => ({
+  ...region,
+  isAlarm: false,
+  threatType: 'none',
+  startedAt: null,
+  durationMinutes: 0,
+  threatDetails: undefined,
+  activeRayons: undefined,
+});
+
+const offlineRegions = () => INITIAL_REGIONS.map(clearRegionThreatState);
+
 export default function App() {
   // Navigation: HOME | NETWORK | FINANCE | PROFILE | ANALYTICS | AFFILIATE
   const [activeSection, setActiveSection] = useState<DashboardSection>(sectionFromLocation);
@@ -95,6 +108,7 @@ export default function App() {
 
   // Regions & Alert Data
   const [regions, setRegions] = useState<RegionData[]>(() => {
+    if (runtimeConfig.isProduction) return offlineRegions();
     try {
       const saved = localStorage.getItem('sirenua_regions_state');
       return saved ? JSON.parse(saved) : INITIAL_REGIONS;
@@ -104,6 +118,7 @@ export default function App() {
   });
 
   const [alerts, setAlerts] = useState<AlertEvent[]>(() => {
+    if (runtimeConfig.isProduction) return [];
     try {
       const saved = localStorage.getItem('sirenua_alerts_state');
       return saved ? JSON.parse(saved) : INITIAL_ALERTS_FEED;
@@ -144,7 +159,7 @@ export default function App() {
   const [isSirenPlaying, setIsSirenPlaying] = useState(false);
   const [bannerAlert, setBannerAlert] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const [threatDataState, setThreatDataState] = useState<DataState>('LOADING');
+  const [threatDataState, setThreatDataState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : 'NOT_CONNECTED');
   const [threatUpdatedAt, setThreatUpdatedAt] = useState('—');
   const [threatPayload, setThreatPayload] = useState<LiveThreatsPayload | null>(null);
   const [sceneTrajectories, setSceneTrajectories] = useState<typeof INITIAL_TRAJECTORIES>([]);
@@ -202,7 +217,7 @@ export default function App() {
   // Sync to LocalStorage
   useEffect(() => {
     try {
-      localStorage.setItem('sirenua_regions_state', JSON.stringify(regions));
+      if (!runtimeConfig.isProduction) localStorage.setItem('sirenua_regions_state', JSON.stringify(regions));
     } catch {
       // ignore
     }
@@ -210,7 +225,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('sirenua_alerts_state', JSON.stringify(alerts));
+      if (!runtimeConfig.isProduction) localStorage.setItem('sirenua_alerts_state', JSON.stringify(alerts));
     } catch {
       // ignore
     }
@@ -256,6 +271,7 @@ export default function App() {
   };
 
   const handleToggleRegionAlarm = (regionId: string, threatType: ThreatType = 'air') => {
+    if (!runtimeConfig.allowDemoData) return;
     setIsDemoMode(true);
     setThreatDataState('DEMO');
     setSceneTrajectories(INITIAL_TRAJECTORIES);
@@ -275,6 +291,7 @@ export default function App() {
   const handleApplyScenario = (
     scenario: 'massive_drone' | 'ballistic_all' | 'eastern_front' | 'all_clear' | 'central_ukraine'
   ) => {
+    if (!runtimeConfig.allowDemoData) return;
     const droneRegions = new Set(['kyiv_obl', 'kyiv_city', 'chernihiv', 'sumy', 'poltava', 'cherkasy', 'odesa']);
     const easternRegions = new Set(['sumy', 'kharkiv', 'luhansk', 'donetsk', 'dnipro', 'zaporizhzhia', 'kherson']);
     const centralRegions = new Set(['kyiv_obl', 'kyiv_city', 'zhytomyr', 'vinnytsia', 'cherkasy', 'poltava', 'kirovohrad']);
@@ -320,7 +337,7 @@ export default function App() {
     setTimeout(() => setBannerAlert(null), 4500);
   };
 
-  const safeRegions = regions || INITIAL_REGIONS;
+  const safeRegions = regions || offlineRegions();
   const hasUsableThreatScene = threatDataState === 'LIVE' || threatDataState === 'DEMO';
   const displayRegions = isDemoMode || hasUsableThreatScene
     ? safeRegions
@@ -458,7 +475,7 @@ export default function App() {
                 threatModel={threatSceneModel}
                 onRefreshData={handleRefreshThreatData}
                 onNavigateToShelters={() => setIsSheltersModalOpen(true)}
-                onOpenDemo={() => setIsSimulatorOpen(true)}
+                onOpenDemo={runtimeConfig.allowDemoData ? () => setIsSimulatorOpen(true) : undefined}
                 theme={settings.theme || 'light'}
               />
 

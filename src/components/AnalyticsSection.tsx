@@ -4,6 +4,7 @@ import { networkService, NetworkSummary } from '../services/networkService';
 import { analyticsService, PartnerAnalytics } from '../services/analyticsService';
 import { DataState } from '../types/dataEnvelope';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
+import { runtimeConfig } from '../config/runtime';
 
 interface AnalyticsSectionProps {
   theme?: 'light' | 'dark';
@@ -13,7 +14,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'lig
   const isDark = theme === 'dark';
   const [summary, setSummary] = useState<NetworkSummary | null>(null);
   const [analytics, setAnalytics] = useState<PartnerAnalytics | null>(null);
-  const [dataState, setDataState] = useState<DataState>('LOADING');
+  const [dataState, setDataState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
 
   useEffect(() => {
     let active = true;

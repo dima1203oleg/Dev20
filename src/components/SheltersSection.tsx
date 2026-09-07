@@ -14,6 +14,7 @@ import { Shelter, RegionData } from '../types';
 import { DataState } from '../types/dataEnvelope';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 import { shelterService } from '../services/shelterService';
+import { runtimeConfig } from '../config/runtime';
 
 interface SheltersSectionProps {
   myRegionId: string;
@@ -22,10 +23,10 @@ interface SheltersSectionProps {
   theme?: 'light' | 'dark';
 }
 
-export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, regions, dataState = 'DEMO', theme = 'light' }) => {
+export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, regions, dataState = 'NOT_CONNECTED', theme = 'light' }) => {
   const isDark = theme === 'dark';
   const [shelters, setShelters] = useState<Shelter[]>([]);
-  const [shelterState, setShelterState] = useState<DataState>('LOADING');
+  const [shelterState, setShelterState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'METRO' | 'GENERATOR' | 'WIFI' | 'ACCESSIBLE'>('ALL');
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);

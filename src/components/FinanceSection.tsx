@@ -43,6 +43,7 @@ import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 import { ContextDrawer } from './ContextDrawer';
 import { InfoTooltip } from './InfoTooltip';
 import { DataState } from '../types/dataEnvelope';
+import { runtimeConfig } from '../config/runtime';
 
 interface FinanceSectionProps {
   onOpenNetwork?: () => void;
@@ -63,12 +64,12 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
   const [newCardCvv, setNewCardCvv] = useState('');
   const [newMethodError, setNewMethodError] = useState<string | null>(null);
   const [newMethodSuccess, setNewMethodSuccess] = useState(false);
-  const [summary, setSummary] = useState<PartnerFinancialSummary>(DEFAULT_FINANCIAL_SUMMARY);
-  const [dataState, setDataState] = useState<DataState>('LOADING');
+  const [summary, setSummary] = useState<PartnerFinancialSummary>(runtimeConfig.allowDemoData ? DEFAULT_FINANCIAL_SUMMARY : UNAVAILABLE_FINANCIAL_SUMMARY);
+  const [dataState, setDataState] = useState<DataState>(runtimeConfig.apiBaseUrl ? 'LOADING' : runtimeConfig.allowDemoData ? 'DEMO' : 'NOT_CONNECTED');
   const [ledger, setLedger] = useState<LedgerTransaction[]>(() => financialService.getLedgerTransactions());
   const [payoutMethods, setPayoutMethods] = useState<PayoutMethodConfig[]>(() => financialService.getPayoutMethods());
   const [selectedMethodId, setSelectedMethodId] = useState<string>(() => financialService.getPayoutMethods()[0]?.id || 'pm-1');
-  const [withdrawAmount, setWithdrawAmount] = useState('4230');
+  const [withdrawAmount, setWithdrawAmount] = useState('0');
   
   // Withdrawal Lifecycle state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -193,6 +194,11 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
   const handleAddPayoutMethod = (event: React.FormEvent) => {
     event.preventDefault();
     setNewMethodError(null);
+
+    if (!runtimeConfig.allowDemoData) {
+      setNewMethodError('Payout provider не підключений. Реальні реквізити недоступні.');
+      return;
+    }
 
     if (dataState === 'LIVE') {
       setNewMethodError('Додавання платіжного методу виконується через payout provider. API ще не повернув доступний flow.');

@@ -49,6 +49,16 @@ export interface LiveThreatsPayload {
 const API_BASE = apiUrl('/api/v1');
 const CACHE_KEY_THREATS = 'sirenua_threat_payload_cache';
 
+const offlineRegions = () => INITIAL_REGIONS.map((region) => ({
+  ...region,
+  isAlarm: false,
+  threatType: 'none' as const,
+  startedAt: null,
+  durationMinutes: 0,
+  threatDetails: undefined,
+  activeRayons: undefined,
+}));
+
 const REGION_CODE_BY_ID: Record<string, string> = {
   kyiv_obl: 'UA-32',
   vinnytsia: 'UA-05',
@@ -438,6 +448,13 @@ class ThreatServerService {
       };
     }
 
+    // A static production build without an explicitly configured API must be
+    // instant and truthful. Do not probe same-origin demo routes or wait on
+    // network timeouts before showing the unavailable state.
+    if (!runtimeConfig.apiBaseUrl && !runtimeConfig.allowDemoData) {
+      return this.offlineResponse(myRegionId, nowTime);
+    }
+
     // 2. Attempt real upstream backend fetch
     // Dev15 is the canonical local integration boundary. Its responses are
     // deliberately labelled DEMO_DATA until an authoritative threat source
@@ -459,6 +476,7 @@ class ThreatServerService {
           : new Date().toISOString();
         const demo = (isJsonObject(liveRemote) && liveRemote.dataMode === 'DEMO_DATA')
           || (isJsonObject(statusRemote) && statusRemote.status === 'DEMO_DATA');
+        if (demo && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
         const state: DataState = demo ? 'DEMO' : 'LIVE';
         const alerts: AlertEvent[] = regions.filter((region) => region.isAlarm).map((region) => ({
           id: `backend-${region.id}`,
@@ -555,7 +573,7 @@ class ThreatServerService {
 
     // 3. Structured Cache Evaluation
     const cached = CacheManager.get<LiveThreatsPayload>(CACHE_KEY_THREATS);
-    if (cached.data && (cached.state === 'CACHED' || cached.state === 'STALE')) {
+    if (cached.data && cached.data.isRealData === true && (cached.state === 'CACHED' || cached.state === 'STALE')) {
       const cachedPayload = cached.data;
       const formattedCachedTime = cached.fetchedAt 
         ? new Date(cached.fetchedAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
@@ -585,36 +603,35 @@ class ThreatServerService {
     }
 
     // 4. Default Offline / Unconnected State (Truthful fallback without fake LIVE claims)
-    const fallbackRegions = INITIAL_REGIONS;
-    const fallbackAlerts = INITIAL_ALERTS_FEED;
+    return this.offlineResponse(myRegionId, nowTime);
+  }
+
+  private offlineResponse(myRegionId: string, nowTime: string): DataEnvelope<LiveThreatsPayload> {
+    const fallbackRegions = offlineRegions();
     const fallbackTrajectories: ThreatTrajectory[] = [];
-
     const fallbackScene = this.normalizeThreatScene(fallbackRegions, fallbackTrajectories, myRegionId, 'NOT_CONNECTED', nowTime);
-
-    const fallbackPayload: LiveThreatsPayload = {
-      regions: fallbackRegions,
-      alerts: fallbackAlerts,
-      trajectories: fallbackTrajectories,
-      systemStatus: {
-        service: 'SirenUA-ThreatServer',
-        version: '2.4.0',
-        status: 'OFFLINE',
-        uptimeSeconds: 0,
-        activeIngestSources: [],
-        lastIngestTimestamp: new Date().toISOString(),
-        latencyMs: 0,
-        totalActiveAlerts: 0,
-        totalActiveVectors: 0,
-        environment: 'offline_fallback',
-      },
-      threatScene: fallbackScene,
-      connectionStatus: 'NOT_CONNECTED',
-      lastUpdated: nowTime,
-      isRealData: false,
-    };
-
     return {
-      data: fallbackPayload,
+      data: {
+        regions: fallbackRegions,
+        alerts: [],
+        trajectories: fallbackTrajectories,
+        systemStatus: {
+          service: 'SirenUA-ThreatServer',
+          version: '2.4.0',
+          status: 'OFFLINE',
+          uptimeSeconds: 0,
+          activeIngestSources: [],
+          lastIngestTimestamp: new Date().toISOString(),
+          latencyMs: 0,
+          totalActiveAlerts: 0,
+          totalActiveVectors: 0,
+          environment: 'offline_fallback',
+        },
+        threatScene: fallbackScene,
+        connectionStatus: 'NOT_CONNECTED',
+        lastUpdated: nowTime,
+        isRealData: false,
+      },
       state: 'NOT_CONNECTED',
       source: 'OFFLINE_BASELINE',
       updatedAt: nowTime,

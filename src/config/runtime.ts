@@ -7,6 +7,11 @@ const viteEnv: Record<string, string | undefined> = (import.meta as ImportMeta &
   env?: Record<string, string | undefined>;
 }).env ?? {};
 
+const isProduction = viteEnv.PROD === 'true' || viteEnv.MODE === 'production';
+// Demo fixtures are opt-in for local QA only. A production bundle can never
+// fall back to synthetic safety or financial data.
+const allowDemoData = !isProduction && viteEnv.VITE_ENABLE_DEMO === 'true';
+
 /**
  * Runtime configuration for deployed environments.
  *
@@ -14,6 +19,8 @@ const viteEnv: Record<string, string | undefined> = (import.meta as ImportMeta &
  * External store URLs are optional until the official apps are published.
  */
 export const runtimeConfig = {
+  isProduction,
+  allowDemoData,
   apiBaseUrl: trimTrailingSlash(viteEnv.VITE_API_BASE_URL?.trim() || ''),
   appStoreUrl: viteEnv.VITE_APP_STORE_URL?.trim() || null,
   googlePlayUrl: viteEnv.VITE_GOOGLE_PLAY_URL?.trim() || null,
