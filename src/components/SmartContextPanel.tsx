@@ -27,6 +27,8 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
   onNavigateToNetwork,
 }) => {
   const isAlarm = threatModel.myRegionStatus.isAlarm;
+  const isDemo = threatModel.dataMode === 'DEMO_DATA';
+  const hasShelterData = Boolean(threatModel.nearestShelter);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
@@ -45,7 +47,11 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
               ОПЕРАТИВНИЙ СТАН КАНАЛІВ
             </div>
             <div className="text-xs font-mono font-bold text-white truncate mt-0.5">
-              {isAlarm ? '🔴 Активна тривога в секторі' : '🟢 Усі сенсори в нормі'}
+              {threatModel.dataMode === 'NOT_CONNECTED'
+                ? '🟡 Дані каналів недоступні'
+                : isAlarm
+                  ? '🔴 Активна тривога в секторі'
+                  : '🟢 Усі сенсори в нормі'}
             </div>
             <div className="text-[10px] text-slate-400 mt-0.5">
               Синхронізація: ДСНС + ПС ЗСУ + РЛС
@@ -67,10 +73,10 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
               <span className="text-cyan-300 font-bold">Маршрут →</span>
             </div>
             <div className="text-xs font-mono font-bold text-white truncate mt-0.5">
-              {threatModel.nearestShelter?.name || 'Станція метро «Золоті Ворота»'}
+              {threatModel.nearestShelter?.name || 'Дані укриття недоступні'}
             </div>
             <div className="text-[10px] text-slate-400 mt-0.5">
-              340 м · ~4 хв пішки · Генератор / Wi-Fi
+              {hasShelterData ? `${threatModel.nearestShelter?.distanceMeters} м · ~${threatModel.nearestShelter?.walkTimeMins} хв пішки` : isDemo ? 'Демонстраційний запис' : 'Потрібне підключення реєстру укриттів'}
             </div>
           </div>
         </div>
@@ -89,10 +95,10 @@ export const SmartContextPanel: React.FC<SmartContextPanelProps> = ({
               <span className="text-purple-300 font-bold">Вивід →</span>
             </div>
             <div className="text-xs font-mono font-bold text-white truncate mt-0.5">
-              ₴ 4,230 доступно · Ранг GOLD (20%)
+              {threatModel.dataMode === 'NOT_CONNECTED' ? 'Фінансові дані недоступні' : isDemo ? 'Демонстраційний партнерський стан' : 'Баланс доступний у фінансовому кабінеті'}
             </div>
             <div className="text-[10px] text-emerald-400 font-mono mt-0.5">
-              +₴18,560 зароблено цього місяця
+              {threatModel.dataMode === 'LIVE' ? 'Відкрити фінансовий кабінет для деталей' : 'Дані не підтверджені live API'}
             </div>
           </div>
         </div>

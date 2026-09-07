@@ -9,6 +9,7 @@ import {
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { DashboardSection } from '../types';
 import { financialService, DEFAULT_FINANCIAL_SUMMARY, UNAVAILABLE_FINANCIAL_SUMMARY } from '../services/financialService';
+import { networkService, NetworkSummary } from '../services/networkService';
 import { DataState } from '../types/dataEnvelope';
 
 interface HomeFeaturesGridProps {
@@ -23,14 +24,18 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
   const isDark = theme === 'dark';
   const [financeSummary, setFinanceSummary] = useState(DEFAULT_FINANCIAL_SUMMARY);
   const [financeState, setFinanceState] = useState<DataState>('LOADING');
+  const [networkSummary, setNetworkSummary] = useState<NetworkSummary | null>(null);
+  const [networkState, setNetworkState] = useState<DataState>('LOADING');
 
   useEffect(() => {
     let mounted = true;
-    financialService.getPartnerFinancialSummary().then((response) => {
+    Promise.all([financialService.getPartnerFinancialSummary(), networkService.getNetworkSummary()]).then(([financeResponse, networkResponse]) => {
       if (!mounted) return;
-      setFinanceState(response.state);
-      if (response.data) setFinanceSummary(response.data);
-      else if (response.state === 'NOT_CONNECTED') setFinanceSummary(UNAVAILABLE_FINANCIAL_SUMMARY);
+      setFinanceState(financeResponse.state);
+      if (financeResponse.data) setFinanceSummary(financeResponse.data);
+      else if (financeResponse.state === 'NOT_CONNECTED') setFinanceSummary(UNAVAILABLE_FINANCIAL_SUMMARY);
+      setNetworkState(networkResponse.state);
+      setNetworkSummary(networkResponse.data);
     });
     return () => {
       mounted = false;
@@ -42,6 +47,16 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
     : financeState === 'NOT_CONNECTED'
       ? 'Дані недоступні'
       : `₴ ${financeSummary.totalBalance.toLocaleString('uk-UA')} · DEMO`;
+  const affiliateRankLabel = networkState === 'LIVE'
+    ? networkSummary?.currentTier.badgeLabel || 'Ранг недоступний'
+    : networkState === 'NOT_CONNECTED'
+      ? 'Ранг недоступний'
+      : `${networkSummary?.currentTier.badgeLabel || 'Demo Partner'} · DEMO`;
+  const affiliateStatusLabel = networkState === 'LIVE'
+    ? 'Статус підтверджено'
+    : networkState === 'NOT_CONNECTED'
+      ? 'API не підключено'
+      : 'Демонстраційний статус';
 
   const cards = [
     {
@@ -76,7 +91,7 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
       title: 'Партнерська програма',
       icon: <Award className="w-5 h-5 text-blue-500" />,
       features: [
-        ['Ранги Gold Partner', 'Статус'],
+        [affiliateRankLabel, affiliateStatusLabel],
         ['Прогрес', 'Запрошення амбасадорів']
       ]
     }

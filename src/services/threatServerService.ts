@@ -190,7 +190,12 @@ class ThreatServerService {
       calculatedEta = primaryTrajectory.etaMinutes || 12;
     }
 
-    const nearestShelter = REGION_SHELTERS[myRegionId] || REGION_SHELTERS['kyiv_city'];
+    // A threat payload does not prove shelter availability. Only expose the
+    // local catalog in explicit DEMO mode; LIVE/CACHED scenes must wait for
+    // the shelter registry contract instead of presenting invented proximity.
+    const nearestShelter = state === 'DEMO'
+      ? REGION_SHELTERS[myRegionId] || REGION_SHELTERS['kyiv_city'] || null
+      : null;
 
     let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'LOW';
     if (myRegionObj.isAlarm) {

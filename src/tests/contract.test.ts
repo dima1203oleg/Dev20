@@ -12,6 +12,7 @@ import { calculateRankByL1, calculateCommissions, REFERRAL_TIERS } from '../serv
 import { INITIAL_REGIONS } from '../data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from '../data/spatialThreatData';
 import { calculateCompensation, calculateQcb } from '../services/compensationEngine';
+import { threatServerService } from '../services/threatServerService';
 
 export interface ContractTestResult {
   suite: string;
@@ -133,6 +134,14 @@ export function runAllContractTests(): {
   assert(typeof traj1.id === 'string', s2, 'Trajectory id must be string');
   assert(typeof traj1.pathD === 'string', s2, 'Trajectory pathD must be SVG curve path string');
   assert(traj1.pathD.length > 5, s2, 'Trajectory pathD must have SVG curve coordinates');
+
+  // A threat response must not invent shelter proximity when the shelter
+  // registry was not part of the payload. Demo is the only state allowed to
+  // use the local illustrative catalog.
+  const disconnectedScene = threatServerService.normalizeThreatScene(INITIAL_REGIONS, [], 'odesa', 'NOT_CONNECTED', '—');
+  const demoScene = threatServerService.normalizeThreatScene(INITIAL_REGIONS, [], 'odesa', 'DEMO', '—');
+  assert(disconnectedScene.nearestShelter === null, s2, 'NOT_CONNECTED threat scene must not expose a fake nearest shelter');
+  assert(demoScene.nearestShelter !== null, s2, 'DEMO threat scene may expose an explicitly local shelter catalog');
 
   // --- SUITE 3: BACKWARD COMPATIBILITY & MOCK ISOLATION ---
   const s3 = 'API Backward Compatibility';

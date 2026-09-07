@@ -2,6 +2,8 @@
 
 This document formalizes the API evolution strategy and compatibility guarantees between **SirenUA-Website**, **SirenUA (Client)**, and **SirenUA-ThreatServer**.
 
+> Status note: the frontend contracts and truthful `LIVE/DEMO/NOT_CONNECTED` handling are implemented. The endpoint labels below describe the required production contract; they do not claim that a backend/provider is reachable in the current local environment.
+
 ---
 
 ## 1. Non-Breaking API Principles (API Lock)

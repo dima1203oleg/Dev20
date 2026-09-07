@@ -105,20 +105,21 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
 
   const profile = profileData;
   const profileUnavailable = profileState === 'NOT_CONNECTED';
-  const displayName = profile?.fullName || (profileUnavailable ? 'Профіль недоступний' : 'Олександр Кравчук');
-  const displayFirstName = profile?.firstName || (profileUnavailable ? '—' : 'Олександр');
-  const displayLastName = profile?.lastName || (profileUnavailable ? '—' : 'Кравчук');
-  const displayPartnerId = profile?.partnerId || (profileUnavailable ? '—' : 'SRN-849201');
-  const displayCode = profile?.partnerCode || (profileUnavailable ? '—' : 'OLEKSANDR25');
-  const displayEmail = profile?.email || (profileUnavailable ? 'Дані недоступні' : 'o.kravchuk@gmail.com');
-  const displayPhone = profile?.phone || (profileUnavailable ? 'Дані недоступні' : '+380 (67) 842-19-44');
-  const displayCity = profile?.city || (profileUnavailable ? '—' : 'Одеса');
-  const displayRegistrationDate = profile?.registrationDate || (profileUnavailable ? '—' : '12 квітня 2024');
-  const displayRank = profile?.currentRank.badgeLabel || (profileUnavailable ? '—' : 'Gold Partner');
-  const displayRate = profile?.currentRank.l1Percent ?? (profileUnavailable ? 0 : 20);
+  const profileLoading = profileState === 'LOADING';
+  const displayName = profile?.fullName || (profileUnavailable ? 'Профіль недоступний' : profileLoading ? 'Завантаження профілю…' : 'Демонстраційний профіль');
+  const displayFirstName = profile?.firstName || (profileUnavailable || profileLoading ? '—' : 'Демо');
+  const displayLastName = profile?.lastName || (profileUnavailable || profileLoading ? '—' : 'користувач');
+  const displayPartnerId = profile?.partnerId || '—';
+  const displayCode = profile?.partnerCode || '—';
+  const displayEmail = profile?.email || 'Дані недоступні';
+  const displayPhone = profile?.phone || 'Дані недоступні';
+  const displayCity = profile?.city || '—';
+  const displayRegistrationDate = profile?.registrationDate || '—';
+  const displayRank = profile?.currentRank.badgeLabel || '—';
+  const displayRate = profile?.currentRank.l1Percent ?? 0;
   const displayQualifiedL1 = profile?.qualifiedL1 ?? 0;
   const displayNetworkCount = profile?.totalNetworkCount ?? 0;
-  const displayNextRank = profile?.nextRank?.name || (profileUnavailable ? '—' : 'Platinum');
+  const displayNextRank = profile?.nextRank?.name || (profileUnavailable || profileLoading ? '—' : 'DEMO');
   const displayRemainingL1 = profile?.remainingL1ToNextRank ?? 0;
   const displayRankProgress = profile?.rankProgressPercent ?? 0;
   const displayAvatar = profile?.avatarUrl || '';
@@ -127,6 +128,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const isSecurityLive = securityState === 'LIVE';
   const kycStatusLabel = isKycLive && kycData?.status === 'VERIFIED' ? 'Підтверджено' : 'Не підтверджено';
   const securitySessions = isSecurityLive ? (securityData?.activeSessions.length ?? 0) : 0;
+  const accountStatusLabel = profileState === 'LIVE' && isSecurityLive ? 'Активний' : profileState === 'DEMO' ? 'DEMO' : 'Статус невідомий';
+  const accountVerificationLabel = profileState === 'LIVE' && isKycLive && kycData?.status === 'VERIFIED' ? 'Верифікований' : profileState === 'DEMO' ? 'DEMO-профіль' : 'Не підтверджено';
 
   const handleCopyCode = () => {
     if (!profile?.partnerCode) return;
@@ -307,8 +310,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               <span className="text-[10px] text-slate-400">Ставка: {displayRate}%</span>
             </div>
             <div className="flex items-center justify-between text-[10px] text-slate-500">
-              <span className="flex items-center gap-1 text-emerald-600"><ShieldCheck className="w-3 h-3" /> Верифікований</span>
-              <span className="flex items-center gap-1 text-emerald-600"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Активний</span>
+              <span className={`flex items-center gap-1 ${accountVerificationLabel === 'Верифікований' ? 'text-emerald-600' : 'text-amber-600'}`}><ShieldCheck className="w-3 h-3" /> {accountVerificationLabel}</span>
+              <span className={`flex items-center gap-1 ${accountStatusLabel === 'Активний' ? 'text-emerald-600' : 'text-amber-600'}`}><span className={`w-1.5 h-1.5 rounded-full ${accountStatusLabel === 'Активний' ? 'bg-emerald-500' : 'bg-amber-500'}`} /> {accountStatusLabel}</span>
             </div>
           </div>
 
@@ -559,9 +562,9 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             </div>
 
             <div className="space-y-2 text-xs">
-              {profileUnavailable ? (
+              {profileState !== 'LIVE' ? (
                 <div className={`p-4 rounded-2xl border text-xs ${isDark ? 'bg-slate-800/80 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-                  Платіжні методи стануть доступні після підключення профільного та payout API. Реквізити не вважаються верифікованими.
+                  {profileState === 'DEMO' ? 'Демонстраційні платіжні реквізити навмисно не показуємо як реальні. Підключіть payout API, щоб отримати верифіковані методи.' : 'Платіжні методи стануть доступні після підключення профільного та payout API. Реквізити не вважаються верифікованими.'}
                 </div>
               ) : <>
               <div className={`p-2.5 rounded-2xl border flex items-center justify-between ${
