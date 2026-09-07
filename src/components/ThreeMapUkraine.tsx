@@ -420,36 +420,43 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     clock.connect(document);
     let currentRotX = -0.22;
     let currentRotY = 0.05;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
-    const animate = (timestamp?: number) => {
-      animationFrameId = requestAnimationFrame(animate);
+    const renderFrame = (timestamp?: number) => {
       clock.update(timestamp);
       const elapsedTime = clock.getElapsed();
 
-      // Smooth Camera / Group Rotation
-      currentRotX += (controlsTargetRef.current.rotX - currentRotX) * 0.06;
-      currentRotY += (controlsTargetRef.current.rotY - currentRotY) * 0.06;
-      mapGroup.rotation.x = currentRotX;
-      mapGroup.rotation.y = currentRotY;
+      // Keep the selected state visible without introducing motion when the
+      // operating system requests reduced motion.
+      if (!reducedMotion) {
+        currentRotX += (controlsTargetRef.current.rotX - currentRotX) * 0.06;
+        currentRotY += (controlsTargetRef.current.rotY - currentRotY) * 0.06;
+        mapGroup.rotation.x = currentRotX;
+        mapGroup.rotation.y = currentRotY;
 
-      // Animate Radar Rings
-      radarRings.forEach((r, idx) => {
-        const cycle = (elapsedTime * 1.3 + idx * 0.5) % 2.5;
-        const progress = cycle / 2.5;
-        const scale = 1 + progress * (r.maxScale - 1);
-        r.mesh.scale.set(scale, scale, scale);
-        (r.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, (isDark ? 0.9 : 0.8) * (1 - progress));
-      });
+        radarRings.forEach((r, idx) => {
+          const cycle = (elapsedTime * 1.3 + idx * 0.5) % 2.5;
+          const progress = cycle / 2.5;
+          const scale = 1 + progress * (r.maxScale - 1);
+          r.mesh.scale.set(scale, scale, scale);
+          (r.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, (isDark ? 0.9 : 0.8) * (1 - progress));
+        });
 
-      // Pulse Alert Light
-      redAlertLight.intensity = (isDark ? 4.5 : 3.0) + Math.sin(elapsedTime * 4.0) * 1.5;
-      blueAccentLight.intensity = (isDark ? 3.5 : 2.0) + Math.cos(elapsedTime * 2.0) * 0.8;
-      orangeThreatLight.intensity = (isDark ? 3.8 : 2.0) + Math.sin(elapsedTime * 3.0) * 1.0;
+        redAlertLight.intensity = (isDark ? 4.5 : 3.0) + Math.sin(elapsedTime * 4.0) * 1.5;
+        blueAccentLight.intensity = (isDark ? 3.5 : 2.0) + Math.cos(elapsedTime * 2.0) * 0.8;
+        orangeThreatLight.intensity = (isDark ? 3.8 : 2.0) + Math.sin(elapsedTime * 3.0) * 1.0;
+      }
 
       renderer.render(scene, camera);
     };
 
-    animate();
+    const animate = (timestamp?: number) => {
+      animationFrameId = requestAnimationFrame(animate);
+      renderFrame(timestamp);
+    };
+
+    if (reducedMotion) renderFrame();
+    else animate();
 
     // 10. Handle Resize
     const handleResize = () => {
