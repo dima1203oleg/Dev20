@@ -10,8 +10,7 @@ import {
 import { DataEnvelope } from '../types/dataEnvelope';
 import { calculateRankByL1, getNextTierInfo } from './referralEngine';
 import { CacheManager } from '../utils/cacheManager';
-import { getJson, getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
-import { postJson } from './apiClient';
+import { getJsonFromPaths, inferDataState, isJsonObject, postJsonFromPaths } from './apiClient';
 import { runtimeConfig } from '../config/runtime';
 
 const CACHE_KEY_FINANCE = 'sirenua_financial_summary_cache';
@@ -441,7 +440,7 @@ class FinancialService {
     // provider failure with a local success state.
     if (runtimeConfig.apiBaseUrl) {
       try {
-        const remoteTransaction = await postJson<PayoutTransaction>('/api/v1/partner/payouts', {
+        const remoteTransaction = await postJsonFromPaths<PayoutTransaction>(['/api/partner/payouts', '/api/v1/partner/payouts'], {
           amount,
           methodId: selectedMethod.id,
           currency: selectedMethod.type === 'USDT_TRC20' ? 'USDT' : 'UAH',

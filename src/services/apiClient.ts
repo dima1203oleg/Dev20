@@ -94,3 +94,38 @@ export async function postJson<T>(path: string, body: unknown, timeoutMs = 5000)
 
   return unwrapApiData<T>(await response.json());
 }
+
+/**
+ * Write to the first compatible mutation route during API migration.
+ * A fallback is allowed only for an explicit missing route (404/405). A
+ * timeout, network error or provider 5xx is never retried against another
+ * path because the upstream may have accepted the mutation already.
+ */
+export async function postJsonFromPaths<T>(paths: string[], body: unknown, timeoutMs = 5000): Promise<T> {
+  let lastMissingRoute: Error | null = null;
+
+  for (const path of paths) {
+    const response = await fetch(apiUrl(path), {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+
+    if (response.status === 404 || response.status === 405) {
+      lastMissingRoute = new Error(`API route unavailable: ${response.status} ${path}`);
+      continue;
+    }
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    return unwrapApiData<T>(await response.json());
+  }
+
+  throw lastMissingRoute || new Error('No compatible API mutation path configured');
+}
