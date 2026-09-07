@@ -88,9 +88,9 @@ export const SheltersSection: React.FC<SheltersSectionProps> = ({ myRegionId, re
             <span>{shelterState === 'LIVE' ? 'Захисні споруди цивільного захисту' : shelterState === 'NOT_CONNECTED' ? 'Реєстр укриттів недоступний' : 'Каталог укриттів'}</span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className={`text-xl sm:text-2xl font-black ${primaryTextClass}`}>
+            <h1 className={`text-xl sm:text-2xl font-black ${primaryTextClass}`}>
               {shelterState === 'LIVE' ? 'Перевірені укриття та маршрутизація' : shelterState === 'NOT_CONNECTED' ? 'Укриття тимчасово недоступні' : 'Укриття та маршрутизація'}
-            </h2>
+            </h1>
             <DataFreshnessIndicator state={shelterState} theme={theme} />
           </div>
           <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
