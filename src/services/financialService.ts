@@ -10,7 +10,7 @@ import {
 import { DataEnvelope } from '../types/dataEnvelope';
 import { calculateRankByL1, getNextTierInfo } from './referralEngine';
 import { CacheManager } from '../utils/cacheManager';
-import { getJson, getJsonFromPaths, isJsonObject } from './apiClient';
+import { getJson, getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
 import { postJson } from './apiClient';
 import { runtimeConfig } from '../config/runtime';
 
@@ -217,7 +217,7 @@ class FinancialService {
         : remote;
 
       if (data && typeof data === 'object') {
-        const state = isJsonObject(remote) && remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE';
+        const state = inferDataState(remote);
         const isDashboardPayload = isJsonObject(remote) && isJsonObject(remote.wallet);
         const payload: PartnerFinancialSummary = {
           ...this.summary,
@@ -346,7 +346,7 @@ class FinancialService {
           balanceAfter: 0,
         };
       });
-      const state = remote.integrityCheck === 'ZERO_SUM_VERIFIED' ? 'DEMO' : 'LIVE';
+      const state = inferDataState(remote, remote.integrityCheck === 'ZERO_SUM_VERIFIED' ? 'DEMO' : 'LIVE');
       return { data: entries, state, source: 'SIREN_UA_PARTNER_LEDGER', updatedAt, isRealData: state === 'LIVE' };
     } catch {
       return { data: null, state: runtimeConfig.apiBaseUrl ? 'NOT_CONNECTED' : 'DEMO', source: 'SIREN_UA_PARTNER_LEDGER', updatedAt, isRealData: false };
@@ -378,7 +378,7 @@ class FinancialService {
           auditTrail: [],
         };
       });
-      const state = remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE';
+      const state = inferDataState(remote);
       return { data: payouts, state, source: 'SIREN_UA_PARTNER_PAYOUTS', updatedAt, isRealData: state === 'LIVE' };
     } catch {
       return { data: null, state: runtimeConfig.apiBaseUrl ? 'NOT_CONNECTED' : 'DEMO', source: 'SIREN_UA_PARTNER_PAYOUTS', updatedAt, isRealData: false };

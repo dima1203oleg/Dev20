@@ -10,7 +10,7 @@
 import { DataEnvelope } from '../types/dataEnvelope';
 import { runtimeConfig } from '../config/runtime';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
-import { getJson, getJsonFromPaths, isJsonObject } from './apiClient';
+import { getJson, getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
 
 export interface UserProfileData {
   id: string;
@@ -108,10 +108,10 @@ class ProfileService {
         };
         return {
           data,
-          state: isJsonObject(remote) && remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
+          state: inferDataState(remote),
           source: 'SIREN_UA_DEV15_PARTNER_DASHBOARD',
           updatedAt,
-          isRealData: !(isJsonObject(remote) && remote.status === 'DEMO_DATA'),
+          isRealData: inferDataState(remote) === 'LIVE',
         };
       }
 

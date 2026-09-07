@@ -13,6 +13,7 @@ import { INITIAL_REGIONS } from '../data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from '../data/spatialThreatData';
 import { calculateCompensation, calculateQcb } from '../services/compensationEngine';
 import { threatServerService } from '../services/threatServerService';
+import { inferDataState } from '../services/apiClient';
 
 export interface ContractTestResult {
   suite: string;
@@ -147,6 +148,10 @@ export function runAllContractTests(): {
   const s3 = 'API Backward Compatibility';
   assert(typeof REFERRAL_TIERS.GOLD.l1Rate === 'number', s3, 'l1Rate must be numeric rate (0.20)');
   assert(typeof REFERRAL_TIERS.GOLD.l1Percent === 'number', s3, 'l1Percent must be integer percent (20)');
+  assert(inferDataState({ status: 'DEMO_DATA' }) === 'DEMO', s3, 'Explicit DEMO_DATA must remain DEMO');
+  assert(inferDataState({ status: 'NOT_CONNECTED' }) === 'NOT_CONNECTED', s3, 'Explicit NOT_CONNECTED must not be promoted to LIVE');
+  assert(inferDataState({ dataMode: 'STALE' }) === 'STALE', s3, 'Explicit STALE must remain STALE');
+  assert(inferDataState({ status: 'READY' }) === 'LIVE', s3, 'Validated provider payload with unknown status may use LIVE fallback');
 
   const total = results.length;
   const passed = results.filter(r => r.passed).length;

@@ -1,7 +1,7 @@
 import { Shelter } from '../types';
 import { DataEnvelope } from '../types/dataEnvelope';
 import { runtimeConfig } from '../config/runtime';
-import { getJsonFromPaths, isJsonObject } from './apiClient';
+import { getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
 import { INITIAL_SHELTERS } from '../data/spatialThreatData';
 
 const nowTime = () => new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
@@ -57,10 +57,10 @@ class ShelterService {
         if (!mapped.length && !sourceItems.length) throw new Error('Shelter payload has invalid shape');
         return {
           data: mapped,
-          state: isJsonObject(remote) && remote.dataMode === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
+          state: inferDataState(remote),
           source: 'SIREN_UA_SHELTER_REGISTRY',
           updatedAt,
-          isRealData: !(isJsonObject(remote) && remote.dataMode === 'DEMO_DATA'),
+          isRealData: inferDataState(remote) === 'LIVE',
         };
       } catch {
         return {

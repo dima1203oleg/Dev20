@@ -10,7 +10,7 @@
 import { DataEnvelope, DataState } from '../types/dataEnvelope';
 import { runtimeConfig } from '../config/runtime';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
-import { getJson, getJsonFromPaths, isJsonObject } from './apiClient';
+import { getJson, getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
 
 export interface NetworkNode {
   id: string;
@@ -605,7 +605,7 @@ class NetworkService {
         },
       });
 
-      const state = remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE';
+      const state = inferDataState(remote);
       return {
         data: remoteSummary,
         state,
@@ -672,18 +672,18 @@ class NetworkService {
           ];
           return {
             data: { nodes, edges },
-            state: remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
+            state: inferDataState(remote),
             source: 'SIREN_UA_PARTNER_NETWORK_AGGREGATE',
             updatedAt: this.now(),
-            isRealData: remote.status !== 'DEMO_DATA',
+            isRealData: inferDataState(remote) === 'LIVE',
           };
         }
         return {
           data: { nodes: remote.nodes as NetworkNode[], edges: remote.edges as NetworkEdge[] },
-          state: remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
+          state: inferDataState(remote),
           source: 'SIREN_UA_PARTNER_NETWORK',
           updatedAt: this.now(),
-          isRealData: remote.status !== 'DEMO_DATA',
+          isRealData: inferDataState(remote) === 'LIVE',
         };
     } catch {
       if (runtimeConfig.apiBaseUrl) return this.notConnected<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>('SIREN_UA_PARTNER_NETWORK');
@@ -745,10 +745,10 @@ class NetworkService {
         });
         return {
           data: nodes,
-          state: isJsonObject(remote) && remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
+          state: inferDataState(remote),
           source: 'SIREN_UA_PARTNER_NETWORK_PARTNERS',
           updatedAt: this.now(),
-          isRealData: !(isJsonObject(remote) && remote.status === 'DEMO_DATA'),
+          isRealData: inferDataState(remote) === 'LIVE',
         };
     } catch {
       if (runtimeConfig.apiBaseUrl) return this.notConnected<NetworkNode[]>('SIREN_UA_PARTNER_NETWORK_PARTNERS');

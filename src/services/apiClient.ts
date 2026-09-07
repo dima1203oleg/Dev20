@@ -1,9 +1,38 @@
 import { apiUrl } from '../config/runtime';
+import { DataState } from '../types/dataEnvelope';
 
 export type JsonObject = Record<string, unknown>;
 
 export function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Preserve an explicit server data state instead of promoting a valid-looking
+ * error/degraded payload to LIVE. Providers may use either `status`,
+ * `dataMode`, or `mode`; an unknown status keeps the endpoint's normal LIVE
+ * fallback after schema validation.
+ */
+export function inferDataState(value: unknown, fallback: DataState = 'LIVE'): DataState {
+  if (!isJsonObject(value)) return fallback;
+  const raw = [value.status, value.dataMode, value.mode].find((item): item is string => typeof item === 'string');
+  switch (raw) {
+    case 'DEMO':
+    case 'DEMO_DATA':
+      return 'DEMO';
+    case 'LIVE':
+      return 'LIVE';
+    case 'CACHED':
+      return 'CACHED';
+    case 'STALE':
+      return 'STALE';
+    case 'NOT_CONNECTED':
+      return 'NOT_CONNECTED';
+    case 'ERROR':
+      return 'ERROR';
+    default:
+      return fallback;
+  }
 }
 
 /** Accept both a plain API payload and the common `{ data: payload }` envelope. */
