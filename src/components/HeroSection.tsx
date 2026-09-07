@@ -271,9 +271,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   alt="3D Карта України SIREN UA — дизайн-прев’ю"
                   referrerPolicy="no-referrer"
                   style={{
+                    opacity: isDark ? 0.92 : 0.78,
                     filter: isDark
-                      ? 'saturate(0.46) brightness(0.72) contrast(0.94)'
-                      : 'saturate(0.42) brightness(1.1) contrast(0.94)'
+                      ? 'saturate(0.38) brightness(0.76) contrast(0.92)'
+                      : 'saturate(0.20) brightness(1.34) contrast(0.84)'
                   }}
                   className="w-full h-auto object-contain max-h-[290px] lg:max-h-[255px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
                 />
