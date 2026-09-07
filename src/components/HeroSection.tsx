@@ -74,6 +74,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     : threatModel?.dataMode === 'DEMO_DATA'
       ? 'bg-purple-500/15 text-purple-300'
       : 'bg-amber-500/15 text-amber-300';
+  const trustPoints = threatModel?.dataMode === 'LIVE'
+    ? [
+        'Швидке встановлення',
+        'Покриття всієї України',
+        'Оновлення в реальному часі',
+      ]
+    : threatModel?.dataMode === 'DEMO_DATA'
+      ? [
+          'Демонстраційний spatial twin',
+          'Реальний API позначається окремо',
+          'Сценарій не видається за live',
+        ]
+      : [
+          'Швидке встановлення',
+          'Джерело даних видно на екрані',
+          'Застарілі дані не маскуються під live',
+        ];
 
   // Verified live data uses the normalized selectable scene. Explicit demo
   // data keeps the polished product preview on the first paint; its paths are
@@ -222,11 +239,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {[
-                "Швидке встановлення",
-                "Покриття всієї України",
-                "Оновлення в реальному часі"
-              ].map((item, idx) => (
+              {trustPoints.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-1.5">
                   <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center flex-shrink-0">
                     <Check className="w-2.5 h-2.5 stroke-[3]" />

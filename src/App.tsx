@@ -477,6 +477,7 @@ export default function App() {
 
               {/* Row 4: SIREN UA на всіх пристроях (3D Device Ecosystem) */}
               <SirenOrbitalDeviceEcosystem
+                threatModel={threatSceneModel}
                 theme={settings.theme || 'light'}
               />
               

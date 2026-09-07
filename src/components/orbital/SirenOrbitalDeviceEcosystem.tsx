@@ -14,11 +14,32 @@ interface SirenOrbitalDeviceEcosystemProps {
 }
 
 export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemProps> = ({
+  threatModel,
   theme = 'light',
 }) => {
   const [activeDeviceIndex, setActiveDeviceIndex] = useState(2);
   const [showDetails, setShowDetails] = useState(false);
   const isDark = theme === 'dark';
+  const ecosystemPoints = threatModel?.dataMode === 'LIVE'
+    ? [
+        'Синхронізація в реальному часі',
+        'Єдині налаштування між пристроями',
+        'Максимальна безпека',
+        "Завжди на зв'язку",
+      ]
+    : threatModel?.dataMode === 'DEMO_DATA'
+      ? [
+          'Єдина демонстраційна модель даних',
+          'Реальні джерела позначаються окремо',
+          'Безпечний demo fallback',
+          'Готовність до підключення live API',
+        ]
+      : [
+          'Статус джерел видно на екрані',
+          'Реальні дані не підміняються',
+          'Безпечний fallback без live-обіцянок',
+          'Готовність до підключення API',
+        ];
 
   const devices = [
     { id: 'tv', name: 'Smart TV', sub: 'Телевізор', description: 'Ситуаційний екран для дому та спільного простору.' },
@@ -162,12 +183,7 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
           </div>
 
           <div className="mt-3.5 lg:mt-2 space-y-2.5 lg:space-y-1.5">
-            {[
-              "Синхронізація в реальному часі",
-              "Єдина налаштованість на всіх пристроях",
-              "Максимальна безпека",
-              "Завжди на зв'язку"
-            ].map((feature, i) => (
+            {ecosystemPoints.map((feature, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div className="w-4 h-4 lg:w-3 lg:h-3 rounded-full bg-[#2563EB] text-white flex items-center justify-center flex-shrink-0 shadow-sm">
                   <Check className="w-2.5 h-2.5 stroke-[3]" />
