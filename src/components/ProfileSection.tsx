@@ -104,30 +104,32 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   }, []);
 
   const profile = profileData;
-  const displayName = profile?.fullName || 'Олександр Кравчук';
-  const displayFirstName = profile?.firstName || 'Олександр';
-  const displayLastName = profile?.lastName || 'Кравчук';
-  const displayPartnerId = profile?.partnerId || 'SRN-849201';
-  const displayCode = profile?.partnerCode || 'OLEKSANDR25';
-  const displayEmail = profile?.email || 'o.kravchuk@gmail.com';
-  const displayPhone = profile?.phone || '+380 (67) 842-19-44';
-  const displayCity = profile?.city || 'Одеса';
-  const displayRegistrationDate = profile?.registrationDate || '12 квітня 2024';
-  const displayRank = profile?.currentRank.badgeLabel || 'Gold Partner';
-  const displayRate = profile?.currentRank.l1Percent ?? 20;
-  const displayQualifiedL1 = profile?.qualifiedL1 ?? 154;
-  const displayNetworkCount = profile?.totalNetworkCount ?? 2847;
-  const displayNextRank = profile?.nextRank?.name || 'Platinum';
-  const displayRemainingL1 = profile?.remainingL1ToNextRank ?? 46;
-  const displayRankProgress = profile?.rankProgressPercent ?? 63;
-  const displayAvatar = profile?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
-  const displayReferralUrl = `https://siren.ua/r/${displayCode}`;
+  const profileUnavailable = profileState === 'NOT_CONNECTED';
+  const displayName = profile?.fullName || (profileUnavailable ? 'Профіль недоступний' : 'Олександр Кравчук');
+  const displayFirstName = profile?.firstName || (profileUnavailable ? '—' : 'Олександр');
+  const displayLastName = profile?.lastName || (profileUnavailable ? '—' : 'Кравчук');
+  const displayPartnerId = profile?.partnerId || (profileUnavailable ? '—' : 'SRN-849201');
+  const displayCode = profile?.partnerCode || (profileUnavailable ? '—' : 'OLEKSANDR25');
+  const displayEmail = profile?.email || (profileUnavailable ? 'Дані недоступні' : 'o.kravchuk@gmail.com');
+  const displayPhone = profile?.phone || (profileUnavailable ? 'Дані недоступні' : '+380 (67) 842-19-44');
+  const displayCity = profile?.city || (profileUnavailable ? '—' : 'Одеса');
+  const displayRegistrationDate = profile?.registrationDate || (profileUnavailable ? '—' : '12 квітня 2024');
+  const displayRank = profile?.currentRank.badgeLabel || (profileUnavailable ? '—' : 'Gold Partner');
+  const displayRate = profile?.currentRank.l1Percent ?? (profileUnavailable ? 0 : 20);
+  const displayQualifiedL1 = profile?.qualifiedL1 ?? 0;
+  const displayNetworkCount = profile?.totalNetworkCount ?? 0;
+  const displayNextRank = profile?.nextRank?.name || (profileUnavailable ? '—' : 'Platinum');
+  const displayRemainingL1 = profile?.remainingL1ToNextRank ?? 0;
+  const displayRankProgress = profile?.rankProgressPercent ?? 0;
+  const displayAvatar = profile?.avatarUrl || '';
+  const displayReferralUrl = profile?.partnerCode ? `https://siren.ua/r/${profile.partnerCode}` : '';
   const isKycLive = kycState === 'LIVE';
   const isSecurityLive = securityState === 'LIVE';
   const kycStatusLabel = isKycLive && kycData?.status === 'VERIFIED' ? 'Підтверджено' : 'Не підтверджено';
   const securitySessions = isSecurityLive ? (securityData?.activeSessions.length ?? 0) : 0;
 
   const handleCopyCode = () => {
+    if (!profile?.partnerCode) return;
     navigator.clipboard.writeText(displayCode);
     setCopiedCode(true);
     playWebAudioSound('click');
@@ -135,6 +137,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   };
 
   const handleCopyLink = () => {
+    if (!displayReferralUrl) return;
     navigator.clipboard.writeText(displayReferralUrl);
     setCopiedLink(true);
     playWebAudioSound('click');
@@ -177,12 +180,12 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             }`}>
               Мій профіль
             </h1>
-            <DataFreshnessIndicator state={profileState === 'LOADING' ? 'DEMO' : profileState} theme={theme} />
+            <DataFreshnessIndicator state={profileState} theme={theme} />
           </div>
 
           <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             <span className="font-bold text-slate-700 dark:text-slate-200">Більше, ніж акаунт. Це твій внесок у безпечне завтра.</span><br />
-            Керуй своїми даними, безпекою, партнерським статусом та відкривай нові можливості разом із SIREN UA. Дані профілю демонстраційні до підключення auth API.
+            Керуй своїми даними, безпекою, партнерським статусом та відкривай нові можливості разом із SIREN UA. {profileState === 'DEMO' ? 'Дані профілю демонстраційні до підключення auth API.' : profileState === 'NOT_CONNECTED' ? 'Дані профілю тимчасово недоступні, доки auth API не відновить з’єднання.' : 'Дані профілю підтверджені auth API.'}
           </p>
         </div>
 
@@ -193,12 +196,16 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           <div className="relative flex flex-col items-center flex-shrink-0">
             <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-blue-600 to-cyan-400 shadow-xl relative">
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-slate-800">
-                <img 
-                  src={displayAvatar}
-                  alt={displayName}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
+                {displayAvatar ? (
+                  <img
+                    src={displayAvatar}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <User className="w-9 h-9 text-slate-400 mx-auto mt-5" aria-hidden="true" />
+                )}
               </div>
               {/* Camera Icon Overlay */}
               <button 
@@ -211,9 +218,15 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             </div>
             
             {/* Online Status Pill */}
-            <div className="mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 text-emerald-600 text-[10px] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Онлайн</span>
+            <div className={`mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-bold ${
+              profileState === 'LIVE'
+                ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 text-emerald-600'
+                : profileState === 'DEMO'
+                  ? 'bg-purple-50 dark:bg-purple-950/70 border-purple-200 text-purple-600'
+                  : 'bg-amber-50 dark:bg-amber-950/70 border-amber-200 text-amber-600'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${profileState === 'LIVE' ? 'bg-emerald-500 animate-pulse' : profileState === 'DEMO' ? 'bg-purple-500' : 'bg-amber-500'}`} />
+              <span>{profileState === 'LIVE' ? 'Онлайн' : profileState === 'DEMO' ? 'DEMO-профіль' : 'Статус недоступний'}</span>
             </div>
           </div>
 
@@ -470,7 +483,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               </div>
               <button 
                 onClick={handleCopyLink}
-                className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                disabled={!displayReferralUrl}
+                className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Поділитися</span>
               </button>
@@ -483,7 +497,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                   isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
                 }`}>
                   <span className="text-sm font-mono font-bold">{displayCode}</span>
-                  <button onClick={handleCopyCode} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer">
+                  <button onClick={handleCopyCode} disabled={!profile?.partnerCode} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                     {copiedCode ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
@@ -495,7 +509,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                   isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
                 }`}>
                   <span className="text-xs font-mono truncate mr-2">{displayReferralUrl}</span>
-                  <button onClick={handleCopyLink} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer">
+                  <button onClick={handleCopyLink} disabled={!displayReferralUrl} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                     {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
@@ -545,6 +559,11 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             </div>
 
             <div className="space-y-2 text-xs">
+              {profileUnavailable ? (
+                <div className={`p-4 rounded-2xl border text-xs ${isDark ? 'bg-slate-800/80 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                  Платіжні методи стануть доступні після підключення профільного та payout API. Реквізити не вважаються верифікованими.
+                </div>
+              ) : <>
               <div className={`p-2.5 rounded-2xl border flex items-center justify-between ${
                 isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
               }`}>
@@ -589,6 +608,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                   Підключено
                 </span>
               </div>
+              </>}
             </div>
           </div>
         </div>

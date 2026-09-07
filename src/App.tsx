@@ -15,6 +15,8 @@ import { SheltersSection } from './components/SheltersSection';
 import { Footer } from './components/Footer';
 import { OnboardingFlow } from './components/OnboardingFlow';
 import { AboutSection } from './components/AboutSection';
+import { threatServerService, LiveThreatsPayload } from './services/threatServerService';
+import { DataState } from './types/dataEnvelope';
 
 import { INITIAL_REGIONS, INITIAL_ALERTS_FEED } from './data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from './data/spatialThreatData';
@@ -101,6 +103,40 @@ export default function App() {
   const [isSirenPlaying, setIsSirenPlaying] = useState(false);
   const [bannerAlert, setBannerAlert] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [threatDataState, setThreatDataState] = useState<DataState>('LOADING');
+  const [threatUpdatedAt, setThreatUpdatedAt] = useState('—');
+  const [threatPayload, setThreatPayload] = useState<LiveThreatsPayload | null>(null);
+  const [sceneTrajectories, setSceneTrajectories] = useState<typeof INITIAL_TRAJECTORIES>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const refreshThreatData = async () => {
+      const response = await threatServerService.fetchLiveThreats(settings.myRegion);
+      if (!mounted) return;
+
+      setThreatDataState(response.state);
+      setThreatUpdatedAt(response.updatedAt || '—');
+      if (response.data) {
+        setThreatPayload(response.data);
+        setRegions(response.data.regions);
+        setAlerts(response.data.alerts);
+        setSceneTrajectories(response.state === 'LIVE' ? response.data.trajectories : []);
+      } else if (response.state !== 'LIVE' && !isDemoMode) {
+        setSceneTrajectories([]);
+      }
+    };
+
+    if (!isDemoMode) refreshThreatData();
+    const refreshTimer = window.setInterval(() => {
+      if (!isDemoMode) refreshThreatData();
+    }, 30_000);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(refreshTimer);
+    };
+  }, [settings.myRegion, isDemoMode]);
 
   // Sync to LocalStorage
   useEffect(() => {
@@ -160,6 +196,8 @@ export default function App() {
 
   const handleToggleRegionAlarm = (regionId: string, threatType: ThreatType = 'air') => {
     setIsDemoMode(true);
+    setThreatDataState('DEMO');
+    setSceneTrajectories(INITIAL_TRAJECTORIES);
     setRegions((current) => current.map((region) => {
       if (region.id !== regionId) return region;
       const nextIsAlarm = !region.isAlarm;
@@ -181,6 +219,8 @@ export default function App() {
     const centralRegions = new Set(['kyiv_obl', 'kyiv_city', 'zhytomyr', 'vinnytsia', 'cherkasy', 'poltava', 'kirovohrad']);
 
     setIsDemoMode(true);
+    setThreatDataState('DEMO');
+    setSceneTrajectories(INITIAL_TRAJECTORIES);
     setRegions((current) => current.map((region) => {
       let isAlarm = false;
       let nextThreatType: ThreatType = 'none';
@@ -220,48 +260,35 @@ export default function App() {
   };
 
   const safeRegions = regions || INITIAL_REGIONS;
-  const myRegionObj = safeRegions.find((r) => r.id === settings.myRegion) || {
+  const displayRegions = isDemoMode || threatDataState === 'LIVE'
+    ? safeRegions
+    : safeRegions.map((region) => ({ ...region, isAlarm: false, threatType: 'none' as ThreatType, startedAt: null, durationMinutes: 0 }));
+  const myRegionObj = displayRegions.find((r) => r.id === settings.myRegion) || {
     id: 'odesa',
     name: 'Одеська область',
     isAlarm: false,
-    threatType: 'none',
+    threatType: 'none' as ThreatType,
   };
 
-  const activeAlarmsCount = safeRegions.filter((r) => r.isAlarm).length;
+  const activeAlarmsCount = displayRegions.filter((r) => r.isAlarm).length;
   const currentTimestamp = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+  const currentDataMode = isDemoMode ? 'DEMO_DATA' : threatDataState === 'LIVE' ? 'LIVE' : 'NOT_CONNECTED';
+  const liveScene = currentDataMode === 'LIVE' ? threatPayload?.threatScene : null;
 
   const threatSceneModel: ThreatSceneModel = {
-    timestamp: isDemoMode ? currentTimestamp : '—',
-    freshness: isDemoMode ? 'STABLE' : 'DEGRADED',
-    dataMode: isDemoMode ? 'DEMO_DATA' : 'NOT_CONNECTED',
+    timestamp: isDemoMode ? currentTimestamp : currentDataMode === 'LIVE' ? threatUpdatedAt : '—',
+    freshness: isDemoMode ? 'STABLE' : currentDataMode === 'LIVE' ? 'REALTIME' : 'DEGRADED',
+    dataMode: currentDataMode,
     activeAlarmsCount,
-    criticalRegions: safeRegions.filter((r) => r.isAlarm && r.threatType === 'ballistic').map((r) => r.id),
-    primaryThreat: isDemoMode ? (INITIAL_TRAJECTORIES[0] || null) : null,
-    nearestShelter: {
-      id: 'sh-1',
-      name: 'Станція метро «Золоті Ворота»',
-      type: 'metro',
-      address: 'вул. Володимирська, 44',
-      regionId: settings.myRegion,
-      capacity: 2500,
-      features: {
-        powerGenerator: true,
-        wifi: true,
-        ventilation: true,
-        waterSupply: true,
-        wheelchairAccessible: true,
-        allDayOpen: true,
-      },
-      distanceMeters: 340,
-      walkTimeMins: 4,
-      verifiedStatus: 'VERIFIED_DSNS',
-    },
+    criticalRegions: displayRegions.filter((r) => r.isAlarm && (r.threatType === 'ballistic' || r.threatType === 'missile')).map((r) => r.id),
+    primaryThreat: sceneTrajectories.find((trajectory) => trajectory.status === 'ACTIVE') || null,
+    nearestShelter: liveScene?.nearestShelter || null,
     myRegionStatus: {
       id: settings.myRegion,
       name: myRegionObj.name || 'Одеська область',
       isAlarm: myRegionObj.isAlarm || false,
-        etaMinutes: myRegionObj.isAlarm && isDemoMode ? 18 : 0,
-      riskLevel: myRegionObj.isAlarm ? 'HIGH' : 'LOW',
+      etaMinutes: liveScene?.myRegionStatus.etaMinutes || (myRegionObj.isAlarm && isDemoMode ? 18 : 0),
+      riskLevel: liveScene?.myRegionStatus.riskLevel || (myRegionObj.isAlarm ? 'HIGH' : 'LOW'),
     },
     partnerModeActive: activeSection === 'NETWORK' || activeSection === 'FINANCE',
   };
@@ -312,7 +339,8 @@ export default function App() {
               
               {/* Row 1: Hero Section with 3D Map of Ukraine & Floating Threat Info */}
               <HeroSection
-                regions={safeRegions}
+                regions={displayRegions}
+                trajectories={sceneTrajectories}
                 selectedRegion={selectedRegion}
                 onSelectRegion={(reg) => setSelectedRegion(reg)}
                 threatModel={threatSceneModel}
@@ -436,7 +464,7 @@ export default function App() {
             </div>
             <SheltersSection
               myRegionId={settings.myRegion}
-              regions={safeRegions}
+              regions={displayRegions}
               dataState={isDemoMode ? 'DEMO' : 'NOT_CONNECTED'}
             />
           </div>

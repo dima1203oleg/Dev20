@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { RegionData, ThreatTrajectory } from '../types';
 import { INITIAL_REGIONS } from '../data/ukraineMapData';
-import { INITIAL_TRAJECTORIES } from '../data/spatialThreatData';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -80,15 +79,17 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
   variant = 'hero',
   theme = 'light',
   regions = INITIAL_REGIONS,
-  trajectories = INITIAL_TRAJECTORIES,
+  trajectories = [],
   selectedRegionId = null,
   onSelectRegion,
-  activeThreatCount = 3,
+  activeThreatCount = 0,
   className = '',
   enableControls = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const isDark = theme === 'dark';
+  const kyivIsAlarm = regions.some((region) => (region.id === 'kyiv_obl' || region.id === 'kyiv_city') && region.isAlarm);
+  const dniproIsAlarm = regions.some((region) => region.id === 'dnipro' && region.isAlarm);
 
   // Interactive Hover state
   const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null);
@@ -302,9 +303,6 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
           : (isDark ? 0xfb923c : 0xf59e0b);
         createRadarWave(r.center, color, 4.5 + (idx % 2) * 1.5, 0.035 + (idx % 3) * 0.005);
       });
-    } else {
-      // Baseline status ping when all clear
-      createRadarWave([450, 155], isDark ? 0x38bdf8 : 0x3b82f6, 4.0, 0.025);
     }
 
     // 7. 3D Trajectory Curved Light Arcs between key threat vectors
@@ -351,13 +349,6 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
           createArc(originPos, targetPos, arcColor);
         }
       });
-    } else {
-      // Standard regional safety network links
-      const kyivPos = new THREE.Vector3((450 - 500) * 0.042, 2.4, (155 - 330) * 0.042);
-      const odesaPos = new THREE.Vector3((450 - 500) * 0.042, 2.4, (440 - 330) * 0.042);
-      const lvivPos = new THREE.Vector3((95 - 500) * 0.042, 2.4, (205 - 330) * 0.042);
-      createArc(kyivPos, odesaPos, isDark ? 0x38bdf8 : 0x3b82f6);
-      createArc(lvivPos, kyivPos, isDark ? 0x60a5fa : 0x60a5fa);
     }
 
     // 8. Raycasting Mouse Interactivity (Hover & Click detection on individual Oblasts)
@@ -478,7 +469,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
       }
       renderer.dispose();
     };
-  }, [regions, selectedRegionId, variant, isDark]);
+  }, [regions, trajectories, selectedRegionId, variant, isDark]);
 
   // Adjust Camera Zoom & View Angle
   const handleZoom = (delta: number) => {
@@ -637,7 +628,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
             className="absolute top-[32%] left-[47%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
           >
             <div className="relative flex items-center justify-center w-5 h-5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+              {kyivIsAlarm ? <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" /> : null}
               <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-cyan-500 border-2 border-white shadow-md" />
             </div>
             <span className={`text-xs font-black drop-shadow-xs transition-colors ${
@@ -674,11 +665,13 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
             className="absolute top-[55%] left-[67%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 cursor-pointer z-20 group hover:scale-110 transition-transform"
           >
             <div className="relative flex items-center justify-center w-6 h-6">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-600 border-2 border-white shadow-lg" />
+              {dniproIsAlarm ? <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" /> : null}
+              <span className={`relative inline-flex rounded-full h-4 w-4 border-2 border-white shadow-lg ${dniproIsAlarm ? 'bg-rose-600' : 'bg-cyan-400'}`} />
             </div>
             <span className={`text-xs font-black drop-shadow-xs transition-colors ${
-              isDark ? 'text-rose-400 group-hover:text-rose-300' : 'text-slate-900 group-hover:text-rose-600'
+              dniproIsAlarm
+                ? (isDark ? 'text-rose-400 group-hover:text-rose-300' : 'text-slate-900 group-hover:text-rose-600')
+                : (isDark ? 'text-white group-hover:text-cyan-400' : 'text-slate-800 group-hover:text-blue-600')
             }`}>
               Дніпро
             </span>

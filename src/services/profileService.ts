@@ -8,6 +8,7 @@
  */
 
 import { DataEnvelope } from '../types/dataEnvelope';
+import { runtimeConfig } from '../config/runtime';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
 import { getJson, isJsonObject } from './apiClient';
 
@@ -92,7 +93,17 @@ class ProfileService {
         isRealData: true,
       };
     } catch {
-      // Keep the profile surface available while explicitly marking its local dataset.
+      if (runtimeConfig.apiBaseUrl) {
+        return {
+          data: null,
+          state: 'NOT_CONNECTED',
+          source: 'SIREN_UA_PROFILE_API',
+          updatedAt,
+          isRealData: false,
+          error: 'Профільний API не підключений або повернув некоректну відповідь',
+        };
+      }
+      // Local development keeps a clearly labelled DEMO profile.
     }
 
     const currentRank = calculateRankByL1(this.profile.qualifiedL1);

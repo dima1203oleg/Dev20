@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   QrCode
 } from 'lucide-react';
-import { RegionData, ThreatSceneModel } from '../types';
+import { RegionData, ThreatSceneModel, ThreatTrajectory } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { runtimeConfig } from '../config/runtime';
 
@@ -20,6 +20,7 @@ interface HeroSectionProps {
   regions?: RegionData[];
   selectedRegion?: RegionData | null;
   onSelectRegion?: (region: RegionData | null) => void;
+  trajectories?: ThreatTrajectory[];
   threatModel?: ThreatSceneModel;
   onNavigateToShelters?: () => void;
   theme?: 'light' | 'dark';
@@ -29,6 +30,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   regions = [],
   selectedRegion = null,
   onSelectRegion,
+  trajectories = [],
   threatModel,
   onNavigateToShelters,
   theme = 'light'
@@ -213,6 +215,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   variant="hero"
                   theme={theme}
                   regions={regions}
+                  trajectories={trajectories}
                   selectedRegionId={selectedRegion?.id || null}
                   onSelectRegion={(region) => onSelectRegion?.(region)}
                   activeThreatCount={threatModel?.activeAlarmsCount || 0}
@@ -234,8 +237,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               />
             )}
 
-            {/* SVG Arcs Connecting Cities */}
-            <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+            {/* Conceptual arcs are allowed only in explicit DEMO mode. Live spatial paths come from the normalized threat model. */}
+            {mapMode === 'RENDER' && threatModel?.dataMode === 'DEMO_DATA' && <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
               <defs>
                 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur stdDeviation="1.5" result="blur" />
@@ -252,9 +255,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <path d="M 72,58 Q 64,72 58,76" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
               {/* Arc 5: Львів (28, 42) -> Одеса (58, 76) */}
               <path d="M 28,42 Q 40,68 58,76" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.5" strokeDasharray="1 1" opacity="0.5" />
-            </svg>
+            </svg>}
 
-            {/* Map Pins and City Labels */}
+            {/* Map Pins and City Labels (the WebGL scene owns its own overlays) */}
+            {mapMode === 'RENDER' && <>
             {[
               { name: 'Львів', top: '42%', left: '28%' },
               { name: 'Київ', top: '28%', left: '57%' },
@@ -307,6 +311,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </span>
               </button>
             ))}
+            </>}
 
             {/* Bottom Right Pill Badge: SIREN UA - Україна */}
             <div className={`absolute bottom-3 right-4 px-4 py-1.5 rounded-full border text-[11px] font-bold shadow-md backdrop-blur-md z-20 ${
