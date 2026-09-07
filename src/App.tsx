@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
 import { HeroSection } from './components/HeroSection';
-import { SmartMetricRail } from './components/SmartMetricRail';
+import { HomeFeaturesGrid } from './components/HomeFeaturesGrid';
 import { HomeFinanceSituationRow } from './components/HomeFinanceSituationRow';
 import { SirenOrbitalDeviceEcosystem } from './components/orbital/SirenOrbitalDeviceEcosystem';
 import { FinanceSection } from './components/FinanceSection';
@@ -13,6 +12,7 @@ import { SimulatorModal } from './components/SimulatorModal';
 import { EmergencyGuideModal } from './components/EmergencyGuideModal';
 import { SheltersSection } from './components/SheltersSection';
 import { Footer } from './components/Footer';
+import { OnboardingFlow } from './components/OnboardingFlow';
 
 import { INITIAL_REGIONS, INITIAL_ALERTS_FEED } from './data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from './data/spatialThreatData';
@@ -29,11 +29,28 @@ import {
   playAllClearSound, 
   speakAlertNotification 
 } from './utils/sirenAudio';
-import { AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export default function App() {
-  // Navigation: HOME | NETWORK | FINANCE | PROFILE
+  // Navigation: HOME | NETWORK | FINANCE | PROFILE | ANALYTICS | AFFILIATE
   const [activeSection, setActiveSection] = useState<DashboardSection>('HOME');
+
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      const completed = localStorage.getItem('sirenua_onboarding_completed');
+      return completed !== 'true';
+    } catch {
+      return true;
+    }
+  });
+
+  const handleCompleteOnboarding = () => {
+    try {
+      localStorage.setItem('sirenua_onboarding_completed', 'true');
+    } catch {
+      // ignore
+    }
+    setShowOnboarding(false);
+  };
 
   // Regions & Alert Data
   const [regions, setRegions] = useState<RegionData[]>(() => {
@@ -191,29 +208,26 @@ export default function App() {
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
-      settings.theme === 'dark' ? 'bg-[#0B0F17] text-slate-100' : 'bg-[#F7F9FC] text-[#111827]'
+      settings.theme === 'dark' ? 'bg-[#0E1520] text-slate-100' : 'bg-[#EAEFF5] text-[#111827]'
     }`}>
       
-      {/* 1. Header with Global Navigation & User Capsule */}
+      {/* 1. Header with Navigation */}
       <Header
         activeSection={activeSection}
         onSelectSection={(sec) => {
           setActiveSection(sec);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        regions={safeRegions}
-        myRegionName={myRegionObj.name}
-        theme={settings.theme || 'light'}
         onToggleTheme={() => {
           const nextTheme = settings.theme === 'dark' ? 'light' : 'dark';
           handleUpdateSettings({ theme: nextTheme });
         }}
+        theme={settings.theme || 'light'}
       />
 
       {/* 2. Critical Alert Banner if Active */}
       {bannerAlert && (
         <div className="bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 text-white px-4 py-2 shadow-md text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-40">
-          <AlertTriangle className="w-4 h-4 animate-bounce" />
           <span>{bannerAlert}</span>
           <button
             onClick={() => setBannerAlert(null)}
@@ -224,80 +238,44 @@ export default function App() {
         </div>
       )}
 
-      {/* 3. Main Workspace Container with Sidebar on Desktop */}
-      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 flex-1 flex flex-col lg:flex-row gap-5">
+      {/* 3. Main Container */}
+      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex-1 flex flex-col gap-6">
         
-        {/* Left Column: Navigation Sidebar */}
-        <div className="w-full lg:w-48 xl:w-52 flex-shrink-0">
-          <Sidebar
-            activeSection={activeSection}
-            onSelectSection={(sec) => {
-              setActiveSection(sec);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            onOpenNotifications={() => setIsSimulatorOpen(true)}
-            onOpenSupport={() => setIsGuideOpen(true)}
-            theme={settings.theme || 'light'}
-          />
-        </div>
-
-        {/* Right Column: Main Content Area */}
-        <main className="flex-1 min-w-0 pb-12">
-          
+        <main className="flex-1 min-w-0 pb-12 w-full">
           {/* =========================================================================
-              SECTION 1: HOME (Головна) - 1:1 Matching the uploaded design screenshot
+              SECTION 1: HOME (Головна) - 1:1 Premium Design as in Mockup
              ========================================================================= */}
           {activeSection === 'HOME' && (
-            <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="space-y-6 animate-in fade-in duration-200">
               
-              {/* Row 1: Top Hero Section with 3D Map of Ukraine & Threat Details */}
+              {/* Row 1: Hero Section with 3D Map of Ukraine & Floating Threat Info */}
               <HeroSection
-                regions={safeRegions}
-                selectedRegionId={selectedRegion?.id}
-                onSelectRegion={(reg) => setSelectedRegion(reg)}
-                onOpenMap={() => setSelectedRegion(safeRegions.find(r => r.id === 'kyiv_obl') || null)}
-                onOpenGuide={() => setIsGuideOpen(true)}
-                onOpenThreats={() => setIsSimulatorOpen(true)}
-                activeThreatsCount={3}
-                theme={settings.theme || 'light'}
-              />
-
-              {/* Row 2: 4 Quick Smart Metric Cards */}
-              <SmartMetricRail
-                threatModel={threatSceneModel}
-                myRegionName={myRegionObj.name || "Одеська область"}
-                isAlarm={myRegionObj.isAlarm || false}
-                activeEventsCount={3}
-                lastUpdatedTime="Сьогодні, 22:14"
-                onSelectRegion={() => setSelectedRegion(safeRegions.find(r => r.id === 'odesa') || null)}
-                onOpenStatus={() => handleToggleTestSiren()}
-                onOpenEvents={() => setIsSimulatorOpen(true)}
-                theme={settings.theme || 'light'}
-              />
-
-              {/* Row 3: Фінансова інформація & Ситуація 5-Card Layout */}
-              <HomeFinanceSituationRow
                 regions={safeRegions}
                 selectedRegion={selectedRegion}
                 onSelectRegion={(reg) => setSelectedRegion(reg)}
                 threatModel={threatSceneModel}
-                onNavigateToFinance={() => setActiveSection('FINANCE')}
-                onNavigateToNetwork={() => setActiveSection('NETWORK')}
                 onNavigateToShelters={() => setIsSheltersModalOpen(true)}
                 theme={settings.theme || 'light'}
               />
 
-              {/* Row 4: SIREN UA на всіх твоїх пристроях (3D Device Ecosystem) */}
-              <SirenOrbitalDeviceEcosystem
-                threatModel={threatSceneModel}
-                onNavigateToTab={(tabId) => {
-                  if (tabId === 'shelters') setIsSheltersModalOpen(true);
-                  if (tabId === 'simulator') setIsSimulatorOpen(true);
-                }}
-                isCriticalAlert={isSirenPlaying}
+              {/* Row 2: 4 Feature Navigation Cards (Мережа, Фінанси, Аналітика, Партнерська програма) */}
+              <HomeFeaturesGrid 
+                onNavigateToTab={(tab) => setActiveSection(tab)}
                 theme={settings.theme || 'light'}
               />
 
+              {/* Row 3: Financial Information Block (Фінансова інформація) */}
+              <HomeFinanceSituationRow
+                onNavigateToFinance={() => setActiveSection('FINANCE')}
+                onNavigateToNetwork={() => setActiveSection('NETWORK')}
+                theme={settings.theme || 'light'}
+              />
+
+              {/* Row 4: SIREN UA на всіх пристроях (3D Device Ecosystem) */}
+              <SirenOrbitalDeviceEcosystem
+                theme={settings.theme || 'light'}
+              />
+              
             </div>
           )}
 
@@ -309,7 +287,6 @@ export default function App() {
               <AffiliateProgram
                 onOpenMap={() => setActiveSection('HOME')}
                 onOpenSimulator={() => setIsSimulatorOpen(true)}
-                theme={settings.theme || 'light'}
               />
             </div>
           )}
@@ -322,7 +299,6 @@ export default function App() {
               <FinanceSection
                 onOpenWithdrawModal={() => {}}
                 onOpenHistory={() => {}}
-                theme={settings.theme || 'light'}
               />
             </div>
           )}
@@ -332,12 +308,32 @@ export default function App() {
              ========================================================================= */}
           {activeSection === 'PROFILE' && (
             <div className="animate-in fade-in duration-200">
-              <ProfileSection
-                theme={settings.theme || 'light'}
-              />
+              <ProfileSection />
             </div>
           )}
 
+          {/* =========================================================================
+              SECTION 5: ANALYTICS (Аналітика)
+             ========================================================================= */}
+          {activeSection === 'ANALYTICS' && (
+            <div className="animate-in fade-in duration-200 p-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h2 className="text-2xl font-bold mb-2">Аналітика загрози та активності</h2>
+              <p className="text-slate-500 text-sm">Збір статистики реального часу за останні 30 днів...</p>
+            </div>
+          )}
+
+          {/* =========================================================================
+              SECTION 6: AFFILIATE (Партнерська програма)
+             ========================================================================= */}
+          {activeSection === 'AFFILIATE' && (
+            <div className="animate-in fade-in duration-200">
+              <AffiliateProgram
+                onOpenMap={() => setActiveSection('HOME')}
+                onOpenSimulator={() => setIsSimulatorOpen(true)}
+              />
+            </div>
+          )}
+          
         </main>
       </div>
 
@@ -354,7 +350,6 @@ export default function App() {
           <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white border border-slate-200 shadow-2xl p-4 sm:p-6">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 <h3 className="text-lg font-bold text-slate-900">Карта укриттів та безпечні маршрути</h3>
               </div>
               <button
@@ -400,6 +395,13 @@ export default function App() {
             setIsSheltersModalOpen(true);
           }}
           nearestShelter={threatSceneModel.nearestShelter}
+        />
+      )}
+
+      {/* Onboarding Flow */}
+      {showOnboarding && (
+        <OnboardingFlow 
+          onComplete={handleCompleteOnboarding}
         />
       )}
 

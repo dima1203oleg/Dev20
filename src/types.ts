@@ -232,7 +232,7 @@ export interface OrbitalDeviceConfig {
   keyFeatures: string[];
 }
 
-export type DashboardSection = 'HOME' | 'NETWORK' | 'FINANCE' | 'PROFILE';
+export type DashboardSection = 'HOME' | 'NETWORK' | 'FINANCE' | 'ANALYTICS' | 'AFFILIATE' | 'PROFILE';
 
 export type MainWorkspaceMode = 'SAFETY' | 'NETWORK';
 
@@ -250,4 +250,5 @@ export interface SmartMetric {
 }
 
 export * from './types/finance';
+export * from './types/dataEnvelope';
 

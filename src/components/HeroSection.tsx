@@ -1,422 +1,236 @@
 import React, { useState } from 'react';
 import { 
-  Play, 
-  ChevronRight, 
+  ArrowRight, 
+  Apple,
+  Play,
+  Check,
   AlertTriangle,
-  ArrowRight,
-  Crosshair,
-  Compass,
-  Clock,
-  Zap,
-  RotateCw,
-  MapPin,
-  Layers,
-  Sparkles,
-  Shield
+  ShieldCheck,
+  QrCode
 } from 'lucide-react';
-import { playWebAudioSound } from '../utils/sirenAudio';
 import { ThreeMapUkraine } from './ThreeMapUkraine';
-import { RegionData } from '../types';
+import { RegionData, ThreatSceneModel } from '../types';
+import { playWebAudioSound } from '../utils/sirenAudio';
 
 interface HeroSectionProps {
-  onOpenMap: () => void;
-  onOpenGuide: () => void;
-  onOpenThreats: () => void;
-  activeThreatsCount?: number;
   regions?: RegionData[];
-  selectedRegionId?: string | null;
-  onSelectRegion?: (region: RegionData) => void;
+  selectedRegion?: RegionData | null;
+  onSelectRegion?: (region: RegionData | null) => void;
+  threatModel?: ThreatSceneModel;
+  onNavigateToShelters?: () => void;
   theme?: 'light' | 'dark';
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
-  onOpenMap,
-  onOpenGuide,
-  onOpenThreats,
-  activeThreatsCount = 3,
-  regions,
-  selectedRegionId,
+  regions = [],
+  selectedRegion = null,
   onSelectRegion,
-  theme = 'light',
+  threatModel,
+  onNavigateToShelters,
+  theme = 'light'
 }) => {
-  const [mapMode, setMapMode] = useState<'STATIC_RENDER' | 'WEBGL_INTERACTIVE'>('STATIC_RENDER');
+  const [mapMode, setMapMode] = useState<'RENDER' | 'WEBGL'>('RENDER');
   const isDark = theme === 'dark';
 
   return (
-    <section className={`relative w-full rounded-3xl p-6 sm:p-8 lg:p-10 border transition-all duration-300 ${
+    <div className={`w-full rounded-[32px] p-6 sm:p-10 lg:p-12 border relative overflow-hidden transition-all duration-300 ${
       isDark 
-        ? 'bg-[#111827] border-slate-800 text-white shadow-google-lg' 
-        : 'bg-[#FFFFFF] border-slate-200/70 text-[#111827] shadow-google-card'
+        ? 'bg-[#131C2B] border-[#24344D] text-white shadow-2xl' 
+        : 'bg-[#FFFFFF] border-[#CBD6E2] text-[#0F172A] shadow-md'
     }`}>
       
-      {/* Background Soft Studio Ambient Glow (No aggressive neon) */}
-      <div className={`absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[100px] pointer-events-none -z-10 ${
-        isDark ? 'bg-blue-900/10' : 'bg-blue-50/70'
+      {/* Background Soft Glow */}
+      <div className={`absolute top-1/2 right-10 -translate-y-1/2 w-[650px] h-[650px] rounded-full blur-[130px] pointer-events-none -z-10 ${
+        isDark ? 'bg-blue-600/15' : 'bg-blue-200/40'
       }`} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-14 relative z-10 w-full min-h-[480px]">
         
-        {/* Left Column: Product Presentation & Clear CTAs (5 cols) */}
-        <div className="lg:col-span-5 space-y-5 z-10">
+        {/* Left: Text Content & Sub-Block */}
+        <div className="flex-1 w-full flex flex-col items-start text-left max-w-xl">
           
-          {/* Google-style Minimalist Badge */}
-          <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-tight transition-colors ${
+          {/* Top Pill Badge */}
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6 text-[12px] font-extrabold tracking-wide ${
             isDark 
-              ? 'bg-slate-800/80 border border-slate-700/80 text-slate-200' 
-              : 'bg-[#F1F4F9] border border-slate-200/80 text-[#2563EB]'
+              ? 'bg-[#1B293F] border-[#2E4160] text-blue-400' 
+              : 'bg-blue-50 border-blue-200 text-blue-700'
           }`}>
-            <span className="text-sm">🇺🇦</span>
-            <span>Платформа безпеки та ситуативної обізнаності</span>
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+            </span>
+            <span>UA | Платформа безпеки та ситуаційної обізнаності</span>
           </div>
 
-          {/* Main Headline */}
-          <h1 className={`text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight leading-[1.14] ${
-            isDark ? 'text-white' : 'text-[#111827]'
+          {/* Heading */}
+          <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] ${
+            isDark ? 'text-white' : 'text-[#0F172A]'
           }`}>
             Розумій ситуацію.<br />
             <span className="text-[#2563EB]">Не просто отримуй тривогу.</span>
           </h1>
-
-          {/* Subtitle description with comfortable readability */}
-          <p className={`text-sm sm:text-base leading-relaxed max-w-lg ${
-            isDark ? 'text-[#8B95A7]' : 'text-[#5B6472]'
+          
+          {/* Subtitle */}
+          <p className={`mt-5 text-[14px] sm:text-[15px] leading-relaxed font-medium ${
+            isDark ? 'text-slate-300' : 'text-[#5A6A80]'
           }`}>
-            Актуальна інформація, реальні загрози та високоточна просторова аналітика. SIREN UA створена для швидких та усвідомлених рішень.
+            SIREN UA — на карті повітряної ситуації, напрями загроз, прогнозні траєкторії, орієнтовний час, хронологія подій та інформація про укриття — в одному застосунку.
           </p>
-
-          {/* Action Buttons Row */}
-          <div className="flex flex-wrap items-center gap-3 pt-1">
+          
+          {/* Primary & Secondary Buttons */}
+          <div className="mt-7 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
             <button
               onClick={() => {
-                onOpenMap();
+                alert('Завантаження для iPhone...');
                 playWebAudioSound('click');
               }}
-              className="px-6 py-3.5 rounded-2xl bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-sm transition-all duration-200 flex items-center gap-2.5 cursor-pointer hover:shadow-md"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-[14px] flex items-center justify-center gap-2.5 transition-all shadow-md hover:shadow-lg cursor-pointer"
             >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 1.01-2.87-.96.04-2.12.65-2.8 1.44-.6.69-.99 1.76-.94 2.82 1.07.08 2.12-.55 2.73-1.39z"/>
-              </svg>
+              <Apple className="w-4 h-4 fill-white mb-0.5" />
               <span>Завантажити для iPhone</span>
               <ArrowRight className="w-4 h-4 ml-0.5" />
             </button>
-
             <button
               onClick={() => {
-                onOpenGuide();
                 playWebAudioSound('click');
               }}
-              className={`px-5 py-3.5 rounded-2xl font-semibold text-sm border transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+              className={`w-full sm:w-auto px-7 py-3.5 rounded-full border font-bold text-[14px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 isDark 
-                  ? 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border-slate-700' 
-                  : 'bg-white hover:bg-[#F7F9FC] text-[#111827] border-slate-200 shadow-google-sm hover:border-slate-300'
+                  ? 'bg-[#182335] border-[#2E4160] text-white hover:bg-[#202E46]' 
+                  : 'bg-white border-[#CBD6E2] text-[#0F172A] hover:bg-slate-50 shadow-sm'
               }`}
             >
-              <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                isDark ? 'bg-blue-950/80 text-blue-400' : 'bg-blue-50 text-[#2563EB]'
-              }`}>
-                <Play className="w-2.5 h-2.5 fill-[#2563EB] ml-0.5" />
-              </div>
+              <Play className="w-3.5 h-3.5 fill-current text-blue-600" />
               <span>Дивитись демо</span>
             </button>
           </div>
 
-          {/* Clean App Store Badges & Fast Setup Features */}
-          <div className="pt-2 flex flex-wrap items-center gap-4">
-            
-            <div className="flex items-center gap-2.5">
-              <div className={`w-13 h-13 rounded-xl p-1.5 border flex items-center justify-center ${
-                isDark ? 'bg-white border-slate-700' : 'bg-white border-slate-200 shadow-google-sm'
+          {/* Sub-block: QR Code, App Store Pill & Checkmarks */}
+          <div className={`mt-9 pt-7 border-t w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 ${
+            isDark ? 'border-[#24344D]' : 'border-[#DBE4EC]'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 border ${
+                isDark ? 'bg-[#182335] border-[#2E4160] text-white' : 'bg-white border-[#CBD6E2] text-slate-800 shadow-sm'
               }`}>
-                <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900 fill-current">
-                  <rect width="30" height="30" rx="3" />
-                  <rect x="8" y="8" width="14" height="14" fill="white" />
-                  <rect x="11" y="11" width="8" height="8" />
-                  
-                  <rect x="70" width="30" height="30" rx="3" />
-                  <rect x="78" y="8" width="14" height="14" fill="white" />
-                  <rect x="81" y="11" width="8" height="8" />
-                  
-                  <rect y="70" width="30" height="30" rx="3" />
-                  <rect x="8" y="78" width="14" height="14" fill="white" />
-                  <rect x="11" y="81" width="8" height="8" />
-                  
-                  <rect x="36" y="10" width="8" height="8" />
-                  <rect x="48" y="20" width="8" height="8" />
-                  <rect x="36" y="36" width="28" height="28" />
-                  <rect x="42" y="42" width="16" height="16" fill="white" />
-                  <rect x="70" y="40" width="8" height="8" />
-                  <rect x="85" y="55" width="8" height="8" />
-                  <rect x="40" y="75" width="12" height="8" />
-                  <rect x="60" y="70" width="10" height="10" />
-                  <rect x="75" y="80" width="15" height="10" />
-                </svg>
+                <QrCode className="w-6 h-6 text-blue-600" />
               </div>
-
-              <a
-                href="#download"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Завантажити SirenUA з App Store');
-                }}
-                className="px-3.5 py-2 rounded-xl bg-[#111827] hover:bg-black text-white flex items-center gap-2 shadow-google-sm transition-transform hover:scale-[1.02] cursor-pointer"
-              >
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 1.01-2.87-.96.04-2.12.65-2.8 1.44-.6.69-.99 1.76-.94 2.82 1.07.08 2.12-.55 2.73-1.39z"/>
-                </svg>
-                <div className="text-left">
-                  <div className="text-[8px] uppercase tracking-wider text-slate-400 leading-none">Завантажити в</div>
-                  <div className="text-xs font-bold tracking-tight leading-tight">App Store</div>
+              <div className="flex flex-col">
+                <div className={`px-3 py-1.5 rounded-lg bg-black text-white text-[10px] font-bold flex items-center gap-1.5 border border-slate-700 shadow-sm mb-1`}>
+                  <Apple className="w-3.5 h-3.5 fill-white" />
+                  <div>
+                    <div className="text-[8px] uppercase tracking-wider text-slate-400">Завантажуйте в</div>
+                    <div className="text-[10px] font-bold leading-none">App Store</div>
+                  </div>
                 </div>
-              </a>
-            </div>
-
-            <div className={`space-y-1 text-xs font-medium ${isDark ? 'text-[#8B95A7]' : 'text-[#5B6472]'}`}>
-              <div className="flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-[#2563EB]" />
-                <span>Швидке встановлення</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <RotateCw className="w-3.5 h-3.5 text-[#2563EB]" />
-                <span>Безкоштовні оновлення</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#2563EB]" />
-                <span>Покриття всієї України</span>
               </div>
             </div>
 
+            <div className="flex flex-col gap-1.5">
+              {[
+                "Швидке встановлення",
+                "Покриття всієї України",
+                "Оновлення в реальному часі"
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </div>
+                  <span className={`text-[12px] font-semibold ${isDark ? 'text-slate-200' : 'text-[#334155]'}`}>
+                    {item}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
         </div>
 
-        {/* Right Column: High-End Studio 3D Relief of Ukraine (7 cols) */}
-        <div className="lg:col-span-7 relative flex flex-col items-center justify-center min-h-[390px]">
-          
-          {/* Top Right Floating Threat Status Card */}
-          <div className="absolute top-0 right-0 z-30 space-y-2.5 max-w-[270px] w-full hidden sm:block">
-            
-            {/* Alert Card 1: Critical Threat Bar (Uses red only for threats) */}
-            <div 
-              onClick={onOpenThreats}
-              className={`p-3 rounded-2xl flex items-center justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
-                isDark 
-                  ? 'bg-slate-900/95 border border-rose-900/40 text-white shadow-google-card' 
-                  : 'bg-[#FFFFFF] border border-rose-100 text-[#111827] shadow-google-card'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-4 h-4 text-rose-600" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold">
-                    <span>Активні загрози</span>
-                    <span className="w-4.5 h-4.5 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center">
-                      {activeThreatsCount}
-                    </span>
-                  </div>
-                  <div className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-slate-400' : 'text-[#5B6472]'}`}>
-                    <span>БпЛА</span>
-                    <span className="text-[10px] font-normal"> · Південно-західний</span>
-                  </div>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
-            </div>
+        {/* Right: 3D Ukraine Map matching screenshots 1:1 with pins & arcs */}
+        <div className="flex-1 w-full flex items-center justify-center relative min-h-[380px] lg:min-h-[460px]">
+          <div className="relative w-full max-w-[620px] aspect-[16/10] flex items-center justify-center">
+            {/* Base 3D Relief Map Image */}
+            <img 
+              src="/src/assets/images/ukraine_3d_cutout.png" 
+              alt="3D Карта України SIREN UA" 
+              referrerPolicy="no-referrer"
+              className="w-full h-auto object-contain max-h-[440px] drop-shadow-[0_20px_35px_rgba(37,99,235,0.25)]"
+            />
 
-            {/* Region Detail Box */}
-            <div className={`p-3.5 rounded-2xl border transition-all duration-200 space-y-2 ${
-              isDark 
-                ? 'bg-slate-900/95 border-slate-800 text-white shadow-google-card' 
-                : 'bg-white border-slate-200/80 text-[#111827] shadow-google-card'
-            }`}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold">Київська область</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold flex items-center gap-1">
-                  <span>⚠️</span>
-                  <span>Підвищена увага</span>
+            {/* SVG Arcs Connecting Cities */}
+            <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+              <defs>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="1.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              {/* Arc 1: Львів (28, 42) -> Київ (57, 28) */}
+              <path d="M 28,42 Q 42,22 57,28" fill="none" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              {/* Arc 2: Київ (57, 28) -> Харків (80, 36) */}
+              <path d="M 57,28 Q 68,22 80,36" fill="none" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              {/* Arc 3: Київ (57, 28) -> Дніпро (72, 58) */}
+              <path d="M 57,28 Q 66,42 72,58" fill="none" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              {/* Arc 4: Дніпро (72, 58) -> Одеса (58, 76) */}
+              <path d="M 72,58 Q 64,72 58,76" fill="none" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              {/* Arc 5: Львів (28, 42) -> Одеса (58, 76) */}
+              <path d="M 28,42 Q 40,68 58,76" fill="none" stroke="#38BDF8" strokeWidth="0.5" strokeDasharray="1 1" opacity="0.5" />
+            </svg>
+
+            {/* Map Pins and City Labels */}
+            {[
+              { name: 'Львів', top: '42%', left: '28%' },
+              { name: 'Київ', top: '28%', left: '57%' },
+              { name: 'Харків', top: '36%', left: '80%' },
+              { name: 'Дніпро', top: '58%', left: '72%' },
+              { name: 'Одеса', top: '76%', left: '58%' },
+            ].map((city, idx) => (
+              <div 
+                key={idx} 
+                className="absolute flex items-center gap-1.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-10 transition-transform hover:scale-110"
+                style={{ top: city.top, left: city.left }}
+              >
+                {/* 3D Map Teardrop Pin Icon */}
+                <div className="relative flex items-center justify-center">
+                  <svg className="w-5 h-5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" viewBox="0 0 24 24" fill="none">
+                    <defs>
+                      <linearGradient id={`pinGrad-${idx}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#7DD3FC" />
+                        <stop offset="100%" stopColor="#0284C7" />
+                      </linearGradient>
+                    </defs>
+                    <path 
+                      d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
+                      fill={`url(#pinGrad-${idx})`} 
+                      stroke="#FFFFFF" 
+                      strokeWidth="1.2"
+                    />
+                    <circle cx="12" cy="9" r="2.5" fill="#FFFFFF" />
+                  </svg>
+                </div>
+
+                {/* City Name Label */}
+                <span className={`text-[12px] sm:text-[13px] font-extrabold tracking-tight select-none ${
+                  isDark ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]' : 'text-[#0F172A] drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]'
+                }`}>
+                  {city.name}
                 </span>
               </div>
+            ))}
 
-              <div className={`space-y-1 text-[11px] border-t pt-1.5 ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-[#5B6472]'}`}>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Crosshair className="w-3 h-3 text-[#2563EB]" /> Тип загрози:
-                  </span>
-                  <span className={`font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>БпЛА</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Compass className="w-3 h-3 text-[#2563EB]" /> Напрямок:
-                  </span>
-                  <span className={`font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>Південно-західний</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-[#2563EB]" /> Оновлено:
-                  </span>
-                  <span className={`font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>Сьогодні, 22:14</span>
-                </div>
-              </div>
-
-              <button 
-                onClick={onOpenMap}
-                className="w-full text-right text-xs font-bold text-[#2563EB] hover:text-blue-700 flex items-center justify-end gap-1 pt-1 cursor-pointer"
-              >
-                <span>Детальніше</span>
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-
-          </div>
-
-          {/* 3D Studio Holographic Map Visual (Clean transparent cutout floating on white surface) */}
-          <div className="relative w-full aspect-[16/10] max-h-[410px] flex items-center justify-center group">
-            
-            {mapMode === 'STATIC_RENDER' ? (
-              <div className="relative w-full h-full flex items-center justify-center">
-                {/* 3D Isolated Relief Map with transparent background & soft organic studio shadow */}
-                <img
-                  src="/src/assets/images/ukraine_3d_cutout.png"
-                  alt="3D Карта України Siren UA"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-103 drop-shadow-[0_15px_30px_rgba(37,99,235,0.18)]"
-                />
-
-                {/* Minimalist City Beacon Nodes */}
-                {/* 1. Львів (Lviv) */}
-                <div 
-                  onClick={() => {
-                    const reg = regions?.find(r => r.id === 'lviv');
-                    if (reg && onSelectRegion) onSelectRegion(reg);
-                  }}
-                  className="absolute top-[30%] left-[22%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
-                >
-                  <div className="relative flex items-center justify-center w-3.5 h-3.5">
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400 border-2 border-white shadow-google-sm" />
-                  </div>
-                  <span className="text-[11px] font-bold text-[#111827] bg-white/95 px-1.5 py-0.5 rounded-md shadow-google-sm border border-slate-200/50">
-                    Львів
-                  </span>
-                </div>
-
-                {/* 2. Київ (Kyiv) */}
-                <div 
-                  onClick={() => {
-                    const reg = regions?.find(r => r.id === 'kyiv_obl' || r.id === 'kyiv_city');
-                    if (reg && onSelectRegion) onSelectRegion(reg);
-                  }}
-                  className="absolute top-[28%] left-[52%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
-                >
-                  <div className="relative flex items-center justify-center w-5 h-5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#2563EB] border-2 border-white shadow-google-sm" />
-                  </div>
-                  <span className="text-[11px] font-bold text-[#111827] bg-white/95 px-2 py-0.5 rounded-md shadow-google-sm border border-slate-200/50">
-                    Київ
-                  </span>
-                </div>
-
-                {/* 3. Харків (Kharkiv) */}
-                <div 
-                  onClick={() => {
-                    const reg = regions?.find(r => r.id === 'kharkiv');
-                    if (reg && onSelectRegion) onSelectRegion(reg);
-                  }}
-                  className="absolute top-[35%] left-[76%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
-                >
-                  <div className="relative flex items-center justify-center w-4 h-4">
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 border-2 border-white shadow-google-sm" />
-                  </div>
-                  <span className="text-[11px] font-bold text-rose-900 bg-rose-50/95 border border-rose-200 px-1.5 py-0.5 rounded-md shadow-google-sm">
-                    Харків
-                  </span>
-                </div>
-
-                {/* 4. Дніпро (Dnipro) */}
-                <div 
-                  onClick={() => {
-                    const reg = regions?.find(r => r.id === 'dnipro');
-                    if (reg && onSelectRegion) onSelectRegion(reg);
-                  }}
-                  className="absolute top-[50%] left-[68%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
-                >
-                  <div className="relative flex items-center justify-center w-3.5 h-3.5">
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 border-2 border-white shadow-google-sm" />
-                  </div>
-                  <span className="text-[11px] font-bold text-[#111827] bg-white/95 px-1.5 py-0.5 rounded-md shadow-google-sm border border-slate-200/50">
-                    Дніпро
-                  </span>
-                </div>
-
-                {/* 5. Одеса (Odesa) */}
-                <div 
-                  onClick={() => {
-                    const reg = regions?.find(r => r.id === 'odesa');
-                    if (reg && onSelectRegion) onSelectRegion(reg);
-                  }}
-                  className="absolute top-[66%] left-[46%] flex items-center gap-1.5 cursor-pointer z-20 group/node hover:scale-110 transition-transform"
-                >
-                  <div className="relative flex items-center justify-center w-3.5 h-3.5">
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#2563EB] border-2 border-white shadow-google-sm" />
-                  </div>
-                  <span className="text-[11px] font-bold text-[#111827] bg-white/95 px-1.5 py-0.5 rounded-md shadow-google-sm border border-slate-200/50">
-                    Одеса
-                  </span>
-                </div>
-
-              </div>
-            ) : (
-              <ThreeMapUkraine
-                variant="hero"
-                theme={theme}
-                regions={regions}
-                selectedRegionId={selectedRegionId}
-                onSelectRegion={onSelectRegion}
-                activeThreatCount={activeThreatsCount}
-                enableControls={true}
-              />
-            )}
-
-            {/* Mode Switcher pill at top left */}
-            <div className="absolute top-1 left-1 z-30">
-              <button
-                onClick={() => {
-                  setMapMode(mapMode === 'STATIC_RENDER' ? 'WEBGL_INTERACTIVE' : 'STATIC_RENDER');
-                  playWebAudioSound('click');
-                }}
-                className="px-3 py-1.5 rounded-full bg-white/95 hover:bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:text-[#2563EB] flex items-center gap-1.5 shadow-google-sm transition-all cursor-pointer"
-                title="Перемкнути між 3D-рендером та інтерактивною 3D-моделлю"
-              >
-                {mapMode === 'STATIC_RENDER' ? (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>3D Studio Render</span>
-                  </>
-                ) : (
-                  <>
-                    <Layers className="w-3.5 h-3.5 text-[#2563EB]" />
-                    <span>WebGL Interactive</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Bottom Right Subtle Slogan */}
-            <div className="absolute bottom-1 right-2 text-right pointer-events-none z-20 bg-white/80 backdrop-blur-xs px-3 py-1 rounded-xl border border-slate-200/60">
-              <div className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-[#5B6472]'}`}>
-                Технології. Люди.
-              </div>
-              <div className={`text-[11px] font-bold ${isDark ? 'text-slate-200' : 'text-[#111827]'}`}>
-                Безпечніше завтра.
-              </div>
+            {/* Bottom Right Pill Badge: SIREN UA - Україна */}
+            <div className={`absolute bottom-3 right-4 px-4 py-1.5 rounded-full border text-[11px] font-bold shadow-md backdrop-blur-md z-20 ${
+              isDark 
+                ? 'bg-[#182335]/90 border-[#2E4160] text-slate-200' 
+                : 'bg-white/90 border-[#CBD6E2] text-slate-700'
+            }`}>
+              SIREN UA • Україна
             </div>
           </div>
-
         </div>
 
       </div>
-
-    </section>
+    </div>
   );
 };
+

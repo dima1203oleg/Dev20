@@ -1,272 +1,173 @@
 import React, { useState } from 'react';
 import { 
-  Search, 
   Bell, 
-  ChevronDown, 
+  Search, 
   Sun, 
-  Moon, 
-  Crown,
+  Moon,
+  ChevronDown,
   ShieldAlert,
-  ArrowRight,
-  TrendingUp
+  Star
 } from 'lucide-react';
-import { DashboardSection, RegionData } from '../types';
+import { DashboardSection } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
 
 interface HeaderProps {
   activeSection: DashboardSection;
   onSelectSection: (section: DashboardSection) => void;
-  regions?: RegionData[];
-  myRegionName?: string;
-  theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
+  theme?: 'light' | 'dark';
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  activeSection,
+export const Header: React.FC<HeaderProps> = ({ 
+  activeSection, 
   onSelectSection,
-  regions = [],
-  myRegionName = 'Одеська область',
-  theme = 'light',
   onToggleTheme,
+  theme = 'light'
 }) => {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-
-  const activeAlarmsCount = regions.filter((r) => r.isAlarm).length;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'home' | 'features' | 'how' | 'pricing' | 'about'>('home');
+  const [lang, setLang] = useState('UK');
+  
   const isDark = theme === 'dark';
 
-  const handleNavClick = (sec: DashboardSection) => {
-    onSelectSection(sec);
+  const handleNavClick = (section: DashboardSection) => {
+    onSelectSection(section);
     playWebAudioSound('click');
   };
 
   return (
-    <header className={`sticky top-0 z-50 transition-colors backdrop-blur-md ${
+    <header className={`sticky top-0 z-40 w-full transition-colors duration-200 border-b backdrop-blur-xl ${
       isDark 
-        ? 'bg-[#090D16]/90 border-b border-slate-800/80 text-white' 
-        : 'bg-white/90 border-b border-slate-100 text-slate-900'
+        ? 'bg-[#0D131F]/90 border-[#1B273D] text-white' 
+        : 'bg-[#EAEFF5]/90 border-[#D1DCE5] text-[#0F172A]'
     }`}>
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
-        {/* Left: Brand Logo & Slogan ("НА КРОК ПОПЕРЕДУ") */}
+        {/* Left: Logo with double signal wave */}
         <div 
+          className="flex items-center gap-3 cursor-pointer flex-shrink-0" 
           onClick={() => handleNavClick('HOME')}
-          className="flex items-center gap-3 cursor-pointer select-none group flex-shrink-0"
         >
-          {/* Siren Circular Signal Icon */}
-          <div className="relative w-10 h-10 flex items-center justify-center">
-            <svg viewBox="0 0 40 40" className="w-10 h-10 fill-none" xmlns="http://www.w3.org/2000/svg">
-              <circle 
-                cx="20" 
-                cy="20" 
-                r="19" 
-                className={isDark ? 'fill-blue-950/60 stroke-blue-800' : 'fill-blue-50/70 stroke-blue-100'} 
-                strokeWidth="1.5" 
-              />
-              {/* Concentric Signal Arcs */}
-              <path d="M12 28C10 24 10 16 12 12" stroke={isDark ? '#38BDF8' : '#2563EB'} strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M16 25C14.5 22 14.5 18 16 15" stroke={isDark ? '#60A5FA' : '#3B82F6'} strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M28 28C30 24 30 16 28 12" stroke={isDark ? '#38BDF8' : '#2563EB'} strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M24 25C25.5 22 25.5 18 24 15" stroke={isDark ? '#60A5FA' : '#3B82F6'} strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="20" cy="20" r="3.5" fill={isDark ? '#38BDF8' : '#2563EB'} />
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-md transition-colors ${
+            isDark 
+              ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' 
+              : 'bg-blue-600/10 text-blue-600 border border-blue-200'
+          }`}>
+            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4.93 19.07A10 10 0 0 1 4.93 4.93" />
+              <path d="M7.76 16.24a6 6 0 0 1 0-8.48" />
+              <circle cx="12" cy="12" r="2" fill="currentColor" />
+              <path d="M16.24 7.76a6 6 0 0 1 0 8.48" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
             </svg>
-            {activeAlarmsCount > 0 && (
-              <span className="absolute top-0 right-0 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
-              </span>
-            )}
           </div>
-
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className={`text-xl font-black tracking-tight font-sans ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}>
-                SIREN
-              </span>
-              <span className="text-xl font-black text-blue-600 font-sans tracking-tight">
-                UA
-              </span>
-            </div>
-            <div className={`text-[9px] font-bold tracking-[0.18em] uppercase font-sans -mt-0.5 ${
-              isDark ? 'text-slate-400' : 'text-slate-400'
-            }`}>
+          <div className="flex flex-col">
+            <span className={`text-base font-black tracking-wider leading-none ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+              SIREN UA
+            </span>
+            <span className={`text-[9px] font-extrabold tracking-widest mt-0.5 uppercase ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
               НА КРОК ПОПЕРЕДУ
-            </div>
+            </span>
           </div>
         </div>
 
-        {/* Center: Global Navigation Links (Головна, Можливості, Як це працює, Партнерська програма, Тарифи, Про нас) */}
-        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
-          <button
-            onClick={() => handleNavClick('HOME')}
-            className={`relative py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
-              activeSection === 'HOME'
-                ? (isDark ? 'text-white font-bold' : 'text-blue-600 font-bold')
-                : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
-            }`}
-          >
-            <span>Головна</span>
-            {activeSection === 'HOME' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
-            )}
-          </button>
-
-          <button
-            onClick={() => handleNavClick('HOME')}
-            className={`py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
-              isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <span>Можливості</span>
-          </button>
-
-          <button
-            onClick={() => handleNavClick('HOME')}
-            className={`py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
-              isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <span>Як це працює</span>
-          </button>
-
-          <button
-            onClick={() => handleNavClick('NETWORK')}
-            className={`relative py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
-              activeSection === 'NETWORK'
-                ? (isDark ? 'text-white font-bold' : 'text-blue-600 font-bold')
-                : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
-            }`}
-          >
-            <span>Партнерська програма</span>
-            {activeSection === 'NETWORK' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
-            )}
-          </button>
-
-          <button
-            onClick={() => handleNavClick('FINANCE')}
-            className={`relative py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
-              activeSection === 'FINANCE'
-                ? (isDark ? 'text-white font-bold' : 'text-blue-600 font-bold')
-                : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
-            }`}
-          >
-            <span>Тарифи</span>
-            {activeSection === 'FINANCE' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
-            )}
-          </button>
-
-          <button
-            onClick={() => handleNavClick('PROFILE')}
-            className={`relative py-5 text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
-              activeSection === 'PROFILE'
-                ? (isDark ? 'text-white font-bold' : 'text-blue-600 font-bold')
-                : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
-            }`}
-          >
-            <span>Про нас</span>
-            {activeSection === 'PROFILE' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-full" />
-            )}
-          </button>
+        {/* Center: Main Navigation Links */}
+        <nav className="hidden md:flex items-center gap-8">
+          {[
+            { id: 'home', label: 'Головна', section: 'HOME' },
+            { id: 'features', label: 'Можливості', section: 'NETWORK' },
+            { id: 'how', label: 'Як це працює', section: 'HOME' },
+            { id: 'pricing', label: 'Тарифи', section: 'FINANCE' },
+            { id: 'about', label: 'Про нас', section: 'AFFILIATE' },
+          ].map((item) => {
+            const isActive = activeTab === item.id || (item.id === 'home' && activeSection === 'HOME');
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id as any);
+                  handleNavClick(item.section as DashboardSection);
+                }}
+                className={`text-[13.5px] font-semibold transition-colors cursor-pointer py-1 relative ${
+                  isActive
+                    ? (isDark ? 'text-white font-bold' : 'text-[#0F172A] font-bold')
+                    : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-[#5A6A80] hover:text-[#0F172A]')
+                }`}
+              >
+                <span>{item.label}</span>
+                {isActive && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#2563EB] rounded-full" />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Right: Actions (Search pill, Notifications, Profile Capsule, Theme Switcher) */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5">
+        {/* Right: Search, Theme, Notifications, Lang, Profile Capsule */}
+        <div className="flex items-center gap-3">
           
-          {/* Prominent Search Pill (1:1 with screenshots) */}
-          <div className="relative hidden lg:block">
-            <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border transition-all ${
-              isDark 
-                ? 'bg-slate-900/90 border-slate-800 text-slate-300 focus-within:border-blue-500' 
-                : 'bg-slate-100/80 border-slate-200/70 text-slate-700 focus-within:border-blue-500 focus-within:bg-white'
-            }`}>
-              <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
-              <input
-                type="text"
-                placeholder="Пошук..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-xs w-28 lg:w-36 placeholder:text-slate-400"
-              />
-            </div>
+          {/* Search Bar (Capsule) */}
+          <div className="relative hidden lg:flex items-center">
+            <Search className={`w-3.5 h-3.5 absolute left-3.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+            <input
+              type="text"
+              placeholder="Пошук..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`pl-9 pr-3 py-1.5 rounded-full text-[12px] font-medium outline-none transition-all w-36 focus:w-48 ${
+                isDark 
+                  ? 'bg-[#182335] text-white placeholder-slate-400 border border-[#24344D]' 
+                  : 'bg-white/80 text-[#0F172A] placeholder-slate-500 border border-[#CBD6E2]'
+              }`}
+            />
           </div>
 
-          {/* Theme Switcher Toggle (Sun / Moon) */}
+          {/* Theme Switcher Button */}
           {onToggleTheme && (
             <button
               onClick={() => {
                 onToggleTheme();
                 playWebAudioSound('click');
               }}
-              className={`p-2 rounded-full transition-all cursor-pointer ${
+              title="Переключити тему"
+              className={`p-2 rounded-full transition-colors cursor-pointer border ${
                 isDark 
-                  ? 'text-amber-400 hover:bg-slate-800 hover:text-amber-300' 
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                  ? 'bg-[#182335] text-amber-400 border-[#24344D] hover:bg-[#202E46]' 
+                  : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
               }`}
-              title={isDark ? 'Увімкнути світлу тему' : 'Увімкнути темну тему'}
             >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
             </button>
           )}
 
-          {/* Notifications with red counter badge "3" */}
+          {/* Notifications Icon with Red Badge */}
           <div className="relative">
             <button
               onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className={`p-2 rounded-full transition-colors relative cursor-pointer ${
+              className={`p-2 rounded-full relative transition-colors cursor-pointer border ${
                 isDark 
-                  ? 'text-slate-300 hover:text-white hover:bg-slate-800' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-[#182335] text-slate-300 border-[#24344D] hover:bg-[#202E46]' 
+                  : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
               }`}
-              title="Сповіщення"
             >
               <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center shadow-xs">
+              <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[8.5px] font-black flex items-center justify-center border border-white dark:border-[#0D131F]">
                 3
               </span>
             </button>
 
-            {/* Notifications Dropdown */}
             {notificationsOpen && (
-              <div className={`absolute right-0 mt-2 w-80 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150 ${
-                isDark 
-                  ? 'bg-slate-900 border border-slate-700 text-white shadow-black/80' 
-                  : 'bg-white border border-slate-100 text-slate-900 shadow-xl'
+              <div className={`absolute right-0 mt-2 w-72 rounded-2xl shadow-xl p-3 z-50 ${
+                isDark ? 'bg-[#131C2B] border border-[#24344D] text-white' : 'bg-white border border-[#CBD6E2] text-[#0F172A]'
               }`}>
-                <div className={`flex items-center justify-between pb-2 mb-2 border-b ${
-                  isDark ? 'border-slate-800' : 'border-slate-100'
-                }`}>
-                  <span className="text-xs font-bold">Сповіщення безпеки</span>
-                  <span className="text-[10px] text-blue-500 font-bold cursor-pointer">Прочитати всі</span>
-                </div>
-                <div className="space-y-2.5">
-                  <div className={`p-2.5 rounded-xl border flex items-start gap-2.5 ${
-                    isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-rose-50/50 border-rose-100'
-                  }`}>
-                    <ShieldAlert className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
+                <div className="text-[11px] font-bold mb-2 px-1">Сповіщення системи</div>
+                <div className="space-y-1">
+                  <div className={`p-2 rounded-xl flex items-start gap-2.5 ${isDark ? 'hover:bg-[#1C293E]' : 'hover:bg-slate-50'}`}>
+                    <ShieldAlert className="w-3.5 h-3.5 text-rose-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <div className="text-xs font-bold">Загроза БпЛА (Київщина)</div>
-                      <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        Зафіксовано рух у південно-західному напрямку
-                      </div>
-                    </div>
-                  </div>
-                  <div className={`p-2.5 rounded-xl border flex items-start gap-2.5 ${
-                    isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-blue-50/50 border-blue-100'
-                  }`}>
-                    <TrendingUp className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-bold">Нарахування ₴ 540</div>
-                      <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        Комісія з продажу від партнера L1 (Марія К.)
-                      </div>
+                      <div className="text-[12px] font-semibold">Київська область</div>
+                      <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Відбій загроз о 22:14</div>
                     </div>
                   </div>
                 </div>
@@ -274,17 +175,26 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* User Profile Capsule (Олександр | Gold Partner) */}
+          {/* Language Selector Dropdown */}
+          <button className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer transition-colors border ${
+            isDark 
+              ? 'bg-[#182335] text-slate-300 border-[#24344D] hover:bg-[#202E46]' 
+              : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
+          }`}>
+            <span>{lang}</span>
+            <ChevronDown className="w-3 h-3 text-slate-400" />
+          </button>
+
+          {/* Profile Capsule (Matches screenshots: Photo + Олександр + Gold Partner badge) */}
           <div 
             onClick={() => handleNavClick('PROFILE')}
-            className={`flex items-center gap-2.5 pl-1.5 pr-2.5 py-1 rounded-full border transition-all cursor-pointer group ${
+            className={`flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full cursor-pointer border transition-all ${
               isDark 
-                ? 'bg-slate-900/90 hover:bg-slate-800 border-slate-800 text-white' 
-                : 'bg-white hover:bg-slate-50 border-slate-200/70 text-slate-800 shadow-xs'
+                ? 'bg-[#182335] border-[#24344D] hover:bg-[#202E46] text-white' 
+                : 'bg-white/90 border-[#CBD6E2] hover:bg-white text-[#0F172A] shadow-sm'
             }`}
           >
-            {/* Avatar */}
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-blue-500/40 relative flex-shrink-0">
+            <div className="w-7 h-7 rounded-full overflow-hidden bg-blue-500 flex-shrink-0 border border-amber-400/60">
               <img 
                 src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" 
                 alt="Олександр"
@@ -292,26 +202,20 @@ export const Header: React.FC<HeaderProps> = ({
                 referrerPolicy="no-referrer"
               />
             </div>
-
-            {/* Name and Rank */}
-            <div className="hidden sm:flex flex-col text-left">
-              <span className={`text-xs font-bold leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div className="flex flex-col text-left">
+              <span className={`text-[11.5px] font-bold leading-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
                 Олександр
               </span>
-              <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1 leading-none mt-0.5">
-                <span>👑</span>
-                <span>Gold Partner</span>
+              <span className="text-[9px] font-extrabold text-amber-500 flex items-center gap-0.5 leading-none mt-0.5">
+                <Star className="w-2.5 h-2.5 fill-amber-500" /> Gold Partner
               </span>
             </div>
-
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform group-hover:translate-y-0.5 ${
-              isDark ? 'text-slate-400' : 'text-slate-400'
-            }`} />
+            <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
           </div>
 
         </div>
-
       </div>
     </header>
   );
 };
+

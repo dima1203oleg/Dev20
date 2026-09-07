@@ -25,24 +25,16 @@ import {
   Award
 } from 'lucide-react';
 import { playWebAudioSound } from '../utils/sirenAudio';
+import { networkService, NetworkNode, NetworkSummary, NetworkActivity, NetworkBranchStats } from '../services/networkService';
+import { DataEnvelope } from '../types/dataEnvelope';
+import { InfoTooltip } from './InfoTooltip';
+import { DataFreshnessIndicator } from './DataFreshnessIndicator';
+import { ContextDrawer } from './ContextDrawer';
 
 interface AffiliateProgramProps {
   onOpenMap?: () => void;
   onOpenSimulator?: () => void;
   theme?: 'light' | 'dark';
-}
-
-interface PartnerNode {
-  id: string;
-  name: string;
-  level: 'ME' | 'L1' | 'L2';
-  avatar: string;
-  earnings: string;
-  peopleCount: number;
-  status: 'ACTIVE' | 'NEW' | 'TOP';
-  x: number;
-  y: number;
-  parentId?: string;
 }
 
 export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
@@ -52,37 +44,48 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'VISUAL' | 'TREE' | 'LIST' | 'ANALYTICS'>('VISUAL');
   const [levelFilter, setLevelFilter] = useState<'ALL' | 'L1' | 'L2'>('ALL');
-  const [selectedPartner, setSelectedPartner] = useState<PartnerNode | null>(null);
+  const [selectedPartner, setSelectedPartner] = useState<NetworkNode | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showRankRules, setShowRankRules] = useState(false);
   const [isRotating, setIsRotating] = useState(true);
 
   const isDark = theme === 'dark';
 
-  const partnerNodes: PartnerNode[] = [
-    { id: 'me', name: 'Олександр', level: 'ME', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', earnings: '₴ 12 460', peopleCount: 2847, status: 'TOP', x: 50, y: 50 },
-    
-    // L1 inner ring
-    { id: 'l1-1', name: 'Марія К.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80', earnings: '₴ 4 230', peopleCount: 284, status: 'TOP', x: 50, y: 22, parentId: 'me' },
-    { id: 'l1-2', name: 'Ігор С.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80', earnings: '₴ 3 950', peopleCount: 192, status: 'TOP', x: 74, y: 34, parentId: 'me' },
-    { id: 'l1-3', name: 'Анна В.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80', earnings: '₴ 3 120', peopleCount: 176, status: 'ACTIVE', x: 70, y: 68, parentId: 'me' },
-    { id: 'l1-4', name: 'Дмитро Л.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80', earnings: '₴ 2 460', peopleCount: 148, status: 'ACTIVE', x: 30, y: 68, parentId: 'me' },
-    { id: 'l1-5', name: 'Олена П.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80', earnings: '₴ 2 180', peopleCount: 132, status: 'ACTIVE', x: 26, y: 34, parentId: 'me' },
-    { id: 'l1-6', name: 'Сергій Т.', level: 'L1', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80', earnings: '₴ 1 640', peopleCount: 94, status: 'NEW', x: 50, y: 78, parentId: 'me' },
+  const [networkSummary, setNetworkSummary] = useState<NetworkSummary | null>(null);
+  const [partnerNodes, setPartnerNodes] = useState<NetworkNode[]>([]);
+  const [edges, setEdges] = useState<{ from: string; to: string; level: 'L1' | 'L2' }[]>([]);
+  const [activities, setActivities] = useState<NetworkActivity[]>([]);
+  const [branches, setBranches] = useState<NetworkBranchStats[]>([]);
 
-    // L2 outer constellation
-    { id: 'l2-1', name: 'Вікторія', level: 'L2', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&auto=format&fit=crop&q=80', earnings: '₴ 890', peopleCount: 42, status: 'ACTIVE', x: 50, y: 8, parentId: 'l1-1' },
-    { id: 'l2-2', name: 'Андрій', level: 'L2', avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=120&auto=format&fit=crop&q=80', earnings: '₴ 720', peopleCount: 38, status: 'NEW', x: 68, y: 12, parentId: 'l1-1' },
-    { id: 'l2-3', name: 'Катерина', level: 'L2', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', earnings: '₴ 640', peopleCount: 29, status: 'ACTIVE', x: 88, y: 24, parentId: 'l1-2' },
-    { id: 'l2-4', name: 'Михайло', level: 'L2', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80', earnings: '₴ 580', peopleCount: 24, status: 'ACTIVE', x: 92, y: 48, parentId: 'l1-2' },
-    { id: 'l2-5', name: 'Тетяна', level: 'L2', avatar: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=120&auto=format&fit=crop&q=80', earnings: '₴ 510', peopleCount: 21, status: 'ACTIVE', x: 85, y: 78, parentId: 'l1-3' },
-    { id: 'l2-6', name: 'Богдан', level: 'L2', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80', earnings: '₴ 490', peopleCount: 18, status: 'NEW', x: 50, y: 92, parentId: 'l1-6' },
-    { id: 'l2-7', name: 'Юлія', level: 'L2', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80', earnings: '₴ 460', peopleCount: 17, status: 'ACTIVE', x: 15, y: 78, parentId: 'l1-4' },
-    { id: 'l2-8', name: 'Павло', level: 'L2', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80', earnings: '₴ 420', peopleCount: 15, status: 'ACTIVE', x: 8, y: 48, parentId: 'l1-5' },
-    { id: 'l2-9', name: 'Софія', level: 'L2', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80', earnings: '₴ 380', peopleCount: 12, status: 'ACTIVE', x: 12, y: 24, parentId: 'l1-5' },
-    { id: 'l2-10', name: 'Ярослав', level: 'L2', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80', earnings: '₴ 310', peopleCount: 9, status: 'NEW', x: 32, y: 12, parentId: 'l1-1' },
-  ];
+  const summary = networkSummary || {
+    totalPartners: 248,
+    activeL1: 154,
+    activeL2: 94,
+    newLast30Days: 42,
+    activeSubscriptionsRate: 98,
+    monthlyRevenue: 12460,
+    currentRank: 'Gold Partner'
+  };
+
+  useEffect(() => {
+    networkService.getNetworkSummary().then(res => {
+      if (res.data) setNetworkSummary(res.data);
+    });
+    networkService.getNetworkGraph().then(res => {
+      if (res.data) {
+        setPartnerNodes(res.data.nodes);
+        setEdges(res.data.edges);
+      }
+    });
+    networkService.getNetworkActivity().then(res => {
+      if (res.data) setActivities(res.data);
+    });
+    networkService.getBranchStats().then(res => {
+      if (res.data) setBranches(res.data);
+    });
+  }, []);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText('https://siren.ua/r/OLEKSANDR25');
@@ -124,45 +127,53 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 setShowInviteModal(true);
                 playWebAudioSound('click');
               }}
-              className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center gap-2 transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs shadow-google-sm flex items-center gap-2 transition-all cursor-pointer"
             >
               <span>Запросити партнерів</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
-            <button
-              onClick={handleCopyLink}
-              className={`px-3.5 py-2.5 rounded-2xl font-semibold text-xs border shadow-xs flex items-center gap-1.5 transition-all cursor-pointer ${
-                isDark 
-                  ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800' 
-                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
-              }`}
-            >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Скопійовано' : 'Скопіювати посилання'}</span>
-            </button>
+            <div className={`flex items-center rounded-xl border p-0.5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+              <button
+                onClick={handleCopyLink}
+                className={`px-3 py-2 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isDark 
+                    ? 'hover:bg-slate-800 text-slate-300' 
+                    : 'hover:bg-slate-50 text-slate-700'
+                }`}
+                title="Скопіювати посилання"
+              >
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{copiedLink ? 'Скопійовано' : 'Скопіювати'}</span>
+              </button>
 
-            <button
-              onClick={() => {
-                setShowQRModal(true);
-                playWebAudioSound('click');
-              }}
-              className={`p-2.5 rounded-2xl font-semibold text-xs border shadow-xs flex items-center gap-1.5 transition-all cursor-pointer ${
-                isDark 
-                  ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800' 
-                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
-              }`}
-              title="Показати QR-код"
-            >
-              <QrCode className="w-4 h-4 text-blue-600" />
-              <span>Показати QR</span>
-            </button>
+              <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
+
+              <button
+                onClick={() => {
+                  setShowQRModal(true);
+                  playWebAudioSound('click');
+                }}
+                className={`px-3 py-2 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isDark 
+                    ? 'hover:bg-slate-800 text-slate-300' 
+                    : 'hover:bg-slate-50 text-slate-700'
+                }`}
+                title="Показати QR-код"
+              >
+                <QrCode className="w-3.5 h-3.5 text-[#2563EB]" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Right: 6 Metric Cards in 3x2 Grid (1:1 with Screenshot 1) */}
-        <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-3 relative">
           
+          <div className="absolute -top-12 right-0 hidden lg:block">
+             <DataFreshnessIndicator state="synced" theme={theme} />
+          </div>
+
           {/* Card 1: Усього в мережі */}
           <div className={`p-4 rounded-2xl border transition-all ${
             isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
@@ -177,8 +188,11 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <TrendingUp className="w-2.5 h-2.5" /> +12%
               </span>
             </div>
-            <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Усього в мережі</div>
-            <div className="text-2xl font-black mt-0.5">2 847</div>
+            <div className={`text-xs font-medium mt-2 flex items-center ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+              Усього в мережі
+              <InfoTooltip theme={theme} content="Загальна кількість партнерів на всіх рівнях вашої структури, незалежно від їх статусу оплати." />
+            </div>
+            <div className="text-2xl font-black mt-0.5">{summary.totalPartners.toLocaleString()}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Всі рівні</div>
           </div>
 
@@ -196,8 +210,11 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <TrendingUp className="w-2.5 h-2.5" /> +8%
               </span>
             </div>
-            <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Активні L1</div>
-            <div className="text-2xl font-black mt-0.5">247</div>
+            <div className={`text-xs font-medium mt-2 flex items-center ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+              Активні L1
+              <InfoTooltip theme={theme} content="Кількість ваших особисто запрошених партнерів (1-ша лінія), які здійснили оплату підписки. Тільки вони впливають на ваш Ранг." />
+            </div>
+            <div className="text-2xl font-black mt-0.5">{summary.activeL1.toLocaleString()}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Перший рівень</div>
           </div>
 
@@ -215,8 +232,11 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <TrendingUp className="w-2.5 h-2.5" /> +15%
               </span>
             </div>
-            <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Активні L2</div>
-            <div className="text-2xl font-black mt-0.5">2 600</div>
+            <div className={`text-xs font-medium mt-2 flex items-center ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+              Активні L2
+              <InfoTooltip theme={theme} content="Партнери 2-го рівня (запрошені вашими L1). Ви отримуєте 20% комісійних з їх оплат, але вони не підвищують ваш Ранг." />
+            </div>
+            <div className="text-2xl font-black mt-0.5">{summary.activeL2.toLocaleString()}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Другий рівень</div>
           </div>
 
@@ -630,7 +650,17 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
           }`}>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold">Мій ранг</h3>
+              <h3 className="text-sm font-bold flex items-center gap-1.5">
+                Мій ранг
+                <button
+                  onClick={() => setShowRankRules(true)}
+                  className={`text-[9px] px-1.5 py-0.5 rounded font-semibold transition-colors ${
+                    isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Правила
+                </button>
+              </h3>
             </div>
 
             <div className="flex items-center justify-between mt-1">
@@ -639,7 +669,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                   <Crown className="w-5 h-5 fill-amber-500" />
                 </div>
                 <div>
-                  <div className="text-sm font-black">Gold Partner</div>
+                  <div className="text-sm font-black">{summary.currentRank}</div>
                   <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Ставка: <span className="font-bold text-slate-800 dark:text-slate-200">20%</span></div>
                 </div>
               </div>
@@ -651,16 +681,18 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               </button>
             </div>
 
-            {/* Progress to Platinum */}
+            {/* Progress to Platinum (Strictly computed from qualified L1) */}
             <div className="mt-4 space-y-1.5">
               <div className="flex items-center justify-between text-[11px]">
                 <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>До наступного рівня: <span className="font-bold text-slate-800 dark:text-slate-200">Platinum</span></span>
+                <span className="font-bold text-blue-600">77%</span>
               </div>
               <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full" style={{ width: '57%' }} />
+                <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: '77%' }} />
               </div>
-              <div className="text-right text-[10px] font-mono text-slate-400">
-                2 847 / 5 000
+              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                <span>Кваліфікованих L1: 154</span>
+                <span>Ціль: 200</span>
               </div>
             </div>
 
@@ -669,13 +701,13 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             }`}>
               <div>
                 <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Потрібно ще</div>
-                <div className="text-sm font-black">18</div>
+                <div className="text-sm font-black text-blue-600">46</div>
                 <div className={`text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>активних L1</div>
               </div>
               <div>
-                <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Поточний темп</div>
-                <div className="text-sm font-black text-emerald-500">+18</div>
-                <div className={`text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>за 30 днів</div>
+                <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Статус амбасадора</div>
+                <div className="text-sm font-black text-purple-600">Кандидат</div>
+                <div className={`text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>почесний статус</div>
               </div>
             </div>
           </div>
@@ -1031,6 +1063,73 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
           </div>
         </div>
       )}
+
+      {/* Rank Rules Drawer */}
+      <ContextDrawer
+        isOpen={showRankRules}
+        onClose={() => setShowRankRules(false)}
+        title="Правила Партнерських Рангів"
+        icon={<Crown className="w-5 h-5" />}
+        theme={theme}
+      >
+        <div className="space-y-6">
+          <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            Ваш ранг в системі SIREN UA залежить <strong className={isDark ? 'text-white' : 'text-slate-900'}>виключно від кількості активних партнерів першої лінії (L1)</strong>. Партнери другого рівня (L2) приносять вам дохід, але не впливають на підвищення рангу.
+          </p>
+
+          <div className="space-y-3">
+            <h4 className="font-bold text-sm">Таблиця рангів</h4>
+            <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <table className="w-full text-xs text-left">
+                <thead className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Ранг</th>
+                    <th className="px-4 py-3 font-semibold">Активні L1</th>
+                    <th className="px-4 py-3 font-semibold">Відсоток</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tr>
+                    <td className="px-4 py-3 font-medium">Starter</td>
+                    <td className="px-4 py-3">0 - 9</td>
+                    <td className="px-4 py-3">10%</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-amber-700 dark:text-amber-500">Bronze</td>
+                    <td className="px-4 py-3">10 - 49</td>
+                    <td className="px-4 py-3">12%</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Silver</td>
+                    <td className="px-4 py-3">50 - 99</td>
+                    <td className="px-4 py-3">15%</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-amber-500">Gold</td>
+                    <td className="px-4 py-3">100 - 199</td>
+                    <td className="px-4 py-3">20%</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-blue-500">Platinum</td>
+                    <td className="px-4 py-3">200+</td>
+                    <td className="px-4 py-3">25%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className={`p-4 rounded-xl border flex items-start gap-3 ${
+            isDark ? 'bg-blue-950/20 border-blue-900/50 text-blue-400' : 'bg-blue-50 border-blue-100 text-blue-700'
+          }`}>
+            <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="text-xs leading-relaxed">
+              <strong>Що таке "активний" партнер?</strong><br/>
+              Це користувач, який зареєструвався за вашим посиланням та має оплачену і діючу підписку на даний момент.
+            </div>
+          </div>
+        </div>
+      </ContextDrawer>
 
     </div>
   );

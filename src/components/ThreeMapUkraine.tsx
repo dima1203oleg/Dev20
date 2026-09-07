@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
-import { RegionData } from '../types';
+import { RegionData, ThreatTrajectory } from '../types';
 import { INITIAL_REGIONS } from '../data/ukraineMapData';
+import { INITIAL_TRAJECTORIES } from '../data/spatialThreatData';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -13,6 +14,7 @@ interface ThreeMapUkraineProps {
   variant?: 'hero' | 'workspace' | 'full';
   theme?: 'light' | 'dark';
   regions?: RegionData[];
+  trajectories?: ThreatTrajectory[];
   selectedRegionId?: string | null;
   onSelectRegion?: (region: RegionData) => void;
   activeThreatCount?: number;
@@ -78,6 +80,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
   variant = 'hero',
   theme = 'light',
   regions = INITIAL_REGIONS,
+  trajectories = INITIAL_TRAJECTORIES,
   selectedRegionId = null,
   onSelectRegion,
   activeThreatCount = 3,
@@ -267,7 +270,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
 
     regionMeshesRef.current = regionMeshes;
 
-    // 6. Dynamic Radar Wave Rings over Alert Regions
+    // 6. Dynamic Radar Wave Rings over Alarm Regions (Derived from live/cached regions)
     const radarRings: { mesh: THREE.Mesh; speed: number; maxScale: number }[] = [];
 
     const createRadarWave = (center: [number, number], color: number, maxScale: number, speed: number) => {
@@ -289,28 +292,25 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
       radarRings.push({ mesh: ringMesh, speed, maxScale });
     };
 
-    // Alert wave over Kyiv (threat active)
-    createRadarWave([450, 155], isDark ? 0xf87171 : 0xef4444, 4.5, 0.04);
-    createRadarWave([450, 155], isDark ? 0xfca5a5 : 0xf87171, 7.0, 0.025);
+    // Dynamically spawn radar rings for all active alarm regions
+    const alarmedRegionsList = regions.filter(r => r.isAlarm);
+    if (alarmedRegionsList.length > 0) {
+      alarmedRegionsList.forEach((r, idx) => {
+        const isCritical = r.threatType === 'ballistic' || r.threatType === 'missile';
+        const color = isCritical 
+          ? (isDark ? 0xf87171 : 0xef4444) 
+          : (isDark ? 0xfb923c : 0xf59e0b);
+        createRadarWave(r.center, color, 4.5 + (idx % 2) * 1.5, 0.035 + (idx % 3) * 0.005);
+      });
+    } else {
+      // Baseline status ping when all clear
+      createRadarWave([450, 155], isDark ? 0x38bdf8 : 0x3b82f6, 4.0, 0.025);
+    }
 
-    // Alert wave over Kharkiv
-    createRadarWave([770, 205], isDark ? 0xf87171 : 0xef4444, 4.0, 0.035);
-
-    // Alert wave over Dnipro
-    createRadarWave([710, 315], isDark ? 0xf87171 : 0xef4444, 5.0, 0.038);
-
-    // 7. 3D Trajectory Curved Light Arcs between key nodes
-    const city3DCoords: { [key: string]: THREE.Vector3 } = {
-      kyiv: new THREE.Vector3((450 - 500) * 0.042, 2.4, (155 - 330) * 0.042),
-      kharkiv: new THREE.Vector3((770 - 500) * 0.042, 2.4, (205 - 330) * 0.042),
-      dnipro: new THREE.Vector3((710 - 500) * 0.042, 2.4, (315 - 330) * 0.042),
-      odesa: new THREE.Vector3((450 - 500) * 0.042, 2.4, (440 - 330) * 0.042),
-      lviv: new THREE.Vector3((95 - 500) * 0.042, 2.4, (205 - 330) * 0.042),
-    };
-
+    // 7. 3D Trajectory Curved Light Arcs between key threat vectors
     const createArc = (p1: THREE.Vector3, p2: THREE.Vector3, color: number) => {
       const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-      mid.y += 5.5; // Elevated arc
+      mid.y += 4.5; // Elevated arc
       const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
       const points = curve.getPoints(40);
       const arcGeo = new THREE.BufferGeometry().setFromPoints(points);
@@ -327,12 +327,38 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
       mapGroup.add(arcLine);
     };
 
-    // Neon arcs (orange and cyan in dark mode, matching image IMG_8325.jpeg!)
-    createArc(city3DCoords.kyiv, city3DCoords.kharkiv, isDark ? 0x38bdf8 : 0x3b82f6);
-    createArc(city3DCoords.kharkiv, city3DCoords.dnipro, isDark ? 0xfb923c : 0xf59e0b);
-    createArc(city3DCoords.dnipro, city3DCoords.odesa, isDark ? 0xf87171 : 0xef4444);
-    createArc(city3DCoords.kyiv, city3DCoords.odesa, isDark ? 0x60a5fa : 0x60a5fa);
-    createArc(city3DCoords.lviv, city3DCoords.kyiv, isDark ? 0xfb923c : 0x3b82f6);
+    // Render 3D arcs dynamically from active trajectories or regional interconnections
+    if (trajectories && trajectories.length > 0) {
+      trajectories.forEach(traj => {
+        const targetRegionObj = regions.find(r => r.id === traj.targetRegion);
+        if (targetRegionObj) {
+          const targetPos = new THREE.Vector3(
+            (targetRegionObj.center[0] - 500) * 0.042,
+            2.4,
+            (targetRegionObj.center[1] - 330) * 0.042
+          );
+          // Calculate origin offset based on threat angle or default entry point
+          const originPos = new THREE.Vector3(
+            targetPos.x + (traj.threatType === 'ballistic' ? 6 : -5),
+            2.4,
+            targetPos.z + (traj.threatType === 'ballistic' ? -6 : -4)
+          );
+          const arcColor = traj.threatType === 'ballistic' 
+            ? (isDark ? 0xf43f5e : 0xe11d48) 
+            : traj.threatType === 'missile'
+              ? (isDark ? 0xfb923c : 0xf59e0b)
+              : (isDark ? 0x38bdf8 : 0x0284c7);
+          createArc(originPos, targetPos, arcColor);
+        }
+      });
+    } else {
+      // Standard regional safety network links
+      const kyivPos = new THREE.Vector3((450 - 500) * 0.042, 2.4, (155 - 330) * 0.042);
+      const odesaPos = new THREE.Vector3((450 - 500) * 0.042, 2.4, (440 - 330) * 0.042);
+      const lvivPos = new THREE.Vector3((95 - 500) * 0.042, 2.4, (205 - 330) * 0.042);
+      createArc(kyivPos, odesaPos, isDark ? 0x38bdf8 : 0x3b82f6);
+      createArc(lvivPos, kyivPos, isDark ? 0x60a5fa : 0x60a5fa);
+    }
 
     // 8. Raycasting Mouse Interactivity (Hover & Click detection on individual Oblasts)
     const raycaster = new THREE.Raycaster();

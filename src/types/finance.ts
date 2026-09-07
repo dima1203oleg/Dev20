@@ -1,8 +1,65 @@
 // Financial Types & ViewModels for SIREN UA DEV20
+import { DataState } from './dataEnvelope';
 
 export type Money = number;
 
-export type FinancialDataStatus = 'SUCCESS' | 'LOADING' | 'STALE' | 'ERROR';
+export type FinancialDataStatus = DataState;
+
+export type PayoutLifecycleStatus = 
+  | 'REQUESTED' 
+  | 'VALIDATING' 
+  | 'KYC_CHECK' 
+  | 'RISK_CHECK' 
+  | 'LOCKED_FOR_PAYOUT' 
+  | 'PROCESSING' 
+  | 'PAID' 
+  | 'REJECTED' 
+  | 'FAILED';
+
+export interface PayoutTransaction {
+  id: string;
+  amount: Money;
+  fee: Money;
+  netAmount: Money;
+  currency: 'UAH' | 'USDT';
+  method: 'MONOBANK' | 'PRIVATBANK' | 'IBAN' | 'USDT_TRC20';
+  targetAccount: string;
+  targetAccountMasked: string;
+  requestedAt: string;
+  completedAt?: string;
+  status: PayoutLifecycleStatus;
+  statusStepIndex: number;
+  auditTrail: {
+    step: string;
+    timestamp: string;
+    status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING' | 'REJECTED';
+  }[];
+}
+
+export interface LedgerTransaction {
+  id: string;
+  type: 'COMMISSION_L1' | 'COMMISSION_L2' | 'PAYOUT_WITHDRAWAL' | 'BONUS_LEADER' | 'ADJUSTMENT';
+  description: string;
+  amount: Money;
+  direction: 'CREDIT' | 'DEBIT';
+  timestamp: string;
+  partnerName?: string;
+  partnerLevel?: 'L1' | 'L2';
+  referenceId?: string;
+  balanceAfter: Money;
+}
+
+export interface PayoutMethodConfig {
+  id: string;
+  type: 'MONOBANK' | 'PRIVATBANK' | 'IBAN' | 'USDT_TRC20';
+  title: string;
+  account: string;
+  accountMasked: string;
+  feePercent: number;
+  fixedFeeUah: number;
+  isDefault: boolean;
+  minAmountUah: number;
+}
 
 export interface PartnerFinancialSummary {
   totalBalance: Money;

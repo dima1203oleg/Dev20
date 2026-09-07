@@ -38,6 +38,9 @@ import {
 } from 'lucide-react';
 import { playWebAudioSound } from '../utils/sirenAudio';
 
+import { InfoTooltip } from './InfoTooltip';
+import { ContextDrawer } from './ContextDrawer';
+
 interface ProfileSectionProps {
   theme?: 'light' | 'dark';
 }
@@ -145,11 +148,14 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           <div className="space-y-1.5 text-center sm:text-left text-xs">
             <div className="flex items-center justify-center sm:justify-start gap-1.5">
               <h2 className="text-xl font-black">{`Олександр Кравчук`}</h2>
-              <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500 text-white" />
+              <InfoTooltip text="Верифікований користувач із підтвердженою особою (KYC).">
+                <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500 text-white" />
+              </InfoTooltip>
             </div>
             
-            <div className={`text-[11px] font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <div className={`text-[11px] font-mono flex items-center justify-center sm:justify-start gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Partner ID: <span className="font-bold text-blue-600">SRN-125678</span>
+              <InfoTooltip text="Ваш унікальний ідентифікатор у мережі SIREN UA. Використовується для реферальних нарахувань та служби підтримки." />
             </div>
 
             <div className={`space-y-1 pt-1 text-slate-600 dark:text-slate-300 text-[11px]`}>
@@ -384,7 +390,10 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Share2 className="w-4 h-4 text-blue-600" />
-                <h3 className="text-sm font-bold">Реферальні інструменти</h3>
+                <h3 className="text-sm font-bold flex items-center gap-1.5">
+                  Реферальні інструменти
+                  <InfoTooltip text="Використовуйте код або посилання для запрошення нових користувачів. Вони стануть вашими партнерами L1." />
+                </h3>
               </div>
               <button 
                 onClick={handleCopyLink}
@@ -577,7 +586,10 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <span className="font-semibold">Оновлено 12 днів тому</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
-                <span className="text-slate-400">Двофакторна автентифікація (2FA)</span>
+                <span className="text-slate-400 flex items-center gap-1">
+                  Двофакторна автентифікація (2FA)
+                  <InfoTooltip text="Захист вашого акаунта. Під час входу потрібно буде ввести код із додатка Google Authenticator." />
+                </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
                   Увімкнено
                 </span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wallet, 
   TrendingUp, 
@@ -21,9 +21,27 @@ import {
   Lock,
   Zap,
   MoreVertical,
-  Check
+  Check,
+  Loader2,
+  Info
 } from 'lucide-react';
 import { playWebAudioSound } from '../utils/sirenAudio';
+import { 
+  financialService, 
+  mapSummaryToViewModel,
+  DEFAULT_FINANCIAL_SUMMARY 
+} from '../services/financialService';
+import { 
+  PartnerFinancialSummary, 
+  LedgerTransaction, 
+  PayoutMethodConfig, 
+  PayoutTransaction,
+  PayoutLifecycleStatus 
+} from '../types/finance';
+import { calculateRankByL1, getNextTierInfo } from '../services/referralEngine';
+import { DataFreshnessIndicator } from './DataFreshnessIndicator';
+import { ContextDrawer } from './ContextDrawer';
+import { InfoTooltip } from './InfoTooltip';
 
 interface FinanceSectionProps {
   onOpenWithdrawModal?: () => void;
@@ -39,19 +57,79 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
   const [selectedPeriod, setSelectedPeriod] = useState('8months');
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState('8460');
+  const [showFaqDrawer, setShowFaqDrawer] = useState(false);
+  const [summary, setSummary] = useState<PartnerFinancialSummary>(DEFAULT_FINANCIAL_SUMMARY);
+  const [ledger, setLedger] = useState<LedgerTransaction[]>(() => financialService.getLedgerTransactions());
+  const [payoutMethods, setPayoutMethods] = useState<PayoutMethodConfig[]>(() => financialService.getPayoutMethods());
+  const [selectedMethodId, setSelectedMethodId] = useState<string>(() => financialService.getPayoutMethods()[0]?.id || 'pm-1');
+  const [withdrawAmount, setWithdrawAmount] = useState('4230');
+  
+  // Withdrawal Lifecycle state
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentStepName, setCurrentStepName] = useState<string>('');
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  const [completedTransaction, setCompletedTransaction] = useState<PayoutTransaction | null>(null);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
   const isDark = theme === 'dark';
 
-  const handleWithdraw = (e: React.FormEvent) => {
+  useEffect(() => {
+    financialService.getPartnerFinancialSummary().then((res) => {
+      if (res.data) {
+        setSummary(res.data);
+        setWithdrawAmount(String(res.data.availableBalance));
+      }
+    });
+    setLedger(financialService.getLedgerTransactions());
+    setPayoutMethods(financialService.getPayoutMethods());
+  }, []);
+
+  const selectedMethod = payoutMethods.find(m => m.id === selectedMethodId) || payoutMethods[0];
+  const calculatedFee = selectedMethod?.feePercent > 0 
+    ? Math.round((Number(withdrawAmount || 0) * selectedMethod.feePercent) / 100)
+    : (selectedMethod?.fixedFeeUah || 0);
+  const netWithdraw = Math.max(0, Number(withdrawAmount || 0) - calculatedFee);
+
+  const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
-    setWithdrawSuccess(true);
+    const amount = Number(withdrawAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    setIsProcessing(true);
+    setWithdrawError(null);
     playWebAudioSound('click');
-    setTimeout(() => {
-      setWithdrawSuccess(false);
-      setShowWithdrawModal(false);
-    }, 2000);
+
+    const result = await financialService.executeWithdrawal(amount, selectedMethodId, (stepName, status, stepIdx) => {
+      setCurrentStepName(stepName);
+      setCurrentStepIndex(stepIdx);
+    });
+
+    setIsProcessing(false);
+
+    if (result.success && result.transaction) {
+      setCompletedTransaction(result.transaction);
+      setSummary(prev => ({
+        ...prev,
+        availableBalance: prev.availableBalance - amount,
+        totalBalance: prev.totalBalance - amount,
+        lifetimePaid: prev.lifetimePaid + amount,
+      }));
+      setLedger(financialService.getLedgerTransactions());
+      setWithdrawSuccess(true);
+      playWebAudioSound('ping');
+    } else {
+      setWithdrawError(result.error || 'Не вдалося виконати виведення коштів');
+      playWebAudioSound('alert');
+    }
+  };
+
+  const closeWithdrawModal = () => {
+    setShowWithdrawModal(false);
+    setCompletedTransaction(null);
+    setCurrentStepName('');
+    setCurrentStepIndex(0);
+    setWithdrawError(null);
   };
 
   return (
@@ -85,18 +163,19 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
-            <div className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border ${
+            <button 
+              onClick={() => setShowFaqDrawer(true)}
+              className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Як працюють фінанси?</span>
+            </button>
+
+            <div className={`hidden sm:flex px-3 py-1.5 rounded-full text-xs font-semibold items-center gap-1.5 border ${
               isDark ? 'bg-slate-900/80 border-slate-800 text-slate-300' : 'bg-white/80 border-slate-200 text-slate-700'
             }`}>
               <span>🖤</span>
               <span>Твій внесок у безпеку</span>
-            </div>
-
-            <div className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border ${
-              isDark ? 'bg-slate-900/80 border-slate-800 text-slate-300' : 'bg-white/80 border-slate-200 text-slate-700'
-            }`}>
-              <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
-              <span>Більше користувачів — Більше можливостей</span>
             </div>
           </div>
         </div>
@@ -104,6 +183,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
         {/* Right: 3D Holographic Leather Wallet + Gold Coin Stack + Ukraine Shield Graphic (1:1 with Screenshot 4) */}
         <div className="relative w-72 h-52 flex items-center justify-center flex-shrink-0 select-none">
           
+          <div className="absolute -top-4 -right-4 hidden lg:block z-20">
+            <DataFreshnessIndicator state="synced" theme={theme} />
+          </div>
+
           {/* Ambient Glow */}
           <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
 
@@ -184,11 +267,11 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               <DollarSign className="w-5 h-5" />
             </div>
             <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> +12%
+              <TrendingUp className="w-3 h-3" /> +{summary.totalBalance > 0 ? '12%' : '0%'}
             </span>
           </div>
           <div className={`text-xs font-medium mt-3 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Зароблено всього</div>
-          <div className="text-2xl sm:text-3xl font-black mt-0.5">₴ 12 460</div>
+          <div className="text-2xl sm:text-3xl font-black mt-0.5">₴ {summary.totalBalance.toLocaleString()}</div>
           <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>З моменту реєстрації</div>
         </div>
 
@@ -204,7 +287,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             </div>
           </div>
           <div className={`text-xs font-medium mt-3 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Баланс</div>
-          <div className="text-2xl sm:text-3xl font-black mt-0.5 text-blue-600">₴ 8 460</div>
+          <div className="text-2xl sm:text-3xl font-black mt-0.5 text-blue-600">₴ {summary.availableBalance.toLocaleString()}</div>
           <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Доступно до виводу</div>
         </div>
 
@@ -220,8 +303,8 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             </div>
           </div>
           <div className={`text-xs font-medium mt-3 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Виведено</div>
-          <div className="text-2xl sm:text-3xl font-black mt-0.5">₴ 4 230</div>
-          <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Успішних виплат: 12</div>
+          <div className="text-2xl sm:text-3xl font-black mt-0.5">₴ {summary.lifetimePaid.toLocaleString()}</div>
+          <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Успішних виплат: {ledger.filter(l => l.type === 'PAYOUT' && l.status === 'COMPLETED').length}</div>
         </div>
 
         {/* Card 4: Очікується */}
@@ -236,7 +319,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             </div>
           </div>
           <div className={`text-xs font-medium mt-3 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Очікується</div>
-          <div className="text-2xl sm:text-3xl font-black mt-0.5">₴ 1 250</div>
+          <div className="text-2xl sm:text-3xl font-black mt-0.5">₴ {summary.pendingBalance.toLocaleString()}</div>
           <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>У процесі обробки</div>
         </div>
 
@@ -311,14 +394,14 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               <div className="flex items-center justify-center my-3 relative">
                 <svg viewBox="0 0 100 100" className="w-28 h-28 transform -rotate-90">
                   {/* Рівень 1 (10%): ₴8 460 ~ 68% */}
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="#2563EB" strokeWidth="12" strokeDasharray="162.3 238.7" strokeDashoffset="0" />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#2563EB" strokeWidth="12" strokeDasharray={`${(summary.totalL1Income / Math.max(1, summary.totalBalance)) * 238.7} 238.7`} strokeDashoffset="0" />
                   {/* Рівень 2 (5%): ₴3 250 ~ 26% */}
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="#8B5CF6" strokeWidth="12" strokeDasharray="62 238.7" strokeDashoffset="-162.3" />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#8B5CF6" strokeWidth="12" strokeDasharray={`${(summary.totalL2Income / Math.max(1, summary.totalBalance)) * 238.7} 238.7`} strokeDashoffset={`-${(summary.totalL1Income / Math.max(1, summary.totalBalance)) * 238.7}`} />
                   {/* Бонуси: ₴750 ~ 6% */}
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="#F59E0B" strokeWidth="12" strokeDasharray="14.4 238.7" strokeDashoffset="-224.3" />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#F59E0B" strokeWidth="12" strokeDasharray={`${(summary.totalBonusIncome / Math.max(1, summary.totalBalance)) * 238.7} 238.7`} strokeDashoffset={`-${((summary.totalL1Income + summary.totalL2Income) / Math.max(1, summary.totalBalance)) * 238.7}`} />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                  <span className="text-sm font-black leading-tight">₴ 12 460</span>
+                  <span className="text-sm font-black leading-tight">₴ {summary.totalBalance.toLocaleString()}</span>
                   <span className={`text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Всього</span>
                 </div>
               </div>
@@ -329,21 +412,21 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                     <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
                     <span>Рівень 1 (20%)</span>
                   </span>
-                  <span className="font-bold">₴ 8 460</span>
+                  <span className="font-bold">₴ {summary.totalL1Income.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                     <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
                     <span>Рівень 2 (20%)</span>
                   </span>
-                  <span className="font-bold">₴ 3 250</span>
+                  <span className="font-bold">₴ {summary.totalL2Income.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                     <span>Бонуси</span>
                   </span>
-                  <span className="font-bold">₴ 750</span>
+                  <span className="font-bold">₴ {summary.totalBonusIncome.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -400,7 +483,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                 <div className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Партнерський рівень</div>
                 <div className="text-base font-black text-amber-500 flex items-center gap-1.5 mt-0.5">
                   <Award className="w-4 h-4" />
-                  <span>Gold Partner</span>
+                  <span>{summary.currentRank}</span>
                 </div>
               </div>
               <button className="w-8 h-8 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 flex items-center justify-center">
@@ -409,13 +492,25 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             </div>
 
             <div className="mt-3 space-y-1">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>До наступного рівня: <span className="font-bold text-slate-800 dark:text-slate-200">Платина</span></span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full" style={{ width: '57%' }} />
-              </div>
-              <div className="text-right text-[10px] font-mono text-slate-400">2 847 / 5 000</div>
+              {(() => {
+                const currentRankTier = calculateRankByL1(summary.qualifiedL1);
+                const nextTierData = getNextTierInfo(currentRankTier, summary.qualifiedL1);
+                const nextTierName = nextTierData.nextTier ? nextTierData.nextTier.name : 'Максимальний';
+                const targetMinL1 = nextTierData.nextTier ? nextTierData.nextTier.minL1 : summary.qualifiedL1;
+                return (
+                  <>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                        До наступного рівня ({nextTierName}): <span className="font-bold text-slate-800 dark:text-slate-200">{nextTierData.remainingL1} L1</span>
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div className="h-full bg-blue-600 rounded-full" style={{ width: `${nextTierData.progressPercent}%` }} />
+                    </div>
+                    <div className="text-right text-[10px] font-mono text-slate-400">{summary.qualifiedL1} / {targetMinL1}</div>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
@@ -433,7 +528,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
 
               <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Доступно до виводу</div>
               <div className="text-3xl font-black mt-1 text-slate-900 dark:text-white">
-                ₴ 8 460
+                ₴ {summary.availableBalance.toLocaleString()}
               </div>
 
               <button
@@ -498,33 +593,28 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className={`p-2.5 rounded-xl border flex items-center justify-between ${
-                isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <div className="font-bold leading-tight">Картка</div>
-                    <div className="text-[10px] text-slate-400">**** 4242</div>
+              {payoutMethods.map((method, idx) => (
+                <div key={method.id} className={`p-2.5 rounded-xl border flex items-center justify-between ${
+                  isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <CreditCard className={`w-4 h-4 ${idx === 0 ? 'text-blue-600' : 'text-purple-600'}`} />
+                    <div>
+                      <div className="font-bold leading-tight">{method.type === 'CARD_UAH' ? 'Картка' : 'IBAN (UAH)'}</div>
+                      <div className="text-[10px] text-slate-400">
+                        {method.type === 'CARD_UAH' ? `**** ${method.details.slice(-4)}` : `${method.details.substring(0, 15)}...`}
+                      </div>
+                    </div>
                   </div>
+                  {method.isDefault ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                      Основна
+                    </span>
+                  ) : (
+                    <MoreVertical className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
+                  )}
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                  Основна
-                </span>
-              </div>
-
-              <div className={`p-2.5 rounded-xl border flex items-center justify-between ${
-                isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-purple-600" />
-                  <div>
-                    <div className="font-bold leading-tight">IBAN (UAH)</div>
-                    <div className="text-[10px] text-slate-400">UA12 3003 0000 0002 ...</div>
-                  </div>
-                </div>
-                <MoreVertical className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
-              </div>
+              ))}
 
               <div className={`p-2.5 rounded-xl border flex items-center justify-between ${
                 isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
@@ -564,38 +654,41 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               </button>
             </div>
 
-            <div className="space-y-2.5 text-xs">
-              {[
-                { date: '02.09.2026', type: 'incoming', desc: 'Комісія з продажів (Рівень 1)', amount: '₴ 540', status: 'Зараховано' },
-                { date: '01.09.2026', type: 'incoming', desc: 'Комісія з продажів (Рівень 2)', amount: '₴ 230', status: 'Зараховано' },
-                { date: '30.08.2026', type: 'bonus', desc: 'Бонус за активність', amount: '₴ 150', status: 'Зараховано' },
-                { date: '28.08.2026', type: 'outgoing', desc: 'Виплата на картку **** 4242', amount: '₴ 2 000', status: 'Виконано' },
-                { date: '25.08.2026', type: 'incoming', desc: 'Комісія з продажів (Рівень 1)', amount: '₴ 420', status: 'Зараховано' },
-              ].map((tx, idx) => (
-                <div key={idx} className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-800/50 last:border-none">
+            <div className="space-y-2.5 text-xs h-[240px] overflow-y-auto pr-2 custom-scrollbar">
+              {ledger.slice(0, 5).map((tx) => (
+                <div key={tx.id} className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-800/50 last:border-none">
                   <div className="flex items-center gap-2.5">
                     <div className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      tx.type === 'incoming' 
+                      tx.type === 'COMMISSION_L1' || tx.type === 'COMMISSION_L2'
                         ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400' 
-                        : tx.type === 'bonus'
+                        : tx.type === 'BONUS'
                         ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400'
                         : 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400'
                     }`}>
-                      {tx.type === 'incoming' ? <ArrowUpRight className="w-3.5 h-3.5" /> : tx.type === 'bonus' ? <Gift className="w-3.5 h-3.5" /> : <ArrowDownLeft className="w-3.5 h-3.5" />}
+                      {tx.type === 'PAYOUT' ? <ArrowDownLeft className="w-3.5 h-3.5" /> : tx.type === 'BONUS' ? <Gift className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                     </div>
                     <div>
-                      <div className="font-semibold">{tx.desc}</div>
-                      <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{tx.date}</div>
+                      <div className="font-semibold">{tx.description}</div>
+                      <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{new Date(tx.date).toLocaleDateString('uk-UA')}</div>
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <div className={`font-black ${tx.type === 'outgoing' ? 'text-slate-800 dark:text-slate-200' : 'text-emerald-500'}`}>
-                      {tx.type === 'incoming' || tx.type === 'bonus' ? `+${tx.amount}` : `-${tx.amount}`}
+                    <div className={`font-black ${tx.type === 'PAYOUT' ? 'text-slate-800 dark:text-slate-200' : 'text-emerald-500'}`}>
+                      {tx.type === 'PAYOUT' ? `-${tx.amountUah}` : `+${tx.amountUah}`} ₴
                     </div>
-                    <div className="text-[10px] text-emerald-500 font-semibold flex items-center justify-end gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span>{tx.status}</span>
+                    <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${
+                      tx.status === 'COMPLETED' ? 'text-emerald-500' : 
+                      tx.status === 'PENDING' ? 'text-amber-500' : 'text-rose-500'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        tx.status === 'COMPLETED' ? 'bg-emerald-500' : 
+                        tx.status === 'PENDING' ? 'bg-amber-500' : 'bg-rose-500'
+                      }`} />
+                      <span>{
+                        tx.status === 'COMPLETED' ? 'Зараховано' : 
+                        tx.status === 'PENDING' ? 'В обробці' : 'Відхилено'
+                      }</span>
                     </div>
                   </div>
                 </div>
@@ -811,19 +904,70 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   }`} 
                 />
               </div>
-              <button
-                onClick={() => {
-                  setShowAddCardModal(false);
-                  playWebAudioSound('click');
-                }}
-                className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md mt-2"
-              >
-                Зберегти картку
-              </button>
+              <div className={`p-4 rounded-xl border flex items-start gap-3 ${
+                isDark ? 'bg-blue-950/20 border-blue-900/50 text-blue-400' : 'bg-blue-50 border-blue-100 text-blue-700'
+              }`}>
+                <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <div className="text-xs leading-relaxed">
+                  <strong>Важливо:</strong><br/>
+                  Якщо у вас виникли проблеми з додаванням картки, будь ласка, переконайтесь, що вона відкрита для інтернет-платежів.
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* FAQ Drawer */}
+      <ContextDrawer
+        isOpen={showFaqDrawer}
+        onClose={() => setShowFaqDrawer(false)}
+        title="Як формується мій дохід?"
+        icon={<HelpCircle className="w-5 h-5" />}
+        theme={theme}
+      >
+        <div className="space-y-6 text-sm">
+          <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+            Твій дохід у SIREN UA формується з двох рівнів партнерської мережі та бонусів за ранги.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-bold mb-1">1. Комісії Першого Рівня (L1)</h4>
+              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Ти отримуєш <strong>20%</strong> (або відсоток, відповідний твоєму рангу) від кожної оплати підписки людьми, яких ти особисто запросив. Це твої найпряміші партнери. Чим вище твій ранг, тим більший відсоток комісії ти отримуєш.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-1">2. Комісії Другого Рівня (L2)</h4>
+              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Ти також отримуєш <strong>20%</strong> комісійних з оплат людей, яких запросили твої партнери з L1. Вони формують твій пасивний дохід, але <strong>НЕ</strong> враховуються для підвищення твого рангу.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-1">3. Бонуси (Bonuses)</h4>
+              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Одноразові винагороди, які нараховуються за досягнення нових рангів (наприклад, перехід на Platinum) або участь у спеціальних акціях.
+              </p>
+            </div>
+            
+            <div className={`p-4 rounded-xl border mt-4 ${
+              isDark ? 'bg-amber-950/20 border-amber-900/50' : 'bg-amber-50 border-amber-200'
+            }`}>
+              <h4 className="font-bold mb-2 flex items-center gap-1.5 text-amber-600">
+                <Clock className="w-4 h-4" />
+                Статуси балансу
+              </h4>
+              <ul className={`text-xs space-y-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                <li><strong>Очікується (Pending):</strong> Кошти надійшли, але проходять 7-денний період перевірки.</li>
+                <li><strong>Доступно (Available):</strong> Кошти перевірені та готові до виводу на вашу картку.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </ContextDrawer>
 
     </div>
   );
