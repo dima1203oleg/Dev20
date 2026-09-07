@@ -367,7 +367,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
           </div>
           <div className={`text-xs font-medium mt-3 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Виведено</div>
           <div className="text-2xl sm:text-3xl font-black mt-0.5">₴ {summary.lifetimePaid.toLocaleString()}</div>
-          <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Успішних виплат: {ledger.filter(l => l.type === 'PAYOUT_WITHDRAWAL').length}</div>
+          <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{dataState === 'LIVE' ? 'Успішних виплат' : 'Демо-прикладів виплат'}: {ledger.filter(l => l.type === 'PAYOUT_WITHDRAWAL').length}</div>
         </div>
 
         {/* Card 4: Очікується */}
@@ -500,7 +500,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             }`}>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-bold">Динаміка мережі</h3>
-                <span className="text-xs font-bold text-emerald-500">+490%</span>
+                <span className="text-xs font-bold text-amber-500">{dataState === 'LIVE' ? '—' : 'ДЕМО-ГРАФІК'}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
@@ -734,7 +734,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                     </div>
                     <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${tx.direction === 'DEBIT' ? 'text-blue-500' : 'text-emerald-500'}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${tx.direction === 'DEBIT' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
-                      <span>{tx.direction === 'DEBIT' ? 'Виплачено' : 'Зараховано'}</span>
+                      <span>{dataState === 'LIVE' ? (tx.direction === 'DEBIT' ? 'Виплачено' : 'Зараховано') : 'DEMO-приклад'}</span>
                     </div>
                   </div>
                 </div>
@@ -1006,6 +1006,11 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
         theme={theme}
       >
         <div className="space-y-2">
+          {dataState !== 'LIVE' && (
+            <div className={`rounded-2xl border px-3 py-2 text-[11px] ${isDark ? 'border-purple-900/50 bg-purple-950/30 text-purple-200' : 'border-purple-200 bg-purple-50 text-purple-700'}`}>
+              Історія нижче — демонстраційна структура ledger. Реальні операції з’являться після підключення financial API.
+            </div>
+          )}
           {ledger.map((transaction) => (
             <div key={transaction.id} className={`rounded-2xl border p-3 ${isDark ? 'border-slate-800 bg-slate-900/70' : 'border-slate-200 bg-slate-50'}`}>
               <div className="flex items-start justify-between gap-3">
