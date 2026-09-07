@@ -255,6 +255,10 @@ class FinancialService {
           updatedAt: nowTime,
           status: state,
         };
+        // Keep the local view-model aligned with the latest authoritative
+        // projection so client-side guardrails (including payout amount
+        // checks) never validate against an obsolete demo balance.
+        this.summary = payload;
         CacheManager.set(CACHE_KEY_FINANCE, payload, 300, 'SIREN_UA_FINANCE_API');
 
         return {
@@ -286,6 +290,7 @@ class FinancialService {
         ...cached.data,
         status: cached.state,
       };
+      this.summary = cachedData;
       return {
         data: cachedData,
         state: cached.state,
@@ -301,6 +306,7 @@ class FinancialService {
       updatedAt: nowTime,
       status: 'DEMO',
     };
+    this.summary = baselineData;
 
     return {
       data: baselineData,

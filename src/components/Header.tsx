@@ -87,6 +87,14 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'about', label: 'Про нас', section: 'ABOUT' as DashboardSection },
   ];
 
+  const mobileSectionItems = [
+    { id: 'network', label: 'Мережа та реферали', section: 'NETWORK' as DashboardSection },
+    { id: 'finance', label: 'Фінанси та виплати', section: 'FINANCE' as DashboardSection },
+    { id: 'analytics', label: 'Аналітика', section: 'ANALYTICS' as DashboardSection },
+    { id: 'shelters', label: 'Укриття та маршрути', section: 'SHELTERS' as DashboardSection },
+    { id: 'affiliate', label: 'Партнерська програма', section: 'AFFILIATE' as DashboardSection },
+  ];
+
   return (
     <header className={`sticky top-0 z-40 w-full transition-colors duration-200 border-b backdrop-blur-xl ${
       isDark 
@@ -351,6 +359,28 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               );
             })}
+            <div className={`mt-2 border-t pt-2 ${isDark ? 'border-[#1B273D]' : 'border-[#D1DCE5]'}`}>
+              <p className={`px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                Робочі розділи
+              </p>
+              {mobileSectionItems.map((item) => {
+                const isActive = activeSection === item.section;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleMobileNavClick(item)}
+                    className={`mt-1 w-full rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors ${
+                      isActive
+                        ? (isDark ? 'bg-[#182335] text-white' : 'bg-white text-[#0F172A] shadow-sm')
+                        : (isDark ? 'text-slate-300 hover:bg-[#182335]' : 'text-[#5A6A80] hover:bg-white/80')
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
             <button
               type="button"
               onClick={() => { handleNavClick('PROFILE'); setMobileMenuOpen(false); }}

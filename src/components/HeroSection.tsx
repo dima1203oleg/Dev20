@@ -26,6 +26,7 @@ interface HeroSectionProps {
   threatModel?: ThreatSceneModel;
   onRefreshData?: () => void;
   onNavigateToShelters?: () => void;
+  onOpenDemo?: () => void;
   theme?: 'light' | 'dark';
 }
 
@@ -37,6 +38,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   threatModel,
   onRefreshData,
   onNavigateToShelters,
+  onOpenDemo,
   theme = 'light'
 }) => {
   const [mapMode, setMapMode] = useState<'RENDER' | 'WEBGL'>('RENDER');
@@ -152,13 +154,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </button>
             <button
               onClick={() => {
-                if (threatModel?.dataMode !== 'LIVE' && threatModel?.dataMode !== 'DEMO_DATA') {
-                  setDownloadNotice('Інтерактивна сцена доступна після підключення перевіреного джерела даних.');
-                  playWebAudioSound('click');
-                  window.setTimeout(() => setDownloadNotice(null), 4200);
-                  return;
+                onOpenDemo?.();
+                if (!onOpenDemo) {
+                  setMapMode((current) => threatModel?.dataMode === 'LIVE' ? 'WEBGL' : current === 'RENDER' ? 'WEBGL' : 'RENDER');
                 }
-                setMapMode((current) => threatModel?.dataMode === 'LIVE' ? 'WEBGL' : current === 'RENDER' ? 'WEBGL' : 'RENDER');
                 playWebAudioSound('click');
               }}
               className={`w-full sm:w-auto px-6 py-2.5 rounded-full border font-bold text-[13px] flex items-center justify-center gap-2 transition-all cursor-pointer ${

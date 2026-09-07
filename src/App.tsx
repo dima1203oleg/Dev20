@@ -304,7 +304,13 @@ export default function App() {
             : threatDataState === 'ERROR'
               ? 'ERROR'
               : 'NOT_CONNECTED';
-  const liveScene = currentDataMode === 'LIVE' || currentDataMode === 'DEMO_DATA' ? threatPayload?.threatScene : null;
+  // Once the local simulator is active, its region/trajectory state is the
+  // source for the current demo scene. Do not leak a previous API snapshot
+  // into the scenario's ETA, risk or primary event.
+  const liveScene = !isDemoMode && (currentDataMode === 'LIVE' || currentDataMode === 'DEMO_DATA')
+    ? threatPayload?.threatScene
+    : null;
+  const primaryThreat = liveScene?.primaryThreat || (isDemoMode ? sceneTrajectories[0] || null : null);
   const currentFreshness: ThreatSceneModel['freshness'] = currentDataMode === 'LIVE'
     ? 'REALTIME'
     : currentDataMode === 'DEMO_DATA' || currentDataMode === 'CACHED'
@@ -324,29 +330,37 @@ export default function App() {
     criticalRegions: displayRegions.filter((r) => r.isAlarm && (r.threatType === 'ballistic' || r.threatType === 'missile')).map((r) => r.id),
     // Do not expose cached/offline trajectory records as current scene data.
     // A non-live scene is intentionally rendered as a truthful preview only.
-    primaryThreat: liveScene?.primaryThreat || null,
+    primaryThreat,
     nearestShelter: liveScene?.nearestShelter || null,
     myRegionStatus: {
       id: settings.myRegion,
       name: myRegionObj.name || 'Одеська область',
       isAlarm: myRegionObj.isAlarm || false,
-      etaMinutes: liveScene?.myRegionStatus.etaMinutes || (myRegionObj.isAlarm && (isDemoMode || currentDataMode === 'DEMO_DATA') ? 18 : 0),
+      etaMinutes: liveScene?.myRegionStatus.etaMinutes || (myRegionObj.isAlarm && (isDemoMode || currentDataMode === 'DEMO_DATA') ? primaryThreat?.etaMinutes || 18 : 0),
       riskLevel: liveScene?.myRegionStatus.riskLevel || (myRegionObj.isAlarm ? 'HIGH' : 'LOW'),
     },
     partnerModeActive: activeSection === 'NETWORK' || activeSection === 'FINANCE',
   };
 
   return (
-    <div className={`siren-app ${settings.theme === 'dark' ? 'siren-app--dark' : 'siren-app--light'} min-h-screen flex flex-col font-sans transition-colors duration-300 ${
+    <div
+      data-active-section={activeSection}
+      className={`siren-app ${settings.theme === 'dark' ? 'siren-app--dark' : 'siren-app--light'} min-h-screen flex flex-col font-sans transition-colors duration-300 ${
       settings.theme === 'dark' ? 'bg-[#0E1520] text-slate-100' : 'bg-[#EAEFF5] text-[#111827]'
-    }`}>
+      }`}
+    >
       
       {/* 1. Header with Navigation */}
       <Header
         activeSection={activeSection}
         onSelectSection={(sec) => {
           setActiveSection(sec);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          try {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } catch {
+            // Some embedded/headless runtimes do not implement smooth scroll.
+            // Section navigation must remain functional without it.
+          }
         }}
         onOpenGuide={() => setIsGuideOpen(true)}
         onToggleTheme={() => {
@@ -395,6 +409,7 @@ export default function App() {
                 threatModel={threatSceneModel}
                 onRefreshData={handleRefreshThreatData}
                 onNavigateToShelters={() => setIsSheltersModalOpen(true)}
+                onOpenDemo={() => setIsSimulatorOpen(true)}
                 theme={settings.theme || 'light'}
               />
 

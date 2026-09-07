@@ -45,11 +45,14 @@ export const SimulatorModal: React.FC<SimulatorModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-slate-100">
-                Симулятор тривог та загроз SirenUA
+                Симулятор тривог та загроз SIREN UA
               </h2>
               <p className="text-xs text-slate-400">
                 Тестуйте роботу звукової сирени, карти та сповіщень у різних оперативних сценаріях
               </p>
+              <div className="mt-2 inline-flex rounded-full border border-amber-400/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black tracking-wide text-amber-200">
+                ДЕМО-РЕЖИМ · НЕ РЕАЛЬНІ ДАНІ
+              </div>
             </div>
           </div>
 

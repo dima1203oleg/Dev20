@@ -13,11 +13,9 @@ interface AppErrorBoundaryState {
 /** Keeps a failed lazy route or WebGL chunk from replacing the whole app with a blank page. */
 export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
   public state: AppErrorBoundaryState = { hasError: false };
-  private readonly boundaryProps: AppErrorBoundaryProps;
 
   public constructor(props: AppErrorBoundaryProps) {
     super(props);
-    this.boundaryProps = props;
   }
 
   public static getDerivedStateFromError(): AppErrorBoundaryState {
@@ -29,14 +27,22 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
     console.error('SIREN UA route failed to render', error, info);
   }
 
+  private getCurrentProps(): AppErrorBoundaryProps {
+    // The bundled React type surface omits `props` from Component, but React
+    // supplies it at runtime. Reading the current value here keeps the
+    // boundary transparent when the routed children change.
+    return (this as unknown as { props: AppErrorBoundaryProps }).props;
+  }
+
   private handleRetry = () => {
     window.location.reload();
   };
 
   public render() {
-    if (!this.state.hasError) return this.boundaryProps.children;
+    const props = this.getCurrentProps();
+    if (!this.state.hasError) return props.children;
 
-    const isDark = this.boundaryProps.theme === 'dark';
+    const isDark = props.theme === 'dark';
 
     return (
       <section
