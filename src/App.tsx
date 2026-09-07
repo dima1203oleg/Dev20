@@ -5,6 +5,7 @@ import { HomeFeaturesGrid } from './components/HomeFeaturesGrid';
 import { HomeFinanceSituationRow } from './components/HomeFinanceSituationRow';
 import { SirenOrbitalDeviceEcosystem } from './components/orbital/SirenOrbitalDeviceEcosystem';
 import { Footer } from './components/Footer';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { threatServerService, LiveThreatsPayload } from './services/threatServerService';
 import { DataState } from './types/dataEnvelope';
 
@@ -373,11 +374,12 @@ export default function App() {
       <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 flex-1 flex flex-col gap-2">
         
         <main className="flex-1 min-w-0 pb-12 w-full">
-          <Suspense fallback={(
-            <div className="min-h-[280px] rounded-3xl border border-slate-200/60 dark:border-slate-800 bg-white/40 dark:bg-slate-950/30 flex items-center justify-center">
-              <span className="text-xs font-semibold text-slate-500">Завантаження розділу…</span>
-            </div>
-          )}>
+          <AppErrorBoundary theme={settings.theme || 'light'}>
+            <Suspense fallback={(
+              <div className="min-h-[280px] rounded-3xl border border-slate-200/60 dark:border-slate-800 bg-white/40 dark:bg-slate-950/30 flex items-center justify-center">
+                <span className="text-xs font-semibold text-slate-500">Завантаження розділу…</span>
+              </div>
+            )}>
           {/* =========================================================================
               SECTION 1: HOME (Головна) - 1:1 Premium Design as in Mockup
              ========================================================================= */}
@@ -500,7 +502,8 @@ export default function App() {
               />
             </div>
           )}
-          </Suspense>
+            </Suspense>
+          </AppErrorBoundary>
         </main>
       </div>
 
