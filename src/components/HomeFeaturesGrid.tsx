@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Users, 
   Wallet, 
@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { DashboardSection } from '../types';
+import { financialService, DEFAULT_FINANCIAL_SUMMARY } from '../services/financialService';
+import { DataState } from '../types/dataEnvelope';
 
 interface HomeFeaturesGridProps {
   onNavigateToTab?: (tab: DashboardSection) => void;
@@ -19,6 +21,24 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
   theme = 'light'
 }) => {
   const isDark = theme === 'dark';
+  const [financeSummary, setFinanceSummary] = useState(DEFAULT_FINANCIAL_SUMMARY);
+  const [financeState, setFinanceState] = useState<DataState>('LOADING');
+
+  useEffect(() => {
+    let mounted = true;
+    financialService.getPartnerFinancialSummary().then((response) => {
+      if (!mounted) return;
+      setFinanceState(response.state);
+      if (response.data) setFinanceSummary(response.data);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const financeBalanceLabel = financeState === 'LIVE'
+    ? `₴ ${financeSummary.totalBalance.toLocaleString('uk-UA')}`
+    : `₴ ${financeSummary.totalBalance.toLocaleString('uk-UA')} · DEMO`;
 
   const cards = [
     {
@@ -35,8 +55,8 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
       title: 'Фінанси',
       icon: <Wallet className="w-5 h-5 text-blue-500" />,
       features: [
-        ['₴ 8 460', 'Виплати/доступність'],
-        ['Дохід', 'Історія']
+        [financeBalanceLabel, 'Виплати/доступність'],
+        [financeState === 'LIVE' ? 'Дохід' : 'Дохід · DEMO', 'Історія']
       ]
     },
     {
