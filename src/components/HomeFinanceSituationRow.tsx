@@ -12,6 +12,8 @@ import {
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { DataFreshnessIndicator } from './DataFreshnessIndicator';
 import { DataState } from '../types/dataEnvelope';
+import { financialService, DEFAULT_FINANCIAL_SUMMARY } from '../services/financialService';
+import { PartnerFinancialSummary } from '../types/finance';
 
 interface HomeFinanceSituationRowProps {
   onNavigateToFinance?: () => void;
@@ -28,6 +30,25 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
   dataState = 'DEMO',
 }) => {
   const isDark = theme === 'dark';
+  const [summary, setSummary] = React.useState<PartnerFinancialSummary>(DEFAULT_FINANCIAL_SUMMARY);
+  const [summaryState, setSummaryState] = React.useState<DataState>(dataState);
+
+  React.useEffect(() => {
+    let mounted = true;
+    financialService.getPartnerFinancialSummary().then((response) => {
+      if (!mounted) return;
+      setSummaryState(response.state);
+      if (response.data) setSummary(response.data);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const effectiveDataState = summaryState === 'LOADING' ? dataState : summaryState;
+  const percentageChange = summary.earnedLastMonth > 0
+    ? Number((((summary.earnedThisMonth - summary.earnedLastMonth) / summary.earnedLastMonth) * 100).toFixed(1))
+    : 0;
 
   return (
     <div className="w-full my-6 space-y-4">
@@ -38,10 +59,10 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
             <h2 className={`text-xl sm:text-[22px] font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
               Фінансова інформація
             </h2>
-            <DataFreshnessIndicator state={dataState} theme={theme} />
+            <DataFreshnessIndicator state={effectiveDataState} theme={theme} />
           </div>
           <p className={`text-[13px] font-medium mt-0.5 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-            {dataState === 'LIVE' ? 'Ваш дохід. Ваш розвиток. Більше можливостей.' : 'Демонстраційний стан до підключення фінансового API.'}
+            {effectiveDataState === 'LIVE' ? 'Ваш дохід. Ваш розвиток. Більше можливостей.' : 'Демонстраційний стан до підключення фінансового API.'}
           </p>
         </div>
         <button
@@ -79,10 +100,10 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                    ₴ 12 460
+                    ₴ {summary.earnedThisMonth.toLocaleString('uk-UA')}
                   </span>
                   <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 text-[10px] font-bold flex items-center gap-0.5">
-                    <TrendingUp className="w-3 h-3" /> +12%
+                    <TrendingUp className="w-3 h-3" /> {percentageChange >= 0 ? '+' : ''}{percentageChange}%
                   </span>
                 </div>
               </div>
@@ -111,13 +132,13 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                   Баланс
                 </div>
                 <div className={`text-xl font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                  ₴ 8 460
+                  ₴ {summary.totalBalance.toLocaleString('uk-UA')}
                 </div>
               </div>
             </div>
           </div>
           <div className={`text-[12px] font-medium mt-4 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-            Доступно: <strong className={isDark ? 'text-white' : 'text-[#0F172A]'}>$450</strong>
+            Доступно: <strong className={isDark ? 'text-white' : 'text-[#0F172A]'}>₴ {summary.availableBalance.toLocaleString('uk-UA')}</strong>
           </div>
         </div>
 
@@ -139,7 +160,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                   Доступна до виводу
                 </div>
                 <div className={`text-xl font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                  ₴ 8 460
+                  ₴ {summary.availableBalance.toLocaleString('uk-UA')}
                 </div>
               </div>
             </div>
@@ -179,7 +200,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                     Виплачено
                   </div>
                   <div className={`text-xl font-black tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                    ₴ 4 230
+                    ₴ {summary.lifetimePaid.toLocaleString('uk-UA')}
                   </div>
                 </div>
               </div>
@@ -230,7 +251,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
                   </span>
                 </div>
                 <div className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-slate-300' : 'text-[#334155]'}`}>
-                  <strong className="font-extrabold">154</strong> кваліфікація L1
+                  <strong className="font-extrabold">{summary.qualifiedL1 ?? 0}</strong> кваліфікація L1
                 </div>
               </div>
             </div>
@@ -242,7 +263,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
               <div className="h-full bg-[#2563EB] rounded-full" style={{ width: '75%' }}></div>
             </div>
             <div className={`text-[10px] font-medium mt-1.5 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
-              До Platinum: 46 / 200
+              До Platinum: {Math.max(0, 200 - (summary.qualifiedL1 ?? 0))} / 200
             </div>
           </div>
         </button>
