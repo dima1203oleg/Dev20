@@ -157,8 +157,12 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
     trafficSources: [],
   };
   const summary: NetworkSummary = networkSummary || (dataState === 'NOT_CONNECTED' ? unavailableSummary : demoSummary);
-  const referralCode = summary.referralCode || (dataState === 'NOT_CONNECTED' ? '—' : 'OLEKSANDR25');
-  const referralUrl = summary.referralUrl || (dataState === 'NOT_CONNECTED' ? '' : 'https://siren.ua/r/OLEKSANDR25');
+  const referralCode = dataState === 'LIVE'
+    ? summary.referralCode || '—'
+    : dataState === 'NOT_CONNECTED'
+      ? '—'
+      : 'DEMO-КОД';
+  const referralUrl = dataState === 'LIVE' ? summary.referralUrl : '';
   // Demo / unavailable payloads may include illustrative values, but must never
   // enable production-looking share or referral actions before a live partner API
   // has verified the referral URL.
@@ -1148,10 +1152,12 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
           <div className="pt-4 z-10">
             <button
               onClick={() => {
+                if (!partnerActionsAvailable) return;
                 setShowInviteModal(true);
                 playWebAudioSound('click');
               }}
-              className="w-full py-2.5 rounded-2xl bg-white hover:bg-blue-50 text-blue-700 font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+              disabled={!partnerActionsAvailable}
+              className="w-full py-2.5 rounded-2xl bg-white hover:bg-blue-50 text-blue-700 font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span>Запросити зараз</span>
               <ArrowRight className="w-3.5 h-3.5" />
