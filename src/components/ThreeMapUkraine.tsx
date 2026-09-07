@@ -113,7 +113,9 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     const scene = new THREE.Scene();
     
     const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 1000);
-    camera.position.set(0, 36, 44);
+    // Keep the whole country readable in the hero viewport. The previous
+    // framing left the extruded meshes too small beside the DOM copy.
+    camera.position.set(0, 25, 31);
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
@@ -129,8 +131,8 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
 
     // 2. Realistic Lighting adjusted for Light / Dark Mode
     const ambientLight = new THREE.AmbientLight(
-      isDark ? 0x1e293b : 0xf8fafc, 
-      isDark ? 1.4 : 1.9
+      isDark ? 0x315363 : 0xf8fafc,
+      isDark ? 1.85 : 1.9
     );
     scene.add(ambientLight);
 
@@ -221,8 +223,8 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
       geometry.rotateX(-Math.PI / 2); // Lay flat on XZ plane
 
       // Color palette adjusted for Light vs Dark
-      let topColor = isDark ? 0x1e293b : 0xf8fafc;
-      let sideColor = isDark ? 0x0f172a : 0x94a3b8;
+      let topColor = isDark ? 0x365967 : 0xf8fafc;
+      let sideColor = isDark ? 0x1c3440 : 0x94a3b8;
       let roughness = isDark ? 0.4 : 0.35;
       let metalness = isDark ? 0.3 : 0.05;
 
@@ -479,7 +481,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     if (!cameraRef.current) return;
     const newZoom = Math.max(0.7, Math.min(1.6, zoomLevel + delta));
     setZoomLevel(newZoom);
-    cameraRef.current.position.set(0, 36 / newZoom, 44 / newZoom);
+    cameraRef.current.position.set(0, 25 / newZoom, 31 / newZoom);
     cameraRef.current.lookAt(0, 0, 0);
   };
 
@@ -500,7 +502,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     if (!cameraRef.current) return;
     setZoomLevel(1);
     setViewAngle('3D');
-    cameraRef.current.position.set(0, 36, 44);
+    cameraRef.current.position.set(0, 25, 31);
     cameraRef.current.lookAt(0, 0, 0);
     controlsTargetRef.current = { rotX: -0.22, rotY: 0.05, zoom: 1 };
   };

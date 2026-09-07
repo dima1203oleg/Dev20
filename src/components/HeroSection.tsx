@@ -75,11 +75,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       ? 'bg-purple-500/15 text-purple-300'
       : 'bg-amber-500/15 text-amber-300';
 
-  // A live source must never be represented by the decorative preview asset.
-  // Switch to the normalized WebGL scene as soon as live data is available.
+  // Verified live data uses the normalized selectable scene. Explicit demo
+  // data keeps the polished product preview on the first paint; its paths are
+  // labelled demo-only and never claim an authoritative threat surface.
   useEffect(() => {
     if (threatModel?.dataMode === 'LIVE') setMapMode('WEBGL');
-    if (threatModel?.dataMode !== 'LIVE' && threatModel?.dataMode !== 'DEMO_DATA') setMapMode('RENDER');
+    if (threatModel?.dataMode !== 'LIVE') setMapMode('RENDER');
   }, [threatModel?.dataMode]);
 
   return (
@@ -117,10 +118,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           {/* Heading */}
           <h1 className={`text-4xl sm:text-5xl lg:text-[36px] font-black tracking-tight leading-[1.06] ${
-            isDark ? 'text-white' : 'text-[#0F172A]'
+            isDark ? 'text-[#ECE4D8]' : 'text-[#0F172A]'
           }`}>
             Розумій ситуацію.<br />
-            <span className={isDark ? 'text-[#8FBACB]' : 'text-[#5E87A0]'}>Не просто отримуй тривогу.</span>
+            <span className={isDark ? 'text-[#9DB0BA]' : 'text-[#5E87A0]'}>Не просто отримуй тривогу.</span>
           </h1>
           
           {/* Subtitle */}
