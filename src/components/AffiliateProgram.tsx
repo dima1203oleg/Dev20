@@ -111,6 +111,8 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
     referralUrl: 'https://siren.ua/r/OLEKSANDR25',
     trafficSources: []
   };
+  const referralCode = summary.referralCode || 'OLEKSANDR25';
+  const referralUrl = summary.referralUrl || 'https://siren.ua/r/OLEKSANDR25';
 
   useEffect(() => {
     networkService.getNetworkSummary().then(res => {
@@ -132,7 +134,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   }, []);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText('https://siren.ua/r/OLEKSANDR25');
+    navigator.clipboard.writeText(referralUrl);
     setCopiedLink(true);
     playWebAudioSound('click');
     setTimeout(() => setCopiedLink(false), 2000);
@@ -140,6 +142,11 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
+      {dataState !== 'LIVE' && (
+        <div className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${isDark ? 'border-amber-900/60 bg-amber-950/20 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+          Демонстраційні дані партнерської мережі: підключіть partner API, щоб відображати реальні L1/L2, rank та earnings.
+        </div>
+      )}
       
       {/* 1. Top Hero Section: "Моя мережа — моя сила" + 6 Quick Metric Cards (1:1 with Screenshot 1) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
@@ -683,19 +690,19 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             isDark ? 'border-slate-800' : 'border-slate-100'
           }`}>
             <div>
-              <div className="text-base font-black text-blue-600">247</div>
+              <div className="text-base font-black text-blue-600">{summary.activeL1Count.toLocaleString('uk-UA')}</div>
               <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>L1 партнерів</div>
             </div>
             <div>
-              <div className="text-base font-black text-purple-500">2 600</div>
+              <div className="text-base font-black text-purple-500">{summary.activeL2Count.toLocaleString('uk-UA')}</div>
               <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>L2 партнерів</div>
             </div>
             <div>
-              <div className="text-base font-black text-emerald-500">931</div>
+              <div className="text-base font-black text-emerald-500">{(summary.activeL1Count + summary.activeL2Count).toLocaleString('uk-UA')}</div>
               <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Активних</div>
             </div>
             <div>
-              <div className="text-base font-black text-amber-500">84</div>
+              <div className="text-base font-black text-amber-500">{summary.new30DaysCount.toLocaleString('uk-UA')}</div>
               <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Нових за 30 днів</div>
             </div>
           </div>
@@ -730,7 +737,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 </div>
                 <div>
                   <div className="text-sm font-black">{summary.currentTier.badgeLabel}</div>
-                  <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Ставка: <span className="font-bold text-slate-800 dark:text-slate-200">20%</span></div>
+                  <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Ставка: <span className="font-bold text-slate-800 dark:text-slate-200">{summary.currentTier.l1Percent}%</span></div>
                 </div>
               </div>
               <button 
@@ -745,13 +752,13 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             <div className="mt-4 space-y-1.5">
               <div className="flex items-center justify-between text-[11px]">
                 <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>До наступного рівня: <span className="font-bold text-slate-800 dark:text-slate-200">Platinum</span></span>
-                <span className="font-bold text-blue-600">77%</span>
+                <span className="font-bold text-blue-600">{summary.rankProgressPercent}%</span>
               </div>
               <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: '77%' }} />
+                <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${summary.rankProgressPercent}%` }} />
               </div>
               <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
-                <span>Кваліфікованих L1: 154</span>
+                <span>Кваліфікованих L1: {summary.qualifiedL1}</span>
                 <span>Ціль: 200</span>
               </div>
             </div>
@@ -761,7 +768,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             }`}>
               <div>
                 <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Потрібно ще</div>
-                <div className="text-sm font-black text-blue-600">46</div>
+                <div className="text-sm font-black text-blue-600">{summary.remainingToNextRank}</div>
                 <div className={`text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>активних L1</div>
               </div>
               <div>
@@ -1058,13 +1065,13 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             <p className="text-xs text-slate-400 mb-4">Відскануйте для швидкого приєднання до мережі</p>
             <div className="w-48 h-48 mx-auto bg-white p-3 rounded-2xl border-2 border-blue-500/30 flex items-center justify-center shadow-lg">
               <img 
-                src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://siren.ua/r/OLEKSANDR25" 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(referralUrl)}`}
                 alt="QR" 
                 className="w-full h-full"
               />
             </div>
             <div className="mt-4 text-xs font-mono font-bold text-blue-600">
-              OLEKSANDR25
+              {referralCode}
             </div>
           </div>
         </div>
@@ -1089,7 +1096,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               <div className={`p-3 rounded-2xl border flex items-center justify-between ${
                 isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'
               }`}>
-                <span className="text-xs font-mono truncate mr-2">https://siren.ua/r/OLEKSANDR25</span>
+                <span className="text-xs font-mono truncate mr-2">{referralUrl}</span>
                 <button
                   onClick={handleCopyLink}
                   className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center gap-1"
@@ -1101,19 +1108,19 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
 
               <div className="grid grid-cols-3 gap-2 pt-2">
                 <button 
-                  onClick={() => window.open('https://t.me/share/url?url=https://siren.ua/r/OLEKSANDR25', '_blank')}
+                  onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}`, '_blank')}
                   className="py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold flex items-center justify-center gap-1.5"
                 >
                   Telegram
                 </button>
                 <button 
-                  onClick={() => window.open('https://www.facebook.com/sharer/sharer.php?u=https://siren.ua/r/OLEKSANDR25', '_blank')}
+                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralUrl)}`, '_blank')}
                   className="py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5"
                 >
                   Facebook
                 </button>
                 <button 
-                  onClick={() => window.open('https://wa.me/?text=https://siren.ua/r/OLEKSANDR25', '_blank')}
+                  onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(referralUrl)}`, '_blank')}
                   className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5"
                 >
                   WhatsApp

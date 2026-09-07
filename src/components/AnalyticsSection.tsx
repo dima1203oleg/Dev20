@@ -39,7 +39,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'lig
           <div>
             <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold ${isDark ? 'border-[#365966] bg-[#17313B] text-[#A8CCD8]' : 'border-[#C9DEE6] bg-[#EDF7FA] text-[#4D788A]'}`}>
               <Activity className="h-3.5 w-3.5" />
-              ЖИВА АНАЛІТИКА МЕРЕЖІ
+              АНАЛІТИКА МЕРЕЖІ
             </div>
             <h1 id="analytics-title" className="mt-4 text-3xl sm:text-4xl font-black tracking-tight">Рішення на основі даних.</h1>
             <p className={`mt-2 max-w-2xl text-sm leading-relaxed ${isDark ? 'text-[#A8BABF]' : 'text-[#5A6A80]'}`}>
@@ -51,6 +51,12 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'lig
             <span>джерело: партнерська статистика</span>
           </div>
         </div>
+
+        {dataState !== 'LIVE' && (
+          <div className={`mt-4 rounded-xl border px-3 py-2 text-xs font-semibold ${isDark ? 'border-amber-900/60 bg-amber-950/20 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+            Демонстраційні метрики: підключіть partner API, щоб замінити приклади на актуальні дані.
+          </div>
+        )}
 
         <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {cards.map(({ label, value, note, icon: Icon, tone }) => (
