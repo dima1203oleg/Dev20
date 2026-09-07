@@ -491,6 +491,8 @@ export default function App() {
               <AffiliateProgram
                 onOpenMap={() => navigateToSection('HOME')}
                 onOpenSimulator={() => setIsSimulatorOpen(true)}
+                view="NETWORK"
+                initialTab="TREE"
                 theme={settings.theme || 'light'}
               />
             </div>
@@ -553,6 +555,8 @@ export default function App() {
               <AffiliateProgram
                 onOpenMap={() => navigateToSection('HOME')}
                 onOpenSimulator={() => setIsSimulatorOpen(true)}
+                view="PROGRAM"
+                initialTab="ANALYTICS"
                 theme={settings.theme || 'light'}
               />
             </div>

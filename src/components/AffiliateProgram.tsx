@@ -37,14 +37,18 @@ interface AffiliateProgramProps {
   onOpenMap?: () => void;
   onOpenSimulator?: () => void;
   theme?: 'light' | 'dark';
+  view?: 'NETWORK' | 'PROGRAM';
+  initialTab?: 'VISUAL' | 'TREE' | 'LIST' | 'ANALYTICS';
 }
 
 export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   onOpenMap,
   onOpenSimulator,
   theme = 'light',
+  view = 'NETWORK',
+  initialTab = 'VISUAL',
 }) => {
-  const [activeTab, setActiveTab] = useState<'VISUAL' | 'TREE' | 'LIST' | 'ANALYTICS'>('VISUAL');
+  const [activeTab, setActiveTab] = useState<'VISUAL' | 'TREE' | 'LIST' | 'ANALYTICS'>(initialTab);
   const [levelFilter, setLevelFilter] = useState<'ALL' | 'L1' | 'L2'>('ALL');
   const [selectedPartner, setSelectedPartner] = useState<NetworkNode | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -375,13 +379,15 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
           <h1 className={`text-3xl sm:text-4xl font-black tracking-tight leading-tight ${
             isDark ? 'text-white' : 'text-slate-900'
           }`}>
-            Моя мережа — <br />
-            <span className="text-blue-600">моя сила</span>
+            {view === 'PROGRAM' ? <>Партнерська програма — <br />
+              <span className="text-blue-600">твій наступний рівень</span></> : <>Моя мережа — <br />
+              <span className="text-blue-600">моя сила</span></>}
           </h1>
 
           <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            <span className="font-bold text-slate-700 dark:text-slate-300">Люди. Довіра. Результат.</span><br />
-            Розширюй свою мережу, підтримуй партнерів, відстежуй активність і разом робимо Україну безпечнішою.
+            {view === 'PROGRAM' ? <><span className="font-bold text-slate-700 dark:text-slate-300">Ранг. Винагорода. Розвиток.</span><br />
+              Переглядай умови, аналізуй конверсію та керуй запрошеннями в одному партнерському кабінеті.</> : <><span className="font-bold text-slate-700 dark:text-slate-300">Люди. Довіра. Результат.</span><br />
+              Розширюй свою мережу, підтримуй партнерів, відстежуй активність і разом робимо Україну безпечнішою.</>}
           </p>
 
           <div className="flex flex-wrap items-center gap-2.5 pt-1">
