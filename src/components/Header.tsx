@@ -6,7 +6,9 @@ import {
   Moon,
   ChevronDown,
   ShieldAlert,
-  Star
+  Star,
+  Menu,
+  X
 } from 'lucide-react';
 import { DashboardSection } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
@@ -33,6 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [activeTab, setActiveTab] = useState<'home' | 'features' | 'how' | 'pricing' | 'about'>('home');
   const [lang, setLang] = useState('UK');
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const isDark = theme === 'dark';
   const searchItems: Array<{ label: string; section: DashboardSection }> = [
@@ -52,6 +55,21 @@ export const Header: React.FC<HeaderProps> = ({
     onSelectSection(section);
     playWebAudioSound('click');
   };
+
+  const handleMobileNavClick = (item: { id: string; section: DashboardSection }) => {
+    setActiveTab(item.id as typeof activeTab);
+    handleNavClick(item.section);
+    if (item.id === 'how') onOpenGuide?.();
+    setMobileMenuOpen(false);
+  };
+
+  const navItems = [
+    { id: 'home', label: 'Головна', section: 'HOME' as DashboardSection },
+    { id: 'features', label: 'Можливості', section: 'NETWORK' as DashboardSection },
+    { id: 'how', label: 'Як це працює', section: 'HOME' as DashboardSection },
+    { id: 'pricing', label: 'Тарифи', section: 'FINANCE' as DashboardSection },
+    { id: 'about', label: 'Про нас', section: 'ABOUT' as DashboardSection },
+  ];
 
   return (
     <header className={`sticky top-0 z-40 w-full transition-colors duration-200 border-b backdrop-blur-xl ${
@@ -91,13 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Center: Main Navigation Links */}
         <nav className="hidden md:flex items-center gap-6 min-[1160px]:gap-8">
-          {[
-            { id: 'home', label: 'Головна', section: 'HOME' },
-            { id: 'features', label: 'Можливості', section: 'NETWORK' },
-            { id: 'how', label: 'Як це працює', section: 'HOME' },
-            { id: 'pricing', label: 'Тарифи', section: 'FINANCE' },
-            { id: 'about', label: 'Про нас', section: 'ABOUT' },
-          ].map((item) => {
+          {navItems.map((item) => {
             const isActive = activeTab === item.id || (item.id === 'home' && activeSection === 'HOME');
             return (
               <button
@@ -120,10 +132,10 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             );
           })}
-        </nav>
+          </nav>
 
         {/* Right: Search, Theme, Notifications, Lang, Profile Capsule */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           
           {/* Search Bar (Capsule) */}
           <div className="relative hidden min-[1160px]:flex items-center">
@@ -190,6 +202,20 @@ export const Header: React.FC<HeaderProps> = ({
               {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
             </button>
           )}
+
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? 'Закрити меню' : 'Відкрити меню'}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className={`md:hidden p-2 rounded-full transition-colors cursor-pointer border ${
+              isDark
+                ? 'bg-[#182335] text-slate-300 border-[#24344D] hover:bg-[#202E46]'
+                : 'bg-white/80 text-slate-700 border-[#CBD6E2] hover:bg-white'
+            }`}
+          >
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
 
           {/* Notifications Icon with Red Badge */}
           <div className="relative">
@@ -283,6 +309,43 @@ export const Header: React.FC<HeaderProps> = ({
 
         </div>
       </div>
+
+      {mobileMenuOpen && (
+        <div className={`md:hidden border-t px-4 pb-4 pt-3 ${
+          isDark ? 'border-[#1B273D] bg-[#0D131F]' : 'border-[#D1DCE5] bg-[#EAEFF5]'
+        }`}>
+          <nav aria-label="Мобільна навігація" className="grid grid-cols-1 gap-1.5">
+            {navItems.map((item) => {
+              const isActive = activeTab === item.id || (item.id === 'home' && activeSection === 'HOME');
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleMobileNavClick(item)}
+                  className={`w-full rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors ${
+                    isActive
+                      ? (isDark ? 'bg-[#182335] text-white' : 'bg-white text-[#0F172A] shadow-sm')
+                      : (isDark ? 'text-slate-300 hover:bg-[#182335]' : 'text-[#5A6A80] hover:bg-white/80')
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => { handleNavClick('PROFILE'); setMobileMenuOpen(false); }}
+              className={`w-full rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors ${
+                activeSection === 'PROFILE'
+                  ? (isDark ? 'bg-[#182335] text-white' : 'bg-white text-[#0F172A] shadow-sm')
+                  : (isDark ? 'text-slate-300 hover:bg-[#182335]' : 'text-[#5A6A80] hover:bg-white/80')
+              }`}
+            >
+              Профіль і безпека
+            </button>
+          </nav>
+        </div>
+      )}
     </header>
   );
 };

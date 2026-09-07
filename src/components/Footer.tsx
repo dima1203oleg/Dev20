@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, Send, Youtube, Facebook, Instagram } from 'lucide-react';
+import { runtimeConfig } from '../config/runtime';
 
 interface FooterProps {
   theme?: 'light' | 'dark';
@@ -49,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({ theme = 'light' }) => {
           {/* Social Icons */}
           <div className="flex items-center gap-3 text-slate-400">
             <a 
-              href="https://t.me/siren_ua" 
+              href={runtimeConfig.telegramUrl}
               target="_blank" 
               rel="noreferrer"
               className={`p-1.5 rounded-full transition-colors cursor-pointer ${
@@ -60,35 +61,9 @@ export const Footer: React.FC<FooterProps> = ({ theme = 'light' }) => {
               <Send className="w-4 h-4" />
             </a>
 
-            <a 
-              href="#youtube" 
-              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-rose-600 hover:bg-slate-100'
-              }`}
-              title="YouTube"
-            >
-              <Youtube className="w-4 h-4" />
-            </a>
-
-            <a 
-              href="#facebook" 
-              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-blue-600 hover:bg-slate-100'
-              }`}
-              title="Facebook"
-            >
-              <Facebook className="w-4 h-4" />
-            </a>
-
-            <a 
-              href="#instagram" 
-              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-pink-600 hover:bg-slate-100'
-              }`}
-              title="Instagram"
-            >
-              <Instagram className="w-4 h-4" />
-            </a>
+            {runtimeConfig.youtubeUrl && <a href={runtimeConfig.youtubeUrl} target="_blank" rel="noreferrer" className={`p-1.5 rounded-full transition-colors cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-rose-600 hover:bg-slate-100'}`} title="YouTube"><Youtube className="w-4 h-4" /></a>}
+            {runtimeConfig.facebookUrl && <a href={runtimeConfig.facebookUrl} target="_blank" rel="noreferrer" className={`p-1.5 rounded-full transition-colors cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-blue-600 hover:bg-slate-100'}`} title="Facebook"><Facebook className="w-4 h-4" /></a>}
+            {runtimeConfig.instagramUrl && <a href={runtimeConfig.instagramUrl} target="_blank" rel="noreferrer" className={`p-1.5 rounded-full transition-colors cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-pink-600 hover:bg-slate-100'}`} title="Instagram"><Instagram className="w-4 h-4" /></a>}
           </div>
         </div>
 

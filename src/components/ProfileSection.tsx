@@ -791,22 +791,22 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             </div>
 
             <div className="space-y-2 text-xs">
-              <a href="#faq" className="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+              <button type="button" onClick={() => setActiveDrawer('support')} className="w-full flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left">
                 <span className="flex items-center gap-2"><HelpCircle className="w-3.5 h-3.5 text-slate-400" /> Центр допомоги (FAQ)</span>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              </a>
-              <a href="#support" className="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+              </button>
+              <button type="button" onClick={() => setActiveDrawer('support')} className="w-full flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left">
                 <span className="flex items-center gap-2"><MessageSquare className="w-3.5 h-3.5 text-slate-400" /> Написати в підтримку</span>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              </a>
+              </button>
               <a href="https://t.me/sirenua_support" target="_blank" rel="noreferrer" className="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                 <span className="flex items-center gap-2"><Send className="w-3.5 h-3.5 text-sky-500" /> Telegram-чат</span>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
               </a>
-              <a href="#kb" className="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+              <button type="button" onClick={() => setActiveDrawer('support')} className="w-full flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left">
                 <span className="flex items-center gap-2"><BookOpen className="w-3.5 h-3.5 text-slate-400" /> База знань</span>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              </a>
+              </button>
             </div>
           </div>
 
