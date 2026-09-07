@@ -360,8 +360,7 @@ export default function App() {
           {activeSection === 'FINANCE' && (
             <div className="animate-in fade-in duration-200">
               <FinanceSection
-                onOpenWithdrawModal={() => {}}
-                onOpenHistory={() => {}}
+                onOpenNetwork={() => setActiveSection('NETWORK')}
                 theme={settings.theme || 'light'}
               />
             </div>

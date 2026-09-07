@@ -20,7 +20,6 @@ import {
   ExternalLink,
   Lock,
   Zap,
-  MoreVertical,
   Check,
   Loader2,
   Info
@@ -45,14 +44,12 @@ import { InfoTooltip } from './InfoTooltip';
 import { DataState } from '../types/dataEnvelope';
 
 interface FinanceSectionProps {
-  onOpenWithdrawModal?: () => void;
-  onOpenHistory?: () => void;
+  onOpenNetwork?: () => void;
   theme?: 'light' | 'dark';
 }
 
 export const FinanceSection: React.FC<FinanceSectionProps> = ({
-  onOpenWithdrawModal,
-  onOpenHistory,
+  onOpenNetwork,
   theme = 'light',
 }) => {
   const [selectedPeriod, setSelectedPeriod] = useState('8months');
@@ -60,6 +57,11 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [showFaqDrawer, setShowFaqDrawer] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [newCardNumber, setNewCardNumber] = useState('');
+  const [newCardExpiry, setNewCardExpiry] = useState('');
+  const [newCardCvv, setNewCardCvv] = useState('');
+  const [newMethodError, setNewMethodError] = useState<string | null>(null);
+  const [newMethodSuccess, setNewMethodSuccess] = useState(false);
   const [summary, setSummary] = useState<PartnerFinancialSummary>(DEFAULT_FINANCIAL_SUMMARY);
   const [dataState, setDataState] = useState<DataState>('LOADING');
   const [ledger, setLedger] = useState<LedgerTransaction[]>(() => financialService.getLedgerTransactions());
@@ -137,6 +139,58 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
     setCurrentStepName('');
     setCurrentStepIndex(0);
     setWithdrawError(null);
+  };
+
+  const closeAddCardModal = () => {
+    setShowAddCardModal(false);
+    setNewCardNumber('');
+    setNewCardExpiry('');
+    setNewCardCvv('');
+    setNewMethodError(null);
+    setNewMethodSuccess(false);
+  };
+
+  const handleAddPayoutMethod = (event: React.FormEvent) => {
+    event.preventDefault();
+    setNewMethodError(null);
+
+    if (dataState === 'LIVE') {
+      setNewMethodError('Додавання платіжного методу виконується через payout provider. API ще не повернув доступний flow.');
+      return;
+    }
+
+    const digits = newCardNumber.replace(/\D/g, '');
+    if (digits.length !== 16) {
+      setNewMethodError('Введіть 16 цифр номера картки. Дані залишаться лише в локальному DEMO-сценарії.');
+      return;
+    }
+
+    if (!/^\d{2}\s*\/\s*\d{2}$/.test(newCardExpiry.trim())) {
+      setNewMethodError('Вкажіть термін дії у форматі MM / YY.');
+      return;
+    }
+
+    if (!/^\d{3,4}$/.test(newCardCvv.trim())) {
+      setNewMethodError('CVV має містити 3 або 4 цифри.');
+      return;
+    }
+
+    const lastFour = digits.slice(-4);
+    const addedMethod = financialService.addPayoutMethod({
+      type: 'MONOBANK',
+      title: 'Нова картка (DEMO)',
+      account: `•••• ${lastFour}`,
+      accountMasked: `•••• ${lastFour}`,
+      feePercent: 0,
+      fixedFeeUah: 0,
+      isDefault: false,
+      minAmountUah: summary.minimumPayout,
+    });
+
+    setPayoutMethods(financialService.getPayoutMethods());
+    setSelectedMethodId(addedMethod.id);
+    setNewMethodSuccess(true);
+    playWebAudioSound('ping');
   };
 
   return (
@@ -495,7 +549,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   <span>{calculateRankByL1(summary.qualifiedL1 ?? 0).badgeLabel}</span>
                 </div>
               </div>
-              <button className="w-8 h-8 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 flex items-center justify-center">
+              <button onClick={() => onOpenNetwork?.()} aria-label="Відкрити партнерську мережу" className="w-8 h-8 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 flex items-center justify-center cursor-pointer">
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -530,7 +584,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-bold">Вивести кошти</h3>
-                <button className="w-7 h-7 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 flex items-center justify-center">
+                <button onClick={() => setShowWithdrawModal(true)} aria-label="Відкрити виведення коштів" className="w-7 h-7 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 flex items-center justify-center cursor-pointer">
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -543,7 +597,6 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               <button
                 onClick={() => {
                   setShowWithdrawModal(true);
-                  onOpenWithdrawModal?.();
                   playWebAudioSound('click');
                 }}
                 className="w-full mt-4 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
@@ -562,8 +615,8 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   <Zap className="w-3 h-3" />
                 </div>
                 <div>
-                  <div className="font-bold leading-tight">Автоматичні виплати</div>
-                  <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Швидко та безпечно</div>
+                  <div className="font-bold leading-tight">Payout flow</div>
+                  <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Автоматизація після API</div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -571,8 +624,8 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   <Clock className="w-3 h-3" />
                 </div>
                 <div>
-                  <div className="font-bold leading-tight">Підтримка 24/7</div>
-                  <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Допомога у будь-який час</div>
+                  <div className="font-bold leading-tight">Підтримка у кабінеті</div>
+                  <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Контекстні підказки та статуси</div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -604,8 +657,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
 
             <div className="space-y-2 text-xs">
               {payoutMethods.map((method, idx) => (
-                <div key={method.id} className={`p-2.5 rounded-xl border flex items-center justify-between ${
-                  isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
+                <button type="button" key={method.id} onClick={() => setSelectedMethodId(method.id)} className={`w-full p-2.5 rounded-xl border flex items-center justify-between text-left cursor-pointer transition-colors ${
+                  selectedMethodId === method.id
+                    ? (isDark ? 'bg-blue-950/40 border-blue-700/70' : 'bg-blue-50 border-blue-200')
+                    : (isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100')
                 }`}>
                   <div className="flex items-center gap-2">
                     <CreditCard className={`w-4 h-4 ${idx === 0 ? 'text-blue-600' : 'text-purple-600'}`} />
@@ -616,28 +671,16 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                       </div>
                     </div>
                   </div>
-                  {method.isDefault ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                      Основна
-                    </span>
-                  ) : (
-                    <MoreVertical className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
+                {selectedMethodId === method.id || method.isDefault ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                    {selectedMethodId === method.id && !method.isDefault ? 'Обрано' : 'Основна'}
+                  </span>
+                ) : (
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                   )}
-                </div>
+                </button>
               ))}
 
-              <div className={`p-2.5 rounded-xl border flex items-center justify-between ${
-                isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-sky-500" />
-                  <div>
-                    <div className="font-bold leading-tight">PayPal</div>
-                    <div className="text-[10px] text-slate-400">example@email.com</div>
-                  </div>
-                </div>
-                <MoreVertical className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
-              </div>
             </div>
           </div>
 
@@ -658,7 +701,6 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               <button 
                 onClick={() => {
                   setShowHistoryDrawer(true);
-                  onOpenHistory?.();
                 }}
                 className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
               >
@@ -708,7 +750,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold">Цілі та досягнення</h3>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
+              <button onClick={() => setShowFaqDrawer(true)} className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
                 <span>Всі цілі</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
@@ -790,10 +832,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
 
           <div className="pt-4 z-10">
             <button
-              onClick={() => setShowWithdrawModal(true)}
+              onClick={() => onOpenNetwork?.()}
               className="px-4 py-2 rounded-xl bg-white hover:bg-blue-50 text-blue-700 font-bold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
             >
-              <span>Дізнатись деталі</span>
+              <span>Відкрити мережу</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -882,18 +924,34 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-100 text-slate-900'
           }`}>
             <button
-              onClick={() => setShowAddCardModal(false)}
+              onClick={closeAddCardModal}
               className="absolute top-4 right-4 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
             >
               ✕
             </button>
             <h3 className="text-lg font-black mb-1">Додати платіжний метод</h3>
-            <p className="text-xs text-slate-400 mb-4">Підтримуються будь-які українські банківські картки (Visa, Mastercard, PROSTIR) та IBAN.</p>
-            
-            <div className="space-y-3">
+            <p className="text-xs text-slate-400 mb-4">Демо-форма приймає картку локально. Повний номер не зберігається й не передається без підключеного payout provider.</p>
+
+            {newMethodSuccess ? (
+              <div className="space-y-4 py-5 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                  <Check className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="font-black">Метод додано в DEMO</h4>
+                  <p className="mt-1 text-xs text-slate-500">У production потрібна верифікація через payout provider.</p>
+                </div>
+                <button type="button" onClick={closeAddCardModal} className="w-full rounded-2xl bg-blue-600 py-2.5 text-xs font-bold text-white hover:bg-blue-700">Готово</button>
+              </div>
+            ) : (
+              <form className="space-y-3" onSubmit={handleAddPayoutMethod}>
               <input 
                 type="text" 
                 placeholder="Номер картки (16 цифр)"
+                inputMode="numeric"
+                autoComplete="off"
+                value={newCardNumber}
+                onChange={(event) => setNewCardNumber(event.target.value)}
                 className={`w-full px-4 py-2.5 rounded-2xl border text-xs outline-none ${
                   isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'
                 }`} 
@@ -902,6 +960,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                 <input 
                   type="text" 
                   placeholder="ММ / РР"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={newCardExpiry}
+                  onChange={(event) => setNewCardExpiry(event.target.value)}
                   className={`w-full px-4 py-2.5 rounded-2xl border text-xs outline-none ${
                     isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'
                   }`} 
@@ -909,6 +971,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                 <input 
                   type="text" 
                   placeholder="CVV"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={newCardCvv}
+                  onChange={(event) => setNewCardCvv(event.target.value)}
                   className={`w-full px-4 py-2.5 rounded-2xl border text-xs outline-none ${
                     isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'
                   }`} 
@@ -923,7 +989,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   Якщо у вас виникли проблеми з додаванням картки, будь ласка, переконайтесь, що вона відкрита для інтернет-платежів.
                 </div>
               </div>
-            </div>
+              {newMethodError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">{newMethodError}</div>}
+              <button type="submit" className="w-full rounded-2xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700">Додати картку</button>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -970,21 +1039,21 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             <div>
               <h4 className="font-bold mb-1">1. Комісії Першого Рівня (L1)</h4>
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Ти отримуєш <strong>20%</strong> (або відсоток, відповідний твоєму рангу) від кожної оплати підписки людьми, яких ти особисто запросив. Це твої найпряміші партнери. Чим вище твій ранг, тим більший відсоток комісії ти отримуєш.
+                Ти отримуєш <strong>{calculateRankByL1(summary.qualifiedL1).l1Percent}%</strong> від кваліфікованої оплати підписки людьми, яких ти особисто запросив. Це твої найпряміші партнери. Ставка фіксується правилами рангу на момент кваліфікації платежу.
               </p>
             </div>
 
             <div>
               <h4 className="font-bold mb-1">2. Комісії Другого Рівня (L2)</h4>
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Ти також отримуєш <strong>20%</strong> комісійних з оплат людей, яких запросили твої партнери з L1. Вони формують твій пасивний дохід, але <strong>НЕ</strong> враховуються для підвищення твого рангу.
+                Ти також отримуєш <strong>{calculateRankByL1(summary.qualifiedL1).l2Percent}%</strong> комісійних з оплат людей, яких запросили твої партнери з L1. Вони формують дохід другого рівня, але <strong>НЕ</strong> враховуються для підвищення твого рангу.
               </p>
             </div>
 
             <div>
               <h4 className="font-bold mb-1">3. Бонуси (Bonuses)</h4>
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Одноразові винагороди, які нараховуються за досягнення нових рангів (наприклад, перехід на Platinum) або участь у спеціальних акціях.
+                Досягнення та медалі за замовчуванням не змінюють фінансову математику. Будь-яка платна промо-кампанія має пройти окреме versioned-правило та перевірку ліміту.
               </p>
             </div>
             
@@ -996,7 +1065,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                 Статуси балансу
               </h4>
               <ul className={`text-xs space-y-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                <li><strong>Очікується (Pending):</strong> Кошти надійшли, але проходять 7-денний період перевірки.</li>
+                <li><strong>Очікується (Pending):</strong> Кошти надійшли, але проходять налаштований policy-період перевірки.</li>
                 <li><strong>Доступно (Available):</strong> Кошти перевірені та готові до виводу на вашу картку.</li>
               </ul>
             </div>
