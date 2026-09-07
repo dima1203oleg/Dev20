@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Check, Clock3, CreditCard, Database, ShieldCheck, Sparkles } from 'lucide-react';
 import { subscriptionService } from '../services/subscriptionService';
+import { commercialPolicy } from '../config/commercial';
 
 interface PricingSectionProps {
   theme?: 'light' | 'dark';
@@ -62,7 +63,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <button type="button" onClick={handleTrial} disabled={trialPending} className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">
-                {trialPending ? 'Перевіряємо доступ…' : 'Почати 30-денний trial'} <ArrowRight className="h-4 w-4" />
+                {trialPending ? 'Перевіряємо доступ…' : `Почати ${commercialPolicy.trialDays}-денний trial`} <ArrowRight className="h-4 w-4" />
               </button>
               <button type="button" onClick={handleStart} className={`inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition ${isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-50'}`}>
                 Ознайомитися
@@ -81,10 +82,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
           <div className={`rounded-3xl border p-5 ${isDark ? 'border-cyan-900/70 bg-slate-950/70' : 'border-blue-100 bg-blue-50/60'}`}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className={`text-xs font-bold uppercase tracking-[0.16em] ${muted}`}>Premium Monthly</p>
-                <p className="mt-3 text-5xl font-black tracking-tight">$1<span className={`text-base font-bold ${muted}`}> / місяць</span></p>
+                <p className={`text-xs font-bold uppercase tracking-[0.16em] ${muted}`}>{commercialPolicy.displayName}</p>
+                <p className="mt-3 text-5xl font-black tracking-tight">${commercialPolicy.basePriceUsd}<span className={`text-base font-bold ${muted}`}> / місяць</span></p>
               </div>
-              <span className="rounded-full bg-purple-500/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-purple-500">30 днів trial</span>
+              <span className="rounded-full bg-purple-500/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-purple-500">{commercialPolicy.trialDays} днів trial</span>
             </div>
             <p className={`mt-3 text-xs leading-relaxed ${muted}`}>
               Цільова базова ціна. Локальна валюта, VAT та ціна каналу визначаються verified billing provider під час оформлення.
@@ -123,7 +124,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
 
       <section className={`grid gap-3 md:grid-cols-3 ${muted}`}>
         {[
-          [Clock3, 'Trial 30 днів', 'Нагадування T−7 / T−3 / T−1 та завершення trial — окремі події системи.'],
+          [Clock3, `Trial ${commercialPolicy.trialDays} днів`, 'Нагадування T−7 / T−3 / T−1 та завершення trial — окремі події системи.'],
           [CreditCard, 'Прозора оплата', 'Provider fee, FX та локальна ціна показуються до підтвердження.'],
           [ShieldCheck, 'REAL DATA ONLY', 'Якщо billing або джерело даних не підключено, інтерфейс прямо показує це.'],
         ].map(([Icon, title, description]) => {
