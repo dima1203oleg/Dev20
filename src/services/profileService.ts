@@ -10,7 +10,7 @@
 import { DataEnvelope } from '../types/dataEnvelope';
 import { runtimeConfig } from '../config/runtime';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
-import { getJson, isJsonObject } from './apiClient';
+import { getJson, getJsonFromPaths, isJsonObject } from './apiClient';
 
 export interface UserProfileData {
   id: string;
@@ -69,9 +69,50 @@ class ProfileService {
     const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
     try {
-      const remote = await getJson<unknown>('/api/v1/profile/me', 2000);
+      const remote = await getJsonFromPaths<unknown>([
+        '/api/v1/profile/me',
+        '/api/partner/dashboard',
+      ], 2500);
       if (!isJsonObject(remote) || typeof remote.id !== 'string' || typeof remote.fullName !== 'string' || typeof remote.qualifiedL1 !== 'number') {
-        throw new Error('Profile payload has invalid shape');
+        const partner = isJsonObject(remote) && isJsonObject(remote.partner) ? remote.partner : null;
+        if (!partner || typeof partner.id !== 'string' || typeof partner.activeL1PaidCount !== 'number') {
+          throw new Error('Profile payload has invalid shape');
+        }
+        const qualifiedL1 = partner.activeL1PaidCount;
+        const currentRank = calculateRankByL1(qualifiedL1);
+        const progression = getNextTierInfo(currentRank, qualifiedL1);
+        const data: UserProfileData = {
+          id: typeof partner.userId === 'string' ? partner.userId : partner.id,
+          partnerId: partner.id,
+          partnerCode: typeof partner.referralCode === 'string' ? partner.referralCode : '',
+          // The canonical partner dashboard intentionally does not expose PII.
+          fullName: 'Партнерський профіль',
+          firstName: 'Партнер',
+          lastName: '',
+          email: '',
+          phone: '',
+          city: '',
+          regionId: '',
+          avatarUrl: '',
+          registrationDate: typeof partner.createdAt === 'string' ? partner.createdAt : '',
+          isEmailVerified: false,
+          isPhoneVerified: false,
+          qualifiedL1,
+          totalNetworkCount: Number(partner.totalL1Count ?? 0) + Number(partner.totalL2Count ?? 0),
+          currentRank,
+          nextRank: progression.nextTier,
+          remainingL1ToNextRank: progression.remainingL1,
+          rankProgressPercent: progression.progressPercent,
+          ambassadorStatus: partner.isAmbassadorApproved === true ? 'APPROVED' : partner.ambassadorTier === 'CANDIDATE' ? 'CANDIDATE' : 'NOT_ELIGIBLE',
+          ambassadorTitle: partner.isAmbassadorApproved === true ? 'Амбасадор' : partner.ambassadorTier === 'CANDIDATE' ? 'Кандидат у амбасадори' : 'Статус не досягнуто',
+        };
+        return {
+          data,
+          state: isJsonObject(remote) && remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
+          source: 'SIREN_UA_DEV15_PARTNER_DASHBOARD',
+          updatedAt,
+          isRealData: !(isJsonObject(remote) && remote.status === 'DEMO_DATA'),
+        };
       }
 
       const currentRank = calculateRankByL1(remote.qualifiedL1);

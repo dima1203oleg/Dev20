@@ -167,6 +167,15 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   const l2SharePercent = summary.totalNetworkSize > 0
     ? ((summary.activeL2Count / summary.totalNetworkSize) * 100).toFixed(1)
     : '0.0';
+  const new30DaysDisplay = summary.metricsAvailability?.new30Days === false
+    ? '—'
+    : summary.new30DaysCount.toLocaleString('uk-UA');
+  const conversionDisplay = summary.metricsAvailability?.conversion === false
+    ? '—'
+    : `${summary.conversionRatePercent}%`;
+  const monthlyIncomeDisplay = summary.metricsAvailability?.monthlyIncome === false
+    ? '—'
+    : `₴ ${summary.monthlyNetworkIncomeUah.toLocaleString('uk-UA')}`;
 
   useEffect(() => {
     networkService.getNetworkSummary().then(res => {
@@ -326,12 +335,12 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             <BarChart2 className="w-5 h-5 text-blue-500" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-            <div className={`rounded-2xl p-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-50'}`}><div className="text-xs text-slate-500">Конверсія в оплату</div><div className="text-2xl font-black mt-1">{summary.conversionRatePercent}%</div><div className="text-[10px] text-slate-500 mt-1">за даними summary API</div></div>
-            <div className={`rounded-2xl p-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-50'}`}><div className="text-xs text-slate-500">Нові за 30 днів</div><div className="text-2xl font-black mt-1">{summary.new30DaysCount.toLocaleString('uk-UA')}</div><div className="text-[10px] text-slate-500 mt-1">з нормалізованого summary</div></div>
-            <div className={`rounded-2xl p-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-50'}`}><div className="text-xs text-slate-500">Мережевий дохід</div><div className="text-2xl font-black mt-1">₴ {summary.monthlyNetworkIncomeUah.toLocaleString('uk-UA')}</div><div className="text-[10px] text-slate-500 mt-1">період: 30 днів</div></div>
+            <div className={`rounded-2xl p-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-50'}`}><div className="text-xs text-slate-500">Конверсія в оплату</div><div className="text-2xl font-black mt-1">{conversionDisplay}</div><div className="text-[10px] text-slate-500 mt-1">за даними summary API</div></div>
+            <div className={`rounded-2xl p-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-50'}`}><div className="text-xs text-slate-500">Нові за 30 днів</div><div className="text-2xl font-black mt-1">{new30DaysDisplay}</div><div className="text-[10px] text-slate-500 mt-1">з нормалізованого summary</div></div>
+            <div className={`rounded-2xl p-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-50'}`}><div className="text-xs text-slate-500">Мережевий дохід</div><div className="text-2xl font-black mt-1">{monthlyIncomeDisplay}</div><div className="text-[10px] text-slate-500 mt-1">період: 30 днів</div></div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div><h3 className="text-sm font-bold mb-3">Джерела трафіку</h3><div className="space-y-3">{summary.trafficSources.map((source) => <div key={source.name}><div className="flex items-center justify-between text-xs mb-1"><span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: source.color }} />{source.name}</span><span className="font-bold">{source.percent}% · {source.count.toLocaleString('uk-UA')}</span></div><div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${source.percent}%`, backgroundColor: source.color }} /></div></div>)}</div></div>
+            <div><h3 className="text-sm font-bold mb-3">Джерела трафіку</h3>{summary.trafficSources.length ? <div className="space-y-3">{summary.trafficSources.map((source) => <div key={source.name}><div className="flex items-center justify-between text-xs mb-1"><span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: source.color }} />{source.name}</span><span className="font-bold">{source.percent}% · {source.count.toLocaleString('uk-UA')}</span></div><div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${source.percent}%`, backgroundColor: source.color }} /></div></div>)}</div> : <p className="text-xs text-slate-500">Джерела трафіку ще не повертає partner API.</p>}</div>
             <div><h3 className="text-sm font-bold mb-3">Гілки мережі</h3><div className="space-y-3">{branches.map((branch) => <div key={branch.branchId}><div className="flex items-center justify-between text-xs mb-1"><span className="font-semibold truncate pr-2">{branch.branchName}</span><span className="font-bold">{branch.sharePercent}%</span></div><div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.min(branch.sharePercent, 100)}%` }} /></div><div className="flex justify-between text-[10px] text-slate-500 mt-1"><span>L1 {branch.l1Members} · L2 {branch.l2Members}</span><span>Конверсія {branch.conversionPercent}%</span></div></div>)}{!branches.length && <p className="text-xs text-slate-500">Branch analytics ще не підключено.</p>}</div></div>
           </div>
         </div>
@@ -512,7 +521,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               </span>
             </div>
             <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Нові за 30 днів</div>
-            <div className="text-2xl font-black mt-0.5">{summary.new30DaysCount.toLocaleString('uk-UA')}</div>
+            <div className="text-2xl font-black mt-0.5">{new30DaysDisplay}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Приєдналися</div>
           </div>
 
@@ -531,7 +540,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               </span>
             </div>
             <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Конверсія в оплату</div>
-            <div className="text-2xl font-black mt-0.5">{summary.conversionRatePercent}%</div>
+            <div className="text-2xl font-black mt-0.5">{conversionDisplay}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Від активних</div>
           </div>
 
@@ -550,7 +559,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               </span>
             </div>
             <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Мережевий дохід</div>
-            <div className="text-2xl font-black mt-0.5">₴ {summary.monthlyNetworkIncomeUah.toLocaleString('uk-UA')}</div>
+            <div className="text-2xl font-black mt-0.5">{monthlyIncomeDisplay}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>За 30 днів</div>
           </div>
 
@@ -631,7 +640,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
 
             {/* Legend breakdown */}
             <div className="space-y-1.5 text-xs pt-1">
-              {summary.trafficSources.map((source) => (
+              {summary.trafficSources.length ? summary.trafficSources.map((source) => (
                 <div key={source.name} className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: source.color }} />
@@ -639,7 +648,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                   </span>
                   <span className="font-bold">{source.percent}%</span>
                 </div>
-              ))}
+              )) : <p className="text-xs text-slate-500">Джерела трафіку ще не повертає partner API.</p>}
             </div>
           </div>
 
@@ -856,7 +865,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Активних</div>
             </div>
             <div>
-              <div className="text-base font-black text-amber-500">{summary.new30DaysCount.toLocaleString('uk-UA')}</div>
+              <div className="text-base font-black text-amber-500">{new30DaysDisplay}</div>
               <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Нових за 30 днів</div>
             </div>
           </div>
@@ -1050,7 +1059,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> Нові</span>
-                <span className="font-bold">{summary.new30DaysCount.toLocaleString('uk-UA')}</span>
+                <span className="font-bold">{new30DaysDisplay}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-300" /> Неактивні</span>

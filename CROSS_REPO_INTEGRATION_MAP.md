@@ -62,6 +62,7 @@ the older `/api/v1` contracts:
 | Threat vectors | `/api/threats/live` | `threatServerService` | Lat/lng paths become normalized trajectory view models |
 | Shelters | `/api/threats/shelters` | `shelterService` | Availability is not invented; demo source remains labelled |
 | Partner summary | `/api/partner/dashboard` | `networkService`, `financialService` | Wallet/rank fields are mapped from minor units |
+| Partner identity | `/api/partner/dashboard` | `profileService` | Uses safe partner/rank aggregates; canonical dashboard PII is intentionally not assumed |
 | Network | `/api/partner/network` | `networkService` | Aggregate L1/L2 response is rendered as aggregate nodes |
 | Ledger | `/api/partner/ledger` | `financialService` | Immutable entries are read-only projections |
 | Payout history | `/api/partner/payouts` | `financialService` | Provider status remains explicit |

@@ -92,6 +92,12 @@ export interface NetworkSummary {
     count: number;
     color: string;
   }[];
+  metricsAvailability?: {
+    conversion: boolean;
+    new30Days: boolean;
+    monthlyIncome: boolean;
+    trafficSources: boolean;
+  };
 }
 
 // Master authoritative dataset for the user's partner network
@@ -526,6 +532,12 @@ class NetworkService {
       referralCode: overrides.referralCode ?? this.referralCode,
       referralUrl: overrides.referralUrl ?? `https://siren.ua/r/${this.referralCode}`,
       trafficSources: overrides.trafficSources ?? defaultTrafficSources,
+      metricsAvailability: overrides.metricsAvailability ?? {
+        conversion: true,
+        new30Days: true,
+        monthlyIncome: true,
+        trafficSources: true,
+      },
     };
   }
 
@@ -543,7 +555,6 @@ class NetworkService {
       if (!isJsonObject(remote)) throw new Error('Partner summary has invalid shape');
 
       const partner = isJsonObject(remote.partner) ? remote.partner : remote;
-      const wallet = isJsonObject(remote.wallet) ? remote.wallet : null;
       const rankProgress = isJsonObject(remote.rankProgress) ? remote.rankProgress : null;
       const qualifiedL1 = Number(partner.activeL1PaidCount ?? remote.qualifiedL1);
       const totalL1 = Number(partner.totalL1Count ?? remote.totalL1Count);
@@ -571,7 +582,7 @@ class NetworkService {
         activeL2Count: activeL2,
         new30DaysCount: 0,
         conversionRatePercent: 0,
-        monthlyNetworkIncomeUah: wallet && typeof wallet.pendingMinor === 'number' ? Number(wallet.pendingMinor) / 100 : 0,
+        monthlyNetworkIncomeUah: typeof remote.monthlyNetworkIncomeUah === 'number' ? remote.monthlyNetworkIncomeUah : 0,
         qualifiedL1,
         referralCode: typeof partner.referralCode === 'string' ? partner.referralCode : undefined,
         referralUrl: typeof partner.referralCode === 'string' ? `https://siren.ua/r/${partner.referralCode}` : undefined,
@@ -586,6 +597,12 @@ class NetworkService {
             && typeof source.color === 'string'
           ))
           : [],
+        metricsAvailability: {
+          conversion: typeof remote.conversionRatePercent === 'number',
+          new30Days: typeof remote.new30DaysCount === 'number',
+          monthlyIncome: typeof remote.monthlyNetworkIncomeUah === 'number',
+          trafficSources: Array.isArray(remote.trafficSources),
+        },
       });
 
       const state = remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE';
@@ -616,8 +633,7 @@ class NetworkService {
    * Returns graph nodes and relational edges
    */
   public async getNetworkGraph(): Promise<DataEnvelope<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>> {
-    if (runtimeConfig.apiBaseUrl) {
-      try {
+    try {
         const remote = await getJsonFromPaths<unknown>([
           '/api/partner/network',
           '/api/v1/partner/network',
@@ -629,18 +645,25 @@ class NetworkService {
           if (!l1 || !l2 || typeof l1.count !== 'number' || typeof l2.count !== 'number') {
             throw new Error('Partner network has invalid aggregate shape');
           }
+          const dashboard = await getJsonFromPaths<unknown>(['/api/partner/dashboard'], 2500).catch(() => null);
+          const dashboardPartner = isJsonObject(dashboard) && isJsonObject(dashboard.partner) ? dashboard.partner : null;
+          const l1Total = dashboardPartner && typeof dashboardPartner.totalL1Count === 'number' ? dashboardPartner.totalL1Count : l1.count;
+          const l2Total = dashboardPartner && typeof dashboardPartner.totalL2Count === 'number' ? dashboardPartner.totalL2Count : l2.count;
+          const qualifiedL1 = dashboardPartner && typeof dashboardPartner.activeL1PaidCount === 'number'
+            ? dashboardPartner.activeL1PaidCount
+            : typeof l1.activePaidCount === 'number' ? l1.activePaidCount : 0;
           const nodes: NetworkNode[] = [
             {
               id: 'me', name: 'Моя мережа', level: 'ME', avatar: '', earnings: '—', rawEarningsUah: 0,
-              peopleCount: l1.count + l2.count, status: 'TOP', x: 50, y: 50, joinDate: '', plan: 'Aggregate', planPrice: 0, qualifiedL1Count: typeof l1.activePaidCount === 'number' ? l1.activePaidCount : 0,
+              peopleCount: l1Total + l2Total, status: 'TOP', x: 50, y: 50, joinDate: '', plan: 'Aggregate', planPrice: 0, qualifiedL1Count: qualifiedL1,
             },
             {
               id: 'l1-aggregate', name: 'L1 · прямі партнери', level: 'L1', avatar: '', earnings: '—', rawEarningsUah: 0,
-              peopleCount: l1.count, status: 'ACTIVE', x: 28, y: 35, parentId: 'me', parentName: 'Моя мережа', joinDate: '', plan: 'Aggregate', planPrice: 0, qualifiedL1Count: typeof l1.activePaidCount === 'number' ? l1.activePaidCount : 0,
+              peopleCount: l1Total, status: 'ACTIVE', x: 28, y: 35, parentId: 'me', parentName: 'Моя мережа', joinDate: '', plan: 'Aggregate', planPrice: 0, qualifiedL1Count: qualifiedL1,
             },
             {
               id: 'l2-aggregate', name: 'L2 · мережа другого рівня', level: 'L2', avatar: '', earnings: '—', rawEarningsUah: 0,
-              peopleCount: l2.count, status: 'ACTIVE', x: 72, y: 35, parentId: 'me', parentName: 'Моя мережа', joinDate: '', plan: 'Aggregate', planPrice: 0, qualifiedL1Count: 0,
+              peopleCount: l2Total, status: 'ACTIVE', x: 72, y: 35, parentId: 'me', parentName: 'Моя мережа', joinDate: '', plan: 'Aggregate', planPrice: 0, qualifiedL1Count: 0,
             },
           ];
           const edges: NetworkEdge[] = [
@@ -662,9 +685,8 @@ class NetworkService {
           updatedAt: this.now(),
           isRealData: remote.status !== 'DEMO_DATA',
         };
-      } catch {
-        return this.notConnected<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>('SIREN_UA_PARTNER_NETWORK');
-      }
+    } catch {
+      if (runtimeConfig.apiBaseUrl) return this.notConnected<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>('SIREN_UA_PARTNER_NETWORK');
     }
 
     return {
@@ -683,8 +705,7 @@ class NetworkService {
    * Returns list of partners filtered by level and search
    */
   public async getNetworkPartners(levelFilter: 'ALL' | 'L1' | 'L2' = 'ALL', search: string = ''): Promise<DataEnvelope<NetworkNode[]>> {
-    if (runtimeConfig.apiBaseUrl) {
-      try {
+    try {
         const query = new URLSearchParams({ level: levelFilter, search: search.trim() });
         const remote = await getJsonFromPaths<unknown>([
           `/api/partner/network?${query.toString()}`,
@@ -729,9 +750,8 @@ class NetworkService {
           updatedAt: this.now(),
           isRealData: !(isJsonObject(remote) && remote.status === 'DEMO_DATA'),
         };
-      } catch {
-        return this.notConnected<NetworkNode[]>('SIREN_UA_PARTNER_NETWORK_PARTNERS');
-      }
+    } catch {
+      if (runtimeConfig.apiBaseUrl) return this.notConnected<NetworkNode[]>('SIREN_UA_PARTNER_NETWORK_PARTNERS');
     }
 
     let filtered = AUTHORITATIVE_PARTNER_NODES.filter(n => n.level !== 'ME');

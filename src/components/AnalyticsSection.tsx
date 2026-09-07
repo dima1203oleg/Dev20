@@ -30,9 +30,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ theme = 'lig
   const unavailable = dataState === 'NOT_CONNECTED' || dataState === 'ERROR';
   const cards = [
     { label: 'Кваліфіковані L1', value: unavailable ? '—' : (data?.qualifiedL1 ?? '—'), note: 'впливають на ранг', icon: Users, tone: 'blue' },
-    { label: 'Конверсія в оплату', value: unavailable ? '—' : `${data?.conversionRatePercent ?? '—'}%`, note: 'trial → paid', icon: CheckCircle2, tone: 'green' },
-    { label: 'Нові за 30 днів', value: unavailable ? '—' : (data?.new30DaysCount ?? '—'), note: 'нові учасники', icon: Activity, tone: 'cyan' },
-    { label: 'Дохід мережі', value: unavailable ? '—' : `₴ ${(data?.monthlyNetworkIncomeUah ?? 0).toLocaleString('uk-UA')}`, note: 'поточний місяць', icon: BarChart3, tone: 'amber' },
+    { label: 'Конверсія в оплату', value: unavailable || data?.metricsAvailability?.conversion === false ? '—' : `${data?.conversionRatePercent ?? '—'}%`, note: 'trial → paid', icon: CheckCircle2, tone: 'green' },
+    { label: 'Нові за 30 днів', value: unavailable || data?.metricsAvailability?.new30Days === false ? '—' : (data?.new30DaysCount ?? '—'), note: 'нові учасники', icon: Activity, tone: 'cyan' },
+    { label: 'Дохід мережі', value: unavailable || data?.metricsAvailability?.monthlyIncome === false ? '—' : `₴ ${(data?.monthlyNetworkIncomeUah ?? 0).toLocaleString('uk-UA')}`, note: 'поточний місяць', icon: BarChart3, tone: 'amber' },
   ];
 
   return (
