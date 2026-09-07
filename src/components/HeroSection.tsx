@@ -37,7 +37,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const isDark = theme === 'dark';
 
   return (
-    <div className={`siren-panel siren-hero w-full rounded-[30px] p-6 sm:p-8 lg:p-10 border relative overflow-hidden transition-all duration-300 ${
+    <div className={`siren-panel siren-hero w-full rounded-[30px] p-6 sm:p-8 lg:p-6 border relative overflow-hidden transition-all duration-300 ${
       isDark 
         ? 'bg-[#10232B] border-[#2D4A55] text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]'
         : 'bg-[#F7FAFC] border-[#D9E2E8] text-[#0F172A] shadow-[0_20px_70px_rgba(42,68,83,0.08)]'
@@ -48,13 +48,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         isDark ? 'bg-blue-600/15' : 'bg-blue-200/40'
       }`} />
 
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-14 relative z-10 w-full min-h-[480px]">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-10 relative z-10 w-full min-h-[430px] lg:min-h-[390px]">
         
         {/* Left: Text Content & Sub-Block */}
-        <div className="flex-1 w-full flex flex-col items-start text-left max-w-xl">
+        <div className="flex-1 w-full flex flex-col items-start text-left max-w-[620px]">
           
           {/* Top Pill Badge */}
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6 text-[12px] font-extrabold tracking-wide ${
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6 lg:mb-4 text-[12px] font-extrabold tracking-wide ${
             isDark 
               ? 'bg-[#1B293F] border-[#2E4160] text-blue-400' 
               : 'bg-blue-50 border-blue-200 text-blue-700'
@@ -76,7 +76,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           {/* Heading */}
-          <h1 className={`text-4xl sm:text-5xl lg:text-[44px] font-black tracking-tight leading-[1.08] ${
+          <h1 className={`text-4xl sm:text-5xl lg:text-[38px] font-black tracking-tight leading-[1.08] ${
             isDark ? 'text-white' : 'text-[#0F172A]'
           }`}>
             Розумій ситуацію.<br />
@@ -84,14 +84,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </h1>
           
           {/* Subtitle */}
-          <p className={`mt-5 text-[14px] sm:text-[15px] leading-relaxed font-medium ${
+          <p className={`mt-5 lg:mt-3 text-[14px] sm:text-[15px] leading-relaxed font-medium ${
             isDark ? 'text-slate-300' : 'text-[#5A6A80]'
           }`}>
             SIREN UA — на карті повітряної ситуації, напрями загроз, прогнозні траєкторії, орієнтовний час, хронологія подій та інформація про укриття — в одному застосунку.
           </p>
           
           {/* Primary & Secondary Buttons */}
-          <div className="mt-7 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
+          <div className="mt-7 lg:mt-5 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
             <button
               onClick={() => {
                 setDownloadNotice('App Store-посилання буде активне після підключення офіційного застосунку.');
@@ -148,7 +148,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           )}
 
           {/* Sub-block: QR Code, App Store Pill & Checkmarks */}
-          <div className={`mt-9 pt-7 border-t w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 ${
+          <div className={`mt-9 lg:mt-5 pt-7 lg:pt-4 border-t w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 ${
             isDark ? 'border-[#24344D]' : 'border-[#DBE4EC]'
           }`}>
             <div className="flex items-center gap-3">
@@ -189,7 +189,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
 
         {/* Right: 3D Ukraine Map matching screenshots 1:1 with pins & arcs */}
-        <div className="flex-1 w-full flex items-center justify-center relative min-h-[380px] lg:min-h-[460px]">
+        <div className="flex-1 w-full flex items-center justify-center relative min-h-[380px] lg:min-h-[350px]">
           <div className={`relative w-full max-w-[620px] aspect-[16/10] flex items-center justify-center rounded-[24px] ${
             isDark ? 'bg-[radial-gradient(circle_at_50%_48%,rgba(89,145,165,0.12),transparent_66%)]' : 'bg-[radial-gradient(circle_at_50%_48%,rgba(154,192,209,0.22),transparent_66%)]'
           }`}>
@@ -215,7 +215,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 src={isDark ? "/src/assets/images/ukraine_3d_cutout_dark.png" : "/src/assets/images/ukraine_3d_cutout.png"}
                 alt="3D Карта України SIREN UA"
                 referrerPolicy="no-referrer"
-                className="w-full h-auto object-contain max-h-[440px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
+                className="w-full h-auto object-contain max-h-[380px] lg:max-h-[340px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
               />
             )}
 
