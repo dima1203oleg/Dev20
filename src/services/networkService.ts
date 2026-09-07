@@ -10,7 +10,7 @@
 import { DataEnvelope, DataState } from '../types/dataEnvelope';
 import { runtimeConfig } from '../config/runtime';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
-import { getJson, getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
+import { getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
 
 export interface NetworkNode {
   id: string;
@@ -778,7 +778,10 @@ class NetworkService {
   public async getNetworkActivity(): Promise<DataEnvelope<NetworkActivity[]>> {
     if (runtimeConfig.apiBaseUrl) {
       try {
-        const remote = await getJson<unknown>('/api/v1/partner/activity', 2500);
+        const remote = await getJsonFromPaths<unknown>([
+          '/api/partner/activity',
+          '/api/v1/partner/activity',
+        ], 2500);
         if (!Array.isArray(remote)) throw new Error('Partner activity has invalid shape');
         return {
           data: remote as NetworkActivity[],
@@ -807,7 +810,10 @@ class NetworkService {
   public async getBranchStats(): Promise<DataEnvelope<NetworkBranchStats[]>> {
     if (runtimeConfig.apiBaseUrl) {
       try {
-        const remote = await getJson<unknown>('/api/v1/partner/branches', 2500);
+        const remote = await getJsonFromPaths<unknown>([
+          '/api/partner/branches',
+          '/api/v1/partner/branches',
+        ], 2500);
         if (!Array.isArray(remote)) throw new Error('Partner branches have invalid shape');
         return {
           data: remote as NetworkBranchStats[],

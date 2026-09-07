@@ -1,6 +1,6 @@
 import { DataEnvelope } from '../types/dataEnvelope';
 import { runtimeConfig } from '../config/runtime';
-import { getJson, isJsonObject } from './apiClient';
+import { getJsonFromPaths, isJsonObject } from './apiClient';
 
 export interface AnalyticsFunnelStep {
   label: string;
@@ -48,7 +48,10 @@ class AnalyticsService {
 
     if (runtimeConfig.apiBaseUrl) {
       try {
-        const remote = await getJson<unknown>('/api/v1/partner/analytics', 2500);
+        const remote = await getJsonFromPaths<unknown>([
+          '/api/partner/analytics',
+          '/api/v1/partner/analytics',
+        ], 2500);
         if (!isValidAnalytics(remote)) throw new Error('Partner analytics has invalid shape');
 
         return {

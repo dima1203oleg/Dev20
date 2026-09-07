@@ -3,7 +3,7 @@
  */
 
 import { DataEnvelope } from '../types/dataEnvelope';
-import { getJson, isJsonObject } from './apiClient';
+import { getJsonFromPaths, isJsonObject } from './apiClient';
 
 export interface KycVerificationData {
   status: 'VERIFIED' | 'PENDING' | 'DOCUMENTS_REQUIRED' | 'UNVERIFIED';
@@ -40,7 +40,10 @@ class KycService {
     const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
     try {
-      const remote = await getJson<unknown>('/api/v1/kyc/status', 2500);
+      const remote = await getJsonFromPaths<unknown>([
+        '/api/kyc/status',
+        '/api/v1/kyc/status',
+      ], 2500);
       if (!isJsonObject(remote) || typeof remote.status !== 'string' || !isJsonObject(remote.limits)) {
         throw new Error('KYC payload has invalid shape');
       }

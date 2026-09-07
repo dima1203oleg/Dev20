@@ -3,7 +3,7 @@
  */
 
 import { DataEnvelope } from '../types/dataEnvelope';
-import { getJson, isJsonObject } from './apiClient';
+import { getJsonFromPaths, isJsonObject } from './apiClient';
 
 export interface UserSecuritySession {
   id: string;
@@ -57,7 +57,10 @@ class AuthSecurityService {
     const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
     try {
-      const remote = await getJson<unknown>('/api/v1/auth/security', 2000);
+      const remote = await getJsonFromPaths<unknown>([
+        '/api/auth/security',
+        '/api/v1/auth/security',
+      ], 2000);
       if (!isJsonObject(remote) || typeof remote.twoFactorEnabled !== 'boolean' || !Array.isArray(remote.activeSessions)) {
         throw new Error('Security payload has invalid shape');
       }

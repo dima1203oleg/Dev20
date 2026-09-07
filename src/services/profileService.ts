@@ -10,7 +10,7 @@
 import { DataEnvelope } from '../types/dataEnvelope';
 import { runtimeConfig } from '../config/runtime';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
-import { getJson, getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
+import { getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
 
 export interface UserProfileData {
   id: string;
@@ -70,6 +70,7 @@ class ProfileService {
 
     try {
       const remote = await getJsonFromPaths<unknown>([
+        '/api/profile/me',
         '/api/v1/profile/me',
         '/api/partner/dashboard',
       ], 2500);
