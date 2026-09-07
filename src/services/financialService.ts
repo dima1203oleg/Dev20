@@ -11,6 +11,8 @@ import { DataEnvelope } from '../types/dataEnvelope';
 import { calculateRankByL1, getNextTierInfo } from './referralEngine';
 import { CacheManager } from '../utils/cacheManager';
 import { getJson } from './apiClient';
+import { postJson } from './apiClient';
+import { runtimeConfig } from '../config/runtime';
 
 const CACHE_KEY_FINANCE = 'sirenua_financial_summary_cache';
 
@@ -282,6 +284,33 @@ class FinancialService {
 
     if (amount < selectedMethod.minAmountUah) {
       return { success: false, error: `Мінімальна сума виведення становить ₴ ${selectedMethod.minAmountUah}` };
+    }
+
+    // A configured API base is a production boundary: never silently replace a
+    // provider failure with a local success state.
+    if (runtimeConfig.apiBaseUrl) {
+      try {
+        const remoteTransaction = await postJson<PayoutTransaction>('/api/v1/partner/payouts', {
+          amount,
+          methodId: selectedMethod.id,
+          currency: selectedMethod.type === 'USDT_TRC20' ? 'USDT' : 'UAH',
+        });
+
+        if (!remoteTransaction || typeof remoteTransaction.id !== 'string' || !remoteTransaction.status) {
+          throw new Error('Payout provider returned an invalid transaction');
+        }
+
+        this.payoutHistory.unshift(remoteTransaction);
+        if (onProgress) {
+          onProgress('Payout provider прийняв запит', remoteTransaction.status, remoteTransaction.statusStepIndex ?? 1);
+        }
+        return { success: true, transaction: remoteTransaction };
+      } catch {
+        return {
+          success: false,
+          error: 'Не вдалося передати payout-запит у production provider. Кошти не списано.',
+        };
+      }
     }
 
     const fee = selectedMethod.feePercent > 0 

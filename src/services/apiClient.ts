@@ -27,3 +27,21 @@ export async function getJson<T>(path: string, timeoutMs = 2500): Promise<T> {
 
   return unwrapApiData<T>(await response.json());
 }
+
+export async function postJson<T>(path: string, body: unknown, timeoutMs = 5000): Promise<T> {
+  const response = await fetch(apiUrl(path), {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  return unwrapApiData<T>(await response.json());
+}
