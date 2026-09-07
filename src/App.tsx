@@ -277,6 +277,7 @@ export default function App() {
           setActiveSection(sec);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        onOpenGuide={() => setIsGuideOpen(true)}
         onToggleTheme={() => {
           const nextTheme = settings.theme === 'dark' ? 'light' : 'dark';
           handleUpdateSettings({ theme: nextTheme });

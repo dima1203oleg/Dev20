@@ -14,13 +14,15 @@ import { playWebAudioSound } from '../utils/sirenAudio';
 interface HeaderProps {
   activeSection: DashboardSection;
   onSelectSection: (section: DashboardSection) => void;
+  onOpenGuide?: () => void;
   onToggleTheme?: () => void;
   theme?: 'light' | 'dark';
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
-  activeSection, 
+  activeSection,
   onSelectSection,
+  onOpenGuide,
   onToggleTheme,
   theme = 'light'
 }) => {
@@ -88,6 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => {
                   setActiveTab(item.id as any);
                   handleNavClick(item.section as DashboardSection);
+                  if (item.id === 'how') onOpenGuide?.();
                 }}
                 className={`text-[13.5px] font-semibold transition-colors cursor-pointer py-1 relative ${
                   isActive
