@@ -4,6 +4,8 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  const devProxyTarget = process.env.SIREN_DEV_PROXY_TARGET;
+
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
@@ -17,6 +19,16 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      // Local cross-repo integration only. Production deployments must use a
+      // configured API origin/reverse proxy with its own CORS and auth policy.
+      ...(devProxyTarget ? {
+        proxy: {
+          '/api': {
+            target: devProxyTarget,
+            changeOrigin: true,
+          },
+        },
+      } : {}),
     },
     build: {
       rollupOptions: {

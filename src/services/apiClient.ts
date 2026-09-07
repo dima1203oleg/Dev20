@@ -28,6 +28,26 @@ export async function getJson<T>(path: string, timeoutMs = 2500): Promise<T> {
   return unwrapApiData<T>(await response.json());
 }
 
+/**
+ * Read the first compatible endpoint that returns JSON successfully.
+ * This keeps the presentation layer compatible with the canonical Dev15
+ * `/api/...` boundary while preserving support for the older `/api/v1/...`
+ * contracts during migration.
+ */
+export async function getJsonFromPaths<T>(paths: string[], timeoutMs = 2500): Promise<T> {
+  let lastError: unknown = new Error('No API paths configured');
+
+  for (const path of paths) {
+    try {
+      return await getJson<T>(path, timeoutMs);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('API request failed');
+}
+
 export async function postJson<T>(path: string, body: unknown, timeoutMs = 5000): Promise<T> {
   const response = await fetch(apiUrl(path), {
     method: 'POST',

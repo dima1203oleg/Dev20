@@ -81,7 +81,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    financialService.getPartnerFinancialSummary().then((res) => {
+    Promise.all([
+      financialService.getPartnerFinancialSummary(),
+      financialService.getLedgerProjection(),
+    ]).then(([res, ledgerResponse]) => {
       setDataState(res.state);
       if (res.data) {
         setSummary(res.data);
@@ -93,9 +96,16 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
         setPayoutMethods([]);
         setSelectedMethodId('');
       }
+      if (ledgerResponse.data) setLedger(ledgerResponse.data);
+      if (res.source && res.source !== 'LOCAL_DEMO_FINANCIAL_DATA') {
+        // Dev15 currently exposes no verified payout-method registry. Never
+        // display local masked cards beside a backend wallet projection.
+        setPayoutMethods([]);
+        setSelectedMethodId('');
+      } else {
+        setPayoutMethods(financialService.getPayoutMethods());
+      }
     });
-    setLedger(financialService.getLedgerTransactions());
-    setPayoutMethods(financialService.getPayoutMethods());
   }, []);
 
   const selectedMethod = payoutMethods.find(m => m.id === selectedMethodId) || payoutMethods[0];
@@ -106,11 +116,21 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
     ? Math.round((Number(withdrawAmount || 0) * selectedMethod.feePercent) / 100)
     : (selectedMethod?.fixedFeeUah || 0);
   const netWithdraw = Math.max(0, Number(withdrawAmount || 0) - calculatedFee);
+  const hasDetailedTrend = Array.isArray(summary.sparkline) && summary.sparkline.length > 0;
+  const earningsSeries = hasDetailedTrend ? summary.sparkline! : [];
+  const earningsMax = Math.max(...earningsSeries, 1);
+  const monthLabels = ['Січ', 'Лют', 'Бер', 'Кві', 'Тра', 'Чер', 'Лип', 'Сер'];
+  const currentRankTier = calculateRankByL1(summary.qualifiedL1 ?? 0);
+  const nextRankProgress = getNextTierInfo(currentRankTier, summary.qualifiedL1 ?? 0);
 
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
     const amount = Number(withdrawAmount);
     if (isNaN(amount) || amount <= 0) return;
+    if (!selectedMethod) {
+      setWithdrawError('Спосіб виплати не підключений. Додайте verified payout method після підключення provider API.');
+      return;
+    }
 
     setIsProcessing(true);
     setWithdrawError(null);
@@ -154,6 +174,11 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
     setNewCardExpiry('');
     setNewCardCvv('');
     setNewMethodError(null);
+
+    if (dataState === 'DEMO' && payoutMethods.length === 0) {
+      setNewMethodError('Payout provider та реєстр платіжних методів ще не підключені. Реальні реквізити не зберігаються в demo.');
+      return;
+    }
     setNewMethodSuccess(false);
   };
 
@@ -411,10 +436,10 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               <div>
                 <div className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Дохід за період</div>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-2xl font-black">₴ 12 460</span>
-                  <span className="text-xs font-bold text-emerald-500 flex items-center gap-0.5">
-                    <TrendingUp className="w-3 h-3" /> +28%
-                  </span>
+                  <span className="text-2xl font-black">{summary.earnedThisMonth > 0 ? `₴ ${summary.earnedThisMonth.toLocaleString('uk-UA')}` : '—'}</span>
+                  {summary.earnedThisMonth > 0 && dataState === 'DEMO' && (
+                    <span className="text-xs font-bold text-amber-500">DEMO</span>
+                  )}
                 </div>
               </div>
 
@@ -432,26 +457,23 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             </div>
 
             {/* 8-Month Vertical Bars */}
-            <div className="h-36 flex items-end justify-between gap-2 sm:gap-4 pt-4 px-2">
-              {[
-                { month: 'Січ', val: 15 },
-                { month: 'Лют', val: 25 },
-                { month: 'Бер', val: 32 },
-                { month: 'Кві', val: 45 },
-                { month: 'Тра', val: 60 },
-                { month: 'Чер', val: 75 },
-                { month: 'Лип', val: 85 },
-                { month: 'Сер', val: 100 },
-              ].map((b, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer">
-                  <div 
-                    className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-xl transition-all group-hover:brightness-110"
-                    style={{ height: `${b.val}%`, opacity: 0.35 + (i * 0.09) }}
-                  />
-                  <span className="text-[11px] font-medium text-slate-400">{b.month}</span>
-                </div>
-              ))}
-            </div>
+            {hasDetailedTrend ? (
+              <div className="h-36 flex items-end justify-between gap-2 sm:gap-4 pt-4 px-2">
+                {earningsSeries.map((value, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer">
+                    <div
+                      className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-xl transition-all group-hover:brightness-110"
+                      style={{ height: `${Math.max(4, (value / earningsMax) * 100)}%`, opacity: 0.45 + (i * 0.06) }}
+                    />
+                    <span className="text-[11px] font-medium text-slate-400">{monthLabels[i] ?? `#${i + 1}`}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-36 flex items-center justify-center text-center text-xs text-slate-400">
+                Детальна динаміка доходу ще не підключена до API.
+              </div>
+            )}
           </div>
 
           {/* 2 Bottom Charts in 2-Columns: Структура доходу (Donut) & Динаміка мережі (Line) */}
@@ -509,16 +531,17 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
             }`}>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-bold">Динаміка мережі</h3>
-                <span className="text-xs font-bold text-amber-500">{dataState === 'LIVE' ? '—' : 'ДЕМО-ГРАФІК'}</span>
+                <span className="text-xs font-bold text-amber-500">{hasDetailedTrend ? (dataState === 'LIVE' ? 'LIVE' : 'DEMO-ГРАФІК') : 'ДАНІ НЕДОСТУПНІ'}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-                <span>482</span>
-                <span className="font-bold text-slate-900 dark:text-white">2 847</span>
+                <span>{summary.qualifiedL1 ?? '—'} qualified L1</span>
+                <span className="font-bold text-slate-900 dark:text-white">{hasDetailedTrend ? 'Є серія' : '—'}</span>
               </div>
 
-              {/* Line chart svg */}
+              {/* Line chart svg only when a real/demo series exists. */}
               <div className="h-28 flex items-center justify-center my-2">
+                {hasDetailedTrend ? (
                 <svg viewBox="0 0 200 80" className="w-full h-full">
                   <path
                     d="M 10 70 Q 50 65 90 45 T 190 10"
@@ -531,6 +554,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   <circle cx="90" cy="45" r="4" fill="#2563EB" />
                   <circle cx="190" cy="10" r="5" fill="#3B82F6" stroke="#FFFFFF" strokeWidth="2" />
                 </svg>
+                ) : <span className="text-xs text-slate-400">Очікуємо аналітичний API</span>}
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
@@ -658,6 +682,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               <h3 className="text-sm font-bold">Способи виплати</h3>
               <button 
                 onClick={() => setShowAddCardModal(true)}
+                disabled={dataState === 'DEMO' && payoutMethods.length === 0}
                 className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
               >
                 <span>Додати</span>
@@ -690,6 +715,11 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
                   )}
                 </button>
               ))}
+              {payoutMethods.length === 0 && (
+                <div className={`rounded-xl border px-3 py-3 text-xs ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
+                  Verified payout methods unavailable. No card or account details are shown.
+                </div>
+              )}
 
             </div>
           </div>
@@ -766,43 +796,47 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               </button>
             </div>
 
-            {/* Target 1: Платина */}
+            {/* Target 1: next rank, derived from qualified L1 only. */}
             <div className="space-y-3 text-xs">
               <div className={`p-3 rounded-2xl border ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-amber-50/50 border-amber-100'}`}>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🏆</span>
                   <div>
-                    <div className="font-bold">Платина</div>
-                    <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Залишилось 2 153 балів</div>
+                    <div className="font-bold">{nextRankProgress.nextTier ? nextRankProgress.nextTier.name : currentRankTier.name}</div>
+                    <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {nextRankProgress.nextTier ? `Залишилось ${nextRankProgress.remainingL1} qualified L1` : 'Максимальний ранг досягнуто'}
+                    </div>
                   </div>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 mt-2 overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full" style={{ width: '57%' }} />
+                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${nextRankProgress.progressPercent}%` }} />
                 </div>
-                <div className="text-right text-[10px] font-mono mt-1 text-slate-400">2 847 / 5 000</div>
+                <div className="text-right text-[10px] font-mono mt-1 text-slate-400">
+                  {summary.qualifiedL1 ?? '—'} / {nextRankProgress.nextTier?.minL1 ?? summary.qualifiedL1 ?? '—'} L1
+                </div>
               </div>
 
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                     <Award className="w-3.5 h-3.5 text-blue-500" />
-                    <span>10 прямих партнерів</span>
+                    <span>Кваліфіковані L1</span>
                   </span>
-                  <span className="font-bold">8 / 10</span>
+                  <span className="font-bold">{summary.qualifiedL1 ?? '—'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                     <Clock className="w-3.5 h-3.5 text-purple-500" />
-                    <span>Загальний дохід</span>
+                    <span>Lifetime earnings</span>
                   </span>
-                  <span className="font-bold">12 460 / 50 000 ₴</span>
+                  <span className="font-bold">{summary.lifetimeEarnings > 0 ? `₴ ${summary.lifetimeEarnings.toLocaleString('uk-UA')}` : '—'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Активність</span>
+                    <span>Статус даних</span>
                   </span>
-                  <span className="font-bold">28 / 30 днів</span>
+                  <span className="font-bold">{dataState}</span>
                 </div>
               </div>
             </div>
@@ -836,7 +870,7 @@ export const FinanceSection: React.FC<FinanceSectionProps> = ({
               Запроси ще друзів і отримуй більше!
             </h3>
             <p className="text-xs text-blue-100 mt-2 max-w-[180px] leading-relaxed">
-              <span className="font-bold text-amber-300">+10%</span> з перших 3 місяців
+              Запрошуй партнерів через прозорий L1/L2 механізм. Платні промо-правила з’являться лише після окремого versioned approval.
             </p>
           </div>
 

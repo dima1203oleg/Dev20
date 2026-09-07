@@ -1,7 +1,7 @@
 import { Shelter } from '../types';
 import { DataEnvelope } from '../types/dataEnvelope';
 import { runtimeConfig } from '../config/runtime';
-import { getJson, isJsonObject } from './apiClient';
+import { getJsonFromPaths, isJsonObject } from './apiClient';
 import { INITIAL_SHELTERS } from '../data/spatialThreatData';
 
 const nowTime = () => new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
@@ -22,14 +22,45 @@ class ShelterService {
 
     if (runtimeConfig.apiBaseUrl) {
       try {
-        const remote = await getJson<unknown>(`/api/v1/shelters?regionId=${encodeURIComponent(regionId)}`, 2500);
-        if (!Array.isArray(remote) || !remote.every(isShelter)) throw new Error('Shelter payload has invalid shape');
+        const remote = await getJsonFromPaths<unknown>([
+          `/api/threats/shelters?district=${encodeURIComponent(regionId)}`,
+          `/api/v1/shelters?regionId=${encodeURIComponent(regionId)}`,
+        ], 2500);
+        const sourceItems = Array.isArray(remote)
+          ? remote
+          : isJsonObject(remote) && Array.isArray(remote.shelters) ? remote.shelters : [];
+        const mapped: Array<Shelter | null> = sourceItems.map((item, index): Shelter | null => {
+          if (!isJsonObject(item)) return null;
+          const type = String(item.type).toUpperCase();
+          const mappedType: Shelter['type'] = type === 'SUBWAY' ? 'metro' : type === 'PARKING' ? 'parking' : type === 'BASEMENT' ? 'basement' : 'bunker';
+          const distanceMeters = typeof item.distanceMeters === 'number' ? item.distanceMeters : 0;
+          return {
+            id: typeof item.id === 'string' ? item.id : `shelter-${index}`,
+            name: typeof item.name === 'string' ? item.name : 'Укриття',
+            type: mappedType,
+            address: typeof item.address === 'string' ? item.address : 'Адреса не вказана',
+            regionId,
+            capacity: typeof item.capacity === 'number' ? item.capacity : 0,
+            features: {
+              powerGenerator: item.hasPowerBackup === true,
+              wifi: false,
+              ventilation: true,
+              waterSupply: item.hasWater === true,
+              wheelchairAccessible: false,
+              allDayOpen: item.isOpen24h === true,
+            },
+            distanceMeters,
+            walkTimeMins: Math.max(1, Math.round(distanceMeters / 80)),
+            verifiedStatus: 'VERIFIED_DSNS' as const,
+          };
+        }).filter((item): item is Shelter => item !== null);
+        if (!mapped.length && !sourceItems.length) throw new Error('Shelter payload has invalid shape');
         return {
-          data: remote,
-          state: 'LIVE',
+          data: mapped,
+          state: isJsonObject(remote) && remote.dataMode === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
           source: 'SIREN_UA_SHELTER_REGISTRY',
           updatedAt,
-          isRealData: true,
+          isRealData: !(isJsonObject(remote) && remote.dataMode === 'DEMO_DATA'),
         };
       } catch {
         return {

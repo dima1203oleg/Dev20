@@ -4,6 +4,12 @@ This document formalizes the API evolution strategy and compatibility guarantees
 
 > Status note: the frontend contracts and truthful `LIVE/DEMO/NOT_CONNECTED` handling are implemented. The endpoint labels below describe the required production contract; they do not claim that a backend/provider is reachable in the current local environment.
 
+> Dev15 integration note: during local development Dev20 dual-reads the verified
+> canonical routes `/api/threats/*`, `/api/partner/dashboard`,
+> `/api/partner/network`, `/api/partner/ledger` and `/api/partner/payouts`.
+> `DEMO_DATA` is retained as `DEMO`; only an authoritative upstream source may
+> produce `LIVE`.
+
 ---
 
 ## 1. Non-Breaking API Principles (API Lock)

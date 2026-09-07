@@ -12,7 +12,8 @@ import { RegionData, AlertEvent, ThreatTrajectory, ThreatSceneModel, Shelter, Da
 import { INITIAL_REGIONS, INITIAL_ALERTS_FEED } from '../data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from '../data/spatialThreatData';
 import { CacheManager } from '../utils/cacheManager';
-import { apiUrl } from '../config/runtime';
+import { apiUrl, runtimeConfig } from '../config/runtime';
+import { getJsonFromPaths, isJsonObject } from './apiClient';
 
 export type ThreatServerConnectionStatus = 
   | 'CONNECTED' 
@@ -47,6 +48,113 @@ export interface LiveThreatsPayload {
 
 const API_BASE = apiUrl('/api/v1');
 const CACHE_KEY_THREATS = 'sirenua_threat_payload_cache';
+
+const REGION_CODE_BY_ID: Record<string, string> = {
+  kyiv_obl: 'UA-32',
+  vinnytsia: 'UA-05',
+  cherkasy: 'UA-71',
+  lviv: 'UA-46',
+  dnipro: 'UA-12',
+};
+
+type Dev15Region = {
+  code?: unknown;
+  name?: unknown;
+  hasAlert?: unknown;
+  riskLevel?: unknown;
+  threatCount?: unknown;
+  lastUpdated?: unknown;
+  districts?: unknown;
+};
+
+type Dev15Threat = {
+  id?: unknown;
+  category?: unknown;
+  categoryLabel?: unknown;
+  speedKmh?: unknown;
+  directionDeg?: unknown;
+  directionLabel?: unknown;
+  originRegion?: unknown;
+  trajectory?: unknown;
+  estimatedArrivalMin?: unknown;
+  targetDistricts?: unknown;
+  status?: unknown;
+  source?: unknown;
+};
+
+const dev15ThreatType = (value: unknown): ThreatTrajectory['threatType'] => {
+  const category = String(value ?? '').toUpperCase();
+  if (category.includes('MISSILE')) return 'missile';
+  if (category.includes('BALLISTIC')) return 'ballistic';
+  if (category.includes('AVIATION')) return 'aviation';
+  return 'drone';
+};
+
+const dev15ThreatRegion = (threat: Dev15Threat): string => {
+  const text = [threat.originRegion, ...(Array.isArray(threat.targetDistricts) ? threat.targetDistricts : [])]
+    .map(String)
+    .join(' ')
+    .toLowerCase();
+  if (text.includes('вінниц') || text.includes('гайсин')) return 'vinnytsia';
+  if (text.includes('київ') || text.includes('обух') || text.includes('борисп')) return 'kyiv_obl';
+  if (text.includes('черкас')) return 'cherkasy';
+  if (text.includes('дніпр')) return 'dnipro';
+  return 'kyiv_obl';
+};
+
+const projectDev15Point = (value: unknown): { x: number; y: number } | null => {
+  if (!isJsonObject(value) || typeof value.lat !== 'number' || typeof value.lng !== 'number') return null;
+  return {
+    x: Math.max(0, Math.min(1000, ((value.lng - 22) / 18) * 1000)),
+    y: Math.max(0, Math.min(650, ((53.5 - value.lat) / 8.5) * 650)),
+  };
+};
+
+const mapDev15Regions = (remoteRegions: unknown): RegionData[] => {
+  const rows = Array.isArray(remoteRegions) ? remoteRegions.filter(isJsonObject) as Dev15Region[] : [];
+  const byCode = new Map(rows.map((row) => [String(row.code ?? ''), row]));
+  return INITIAL_REGIONS.map((base) => {
+    const row = byCode.get(REGION_CODE_BY_ID[base.id]);
+    if (!row) return { ...base, isAlarm: false, threatType: 'none', threatDetails: undefined };
+    const risk = String(row.riskLevel ?? '').toUpperCase();
+    const threatType: RegionData['threatType'] = risk === 'CRITICAL' ? 'ballistic' : risk === 'HIGH' || risk === 'ELEVATED' ? 'drone' : 'none';
+    return {
+      ...base,
+      isAlarm: row.hasAlert === true,
+      threatType,
+      threatDetails: typeof row.name === 'string' ? `Backend status: ${row.name}` : undefined,
+      startedAt: typeof row.lastUpdated === 'string' ? row.lastUpdated : base.startedAt,
+    };
+  });
+};
+
+const mapDev15Trajectories = (remoteThreats: unknown): ThreatTrajectory[] => {
+  const rows = Array.isArray(remoteThreats) ? remoteThreats.filter(isJsonObject) as Dev15Threat[] : [];
+  return rows.flatMap((threat, index) => {
+    const points = Array.isArray(threat.trajectory)
+      ? threat.trajectory.map(projectDev15Point).filter((point): point is { x: number; y: number } => Boolean(point))
+      : [];
+    if (!points.length) return [];
+    const etaMatch = String(threat.estimatedArrivalMin ?? '').match(/\d+/);
+    const type = dev15ThreatType(threat.category);
+    return [{
+      id: typeof threat.id === 'string' ? threat.id : `dev15-threat-${index}`,
+      threatType: type,
+      name: typeof threat.categoryLabel === 'string' ? threat.categoryLabel : 'Активна подія',
+      altitudeMeters: 0,
+      speedKmh: typeof threat.speedKmh === 'number' ? threat.speedKmh : 0,
+      azimuthDeg: typeof threat.directionDeg === 'number' ? threat.directionDeg : 0,
+      azimuthDirection: typeof threat.directionLabel === 'string' ? threat.directionLabel : 'Напрямок не визначено',
+      pathD: `M ${points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' L ')}`,
+      currentPoint: { x: points[0].x, y: points[0].y, z: 22 },
+      origin: typeof threat.originRegion === 'string' ? threat.originRegion : 'Джерело не визначено',
+      targetRegion: dev15ThreatRegion(threat),
+      etaMinutes: etaMatch ? Number(etaMatch[0]) : 0,
+      status: threat.status === 'ACTIVE' || threat.status === 'TRACKING' ? 'ACTIVE' : 'WARNING',
+      altitudeLevel: 'MEDIUM',
+    } satisfies ThreatTrajectory];
+  });
+};
 
 // Verified Shelters registry mapped to regions
 const REGION_SHELTERS: Record<string, Shelter> = {
@@ -328,6 +436,73 @@ class ThreatServerService {
     }
 
     // 2. Attempt real upstream backend fetch
+    // Dev15 is the canonical local integration boundary. Its responses are
+    // deliberately labelled DEMO_DATA until an authoritative threat source
+    // is configured, so the UI must preserve that state end-to-end.
+    try {
+        const [regionsRemote, liveRemote, statusRemote] = await Promise.all([
+          getJsonFromPaths<unknown>(['/api/threats/regions'], 2500),
+          getJsonFromPaths<unknown>(['/api/threats/live'], 2500),
+          getJsonFromPaths<unknown>(['/api/threats/status'], 2500),
+        ]);
+        const remoteRegions = isJsonObject(regionsRemote) ? regionsRemote.regions : regionsRemote;
+        const remoteThreats = isJsonObject(liveRemote) ? liveRemote.threats : [];
+        if (!Array.isArray(remoteRegions) || !Array.isArray(remoteThreats)) throw new Error('Canonical threat payload has invalid shape');
+
+        const regions = mapDev15Regions(remoteRegions);
+        const trajectories = mapDev15Trajectories(remoteThreats);
+        const timestamp = isJsonObject(liveRemote) && typeof liveRemote.timestamp === 'string'
+          ? liveRemote.timestamp
+          : new Date().toISOString();
+        const demo = (isJsonObject(liveRemote) && liveRemote.dataMode === 'DEMO_DATA')
+          || (isJsonObject(statusRemote) && statusRemote.status === 'DEMO_DATA');
+        const state: DataState = demo ? 'DEMO' : 'LIVE';
+        const alerts: AlertEvent[] = regions.filter((region) => region.isAlarm).map((region) => ({
+          id: `backend-${region.id}`,
+          regionId: region.id,
+          regionName: region.name,
+          type: 'update',
+          threatType: region.threatType === 'none' ? 'air' : region.threatType,
+          timestamp,
+          description: region.threatDetails || 'Оновлено статус регіону',
+          source: demo ? 'Dev15 DEMO_DATA' : 'Dev15 ThreatServer',
+        }));
+        const threatScene = this.normalizeThreatScene(regions, trajectories, myRegionId, state, this.formatTime(new Date(timestamp)));
+        const payload: LiveThreatsPayload = {
+          regions,
+          alerts,
+          trajectories,
+          systemStatus: {
+            service: 'SirenUA-ThreatServer',
+            version: 'Dev15',
+            status: 'HEALTHY',
+            uptimeSeconds: 0,
+            activeIngestSources: isJsonObject(statusRemote) && typeof statusRemote.authoritativeSource === 'string' ? [statusRemote.authoritativeSource] : [],
+            lastIngestTimestamp: timestamp,
+            latencyMs: 0,
+            totalActiveAlerts: regions.filter((region) => region.isAlarm).length,
+            totalActiveVectors: trajectories.length,
+            environment: demo ? 'development' : 'production',
+          },
+          threatScene,
+          connectionStatus: demo ? 'DEMO_MODE' : 'CONNECTED',
+          lastUpdated: this.formatTime(new Date(timestamp)),
+          isRealData: !demo,
+        };
+        this.connectionStatus = demo ? 'DEMO_MODE' : 'CONNECTED';
+        CacheManager.set(CACHE_KEY_THREATS, payload, 300, 'SIREN_UA_DEV15_THREATS');
+        return {
+          data: payload,
+          state,
+          source: demo ? 'SIREN_UA_DEV15_DEMO' : 'SIREN_UA_DEV15_THREATSERVER',
+          updatedAt: payload.lastUpdated,
+          isRealData: !demo,
+        };
+    } catch {
+      // Continue to the legacy `/api/v1` contract and then the truthful
+      // cache/offline path below.
+    }
+
     try {
       const start = performance.now();
       const [regionsRes, alertsRes, radarRes] = await Promise.all([

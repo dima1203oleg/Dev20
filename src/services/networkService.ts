@@ -10,7 +10,7 @@
 import { DataEnvelope, DataState } from '../types/dataEnvelope';
 import { runtimeConfig } from '../config/runtime';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
-import { getJson, isJsonObject } from './apiClient';
+import { getJson, getJsonFromPaths, isJsonObject } from './apiClient';
 
 export interface NetworkNode {
   id: string;
@@ -536,32 +536,45 @@ class NetworkService {
     const updatedAt = this.now();
 
     try {
-      const remote = await getJson<unknown>('/api/v1/partner/summary', 2000);
+      const remote = await getJsonFromPaths<unknown>([
+        '/api/partner/dashboard',
+        '/api/v1/partner/summary',
+      ], 2500);
       if (!isJsonObject(remote)) throw new Error('Partner summary has invalid shape');
 
+      const partner = isJsonObject(remote.partner) ? remote.partner : remote;
+      const wallet = isJsonObject(remote.wallet) ? remote.wallet : null;
+      const rankProgress = isJsonObject(remote.rankProgress) ? remote.rankProgress : null;
+      const qualifiedL1 = Number(partner.activeL1PaidCount ?? remote.qualifiedL1);
+      const totalL1 = Number(partner.totalL1Count ?? remote.totalL1Count);
+      const totalL2 = Number(partner.totalL2Count ?? remote.totalL2Count);
+      const activeL1 = Number(partner.activeL1PaidCount ?? remote.activeL1Count);
+      const activeL2 = Number(partner.activeL2PaidCount ?? remote.activeL2Count);
+      if (![qualifiedL1, totalL1, totalL2, activeL1, activeL2].every(Number.isFinite)) {
+        throw new Error('Partner dashboard is missing required network fields');
+      }
+
       const requiredNumericFields = [
-        'totalNetworkSize',
-        'activeL1Count',
-        'activeL2Count',
-        'new30DaysCount',
-        'conversionRatePercent',
-        'monthlyNetworkIncomeUah',
-        'qualifiedL1',
+        qualifiedL1,
+        totalL1,
+        totalL2,
+        activeL1,
+        activeL2,
       ];
-      if (requiredNumericFields.some((field) => typeof remote[field] !== 'number' || !Number.isFinite(remote[field]))) {
+      if (requiredNumericFields.some((field) => typeof field !== 'number' || !Number.isFinite(field))) {
         throw new Error('Partner summary is missing required numeric fields');
       }
 
       const remoteSummary = this.buildSummary({
-        totalNetworkSize: remote.totalNetworkSize as number,
-        activeL1Count: remote.activeL1Count as number,
-        activeL2Count: remote.activeL2Count as number,
-        new30DaysCount: remote.new30DaysCount as number,
-        conversionRatePercent: remote.conversionRatePercent as number,
-        monthlyNetworkIncomeUah: remote.monthlyNetworkIncomeUah as number,
-        qualifiedL1: remote.qualifiedL1 as number,
-        referralCode: typeof remote.referralCode === 'string' ? remote.referralCode : undefined,
-        referralUrl: typeof remote.referralUrl === 'string' ? remote.referralUrl : undefined,
+        totalNetworkSize: totalL1 + totalL2,
+        activeL1Count: activeL1,
+        activeL2Count: activeL2,
+        new30DaysCount: 0,
+        conversionRatePercent: 0,
+        monthlyNetworkIncomeUah: wallet && typeof wallet.pendingMinor === 'number' ? Number(wallet.pendingMinor) / 100 : 0,
+        qualifiedL1,
+        referralCode: typeof partner.referralCode === 'string' ? partner.referralCode : undefined,
+        referralUrl: typeof partner.referralCode === 'string' ? `https://siren.ua/r/${partner.referralCode}` : undefined,
         trafficSources: Array.isArray(remote.trafficSources)
           ? remote.trafficSources.filter((source): source is NetworkSummary['trafficSources'][number] => (
             isJsonObject(source)
@@ -575,12 +588,13 @@ class NetworkService {
           : [],
       });
 
+      const state = remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE';
       return {
         data: remoteSummary,
-        state: 'LIVE',
+        state,
         source: 'SIREN_UA_PARTNER_SUMMARY',
         updatedAt,
-        isRealData: true,
+        isRealData: state === 'LIVE',
       };
     } catch {
       if (runtimeConfig.apiBaseUrl) return this.notConnected<NetworkSummary>('SIREN_UA_PARTNER_SUMMARY');
@@ -604,16 +618,49 @@ class NetworkService {
   public async getNetworkGraph(): Promise<DataEnvelope<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>> {
     if (runtimeConfig.apiBaseUrl) {
       try {
-        const remote = await getJson<unknown>('/api/v1/partner/network', 2500);
-        if (!isJsonObject(remote) || !Array.isArray(remote.nodes) || !Array.isArray(remote.edges)) {
-          throw new Error('Partner network has invalid shape');
+        const remote = await getJsonFromPaths<unknown>([
+          '/api/partner/network',
+          '/api/v1/partner/network',
+        ], 2500);
+        if (!isJsonObject(remote)) throw new Error('Partner network has invalid shape');
+        if (!Array.isArray(remote.nodes) || !Array.isArray(remote.edges)) {
+          const l1 = isJsonObject(remote.l1) ? remote.l1 : null;
+          const l2 = isJsonObject(remote.l2) ? remote.l2 : null;
+          if (!l1 || !l2 || typeof l1.count !== 'number' || typeof l2.count !== 'number') {
+            throw new Error('Partner network has invalid aggregate shape');
+          }
+          const nodes: NetworkNode[] = [
+            {
+              id: 'me', name: 'Моя мережа', level: 'ME', avatar: '', earnings: '—', rawEarningsUah: 0,
+              peopleCount: l1.count + l2.count, status: 'TOP', x: 50, y: 50, joinDate: '', plan: 'Aggregate', planPrice: 0, qualifiedL1Count: typeof l1.activePaidCount === 'number' ? l1.activePaidCount : 0,
+            },
+            {
+              id: 'l1-aggregate', name: 'L1 · прямі партнери', level: 'L1', avatar: '', earnings: '—', rawEarningsUah: 0,
+              peopleCount: l1.count, status: 'ACTIVE', x: 28, y: 35, parentId: 'me', parentName: 'Моя мережа', joinDate: '', plan: 'Aggregate', planPrice: 0, qualifiedL1Count: typeof l1.activePaidCount === 'number' ? l1.activePaidCount : 0,
+            },
+            {
+              id: 'l2-aggregate', name: 'L2 · мережа другого рівня', level: 'L2', avatar: '', earnings: '—', rawEarningsUah: 0,
+              peopleCount: l2.count, status: 'ACTIVE', x: 72, y: 35, parentId: 'me', parentName: 'Моя мережа', joinDate: '', plan: 'Aggregate', planPrice: 0, qualifiedL1Count: 0,
+            },
+          ];
+          const edges: NetworkEdge[] = [
+            { from: 'me', to: 'l1-aggregate', level: 'L1' },
+            { from: 'me', to: 'l2-aggregate', level: 'L2' },
+          ];
+          return {
+            data: { nodes, edges },
+            state: remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
+            source: 'SIREN_UA_PARTNER_NETWORK_AGGREGATE',
+            updatedAt: this.now(),
+            isRealData: remote.status !== 'DEMO_DATA',
+          };
         }
         return {
           data: { nodes: remote.nodes as NetworkNode[], edges: remote.edges as NetworkEdge[] },
-          state: 'LIVE',
+          state: remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
           source: 'SIREN_UA_PARTNER_NETWORK',
           updatedAt: this.now(),
-          isRealData: true,
+          isRealData: remote.status !== 'DEMO_DATA',
         };
       } catch {
         return this.notConnected<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>('SIREN_UA_PARTNER_NETWORK');
@@ -639,14 +686,48 @@ class NetworkService {
     if (runtimeConfig.apiBaseUrl) {
       try {
         const query = new URLSearchParams({ level: levelFilter, search: search.trim() });
-        const remote = await getJson<unknown>(`/api/v1/partner/network/partners?${query.toString()}`, 2500);
-        if (!Array.isArray(remote)) throw new Error('Partner list has invalid shape');
+        const remote = await getJsonFromPaths<unknown>([
+          `/api/partner/network?${query.toString()}`,
+          `/api/v1/partner/network/partners?${query.toString()}`,
+        ], 2500);
+        const sourceItems = Array.isArray(remote)
+          ? remote
+          : isJsonObject(remote)
+            ? [
+                ...(isJsonObject(remote) && isJsonObject(remote.l1) && Array.isArray(remote.l1.items) ? remote.l1.items : []),
+                ...(isJsonObject(remote) && isJsonObject(remote.l2) && Array.isArray(remote.l2.items) ? remote.l2.items : []),
+              ]
+            : [];
+        if (!sourceItems.length && isJsonObject(remote) && !('l1' in remote) && !('l2' in remote)) throw new Error('Partner list has invalid shape');
+        const nodes = sourceItems.map((item, index): NetworkNode => {
+          const row = isJsonObject(item) ? item : {};
+          const level = row.referralLevel === 'L2' || row.level === 'L2' ? 'L2' : 'L1';
+          const qualified = row.isQualifiedPaid === true;
+          return {
+            id: typeof row.id === 'string' ? row.id : `partner-${index}`,
+            name: typeof row.userAnonymousLabel === 'string' ? row.userAnonymousLabel : 'Партнер без ідентифікації',
+            level,
+            avatar: '',
+            earnings: '—',
+            rawEarningsUah: 0,
+            peopleCount: 1,
+            status: qualified ? 'ACTIVE' : 'TRIAL',
+            x: 20 + (index % 5) * 15,
+            y: level === 'L1' ? 30 : 70,
+            parentId: level === 'L1' ? 'me' : 'l1-aggregate',
+            parentName: level === 'L1' ? 'Моя мережа' : 'L1 · прямі партнери',
+            joinDate: typeof row.registeredAt === 'string' ? row.registeredAt : '',
+            plan: typeof row.subscriptionPlan === 'string' ? row.subscriptionPlan : '—',
+            planPrice: typeof row.monthlyQcbMinor === 'number' ? row.monthlyQcbMinor / 100 : 0,
+            qualifiedL1Count: 0,
+          };
+        });
         return {
-          data: remote as NetworkNode[],
-          state: 'LIVE',
+          data: nodes,
+          state: isJsonObject(remote) && remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE',
           source: 'SIREN_UA_PARTNER_NETWORK_PARTNERS',
           updatedAt: this.now(),
-          isRealData: true,
+          isRealData: !(isJsonObject(remote) && remote.status === 'DEMO_DATA'),
         };
       } catch {
         return this.notConnected<NetworkNode[]>('SIREN_UA_PARTNER_NETWORK_PARTNERS');

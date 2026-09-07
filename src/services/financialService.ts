@@ -10,7 +10,7 @@ import {
 import { DataEnvelope } from '../types/dataEnvelope';
 import { calculateRankByL1, getNextTierInfo } from './referralEngine';
 import { CacheManager } from '../utils/cacheManager';
-import { getJson } from './apiClient';
+import { getJson, getJsonFromPaths, isJsonObject } from './apiClient';
 import { postJson } from './apiClient';
 import { runtimeConfig } from '../config/runtime';
 
@@ -197,22 +197,50 @@ class FinancialService {
     const nowTime = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
     
     try {
-      const data = await getJson<Partial<PartnerFinancialSummary>>('/api/partner/finance/summary', 2000);
+      const remote = await getJsonFromPaths<unknown>([
+        '/api/partner/dashboard',
+        '/api/partner/finance/summary',
+      ], 2500);
+      const data = isJsonObject(remote) && isJsonObject(remote.wallet)
+        ? {
+            totalBalance: (Number(remote.wallet.pendingMinor) + Number(remote.wallet.heldMinor) + Number(remote.wallet.availableMinor)) / 100,
+            availableBalance: Number(remote.wallet.availableMinor) / 100,
+            pendingBalance: Number(remote.wallet.pendingMinor) / 100,
+            heldBalance: Number(remote.wallet.heldMinor) / 100,
+            lifetimeEarnings: Number(remote.wallet.lifetimeEarnedMinor) / 100,
+            lifetimePaid: Number(remote.wallet.paidTotalMinor) / 100,
+            qualifiedL1: isJsonObject(remote.partner) ? Number(remote.partner.activeL1PaidCount) : undefined,
+            minimumPayout: isJsonObject(remote.payoutEligibility) && isJsonObject(remote.payoutEligibility.minimumPayout)
+              ? Number(remote.payoutEligibility.minimumPayout.amountMinor ?? 0) / 100
+              : 0,
+          }
+        : remote;
+
       if (data && typeof data === 'object') {
+        const state = isJsonObject(remote) && remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE';
+        const isDashboardPayload = isJsonObject(remote) && isJsonObject(remote.wallet);
         const payload: PartnerFinancialSummary = {
           ...this.summary,
-          ...data,
+          ...(isDashboardPayload ? {
+            earnedThisMonth: 0,
+            earnedLastMonth: 0,
+            l1Earnings: 0,
+            l2Earnings: 0,
+            sparkline: [],
+            amountUntilMinimum: 0,
+          } : {}),
+          ...(data as Partial<PartnerFinancialSummary>),
           updatedAt: nowTime,
-          status: 'LIVE',
+          status: state,
         };
         CacheManager.set(CACHE_KEY_FINANCE, payload, 300, 'SIREN_UA_FINANCE_API');
 
         return {
           data: payload,
-          state: 'LIVE',
+          state,
           source: 'SIREN_UA_FINANCE_LEDGER',
           updatedAt: nowTime,
-          isRealData: true,
+          isRealData: state === 'LIVE',
         };
       }
     } catch {
@@ -295,6 +323,66 @@ class FinancialService {
    */
   public getPayoutHistory(): PayoutTransaction[] {
     return this.payoutHistory;
+  }
+
+  /** Read the canonical immutable-ledger projection when the backend is connected. */
+  public async getLedgerProjection(): Promise<DataEnvelope<LedgerTransaction[]>> {
+    const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+    try {
+      const remote = await getJsonFromPaths<unknown>(['/api/partner/ledger', '/api/v1/partner/ledger'], 2500);
+      if (!isJsonObject(remote) || !Array.isArray(remote.entries)) throw new Error('Ledger payload has invalid shape');
+      const entries = remote.entries.filter(isJsonObject).map((entry, index): LedgerTransaction => {
+        const amountMinor = typeof entry.amountMinor === 'number' ? entry.amountMinor : 0;
+        const creditAccount = String(entry.creditAccount ?? '');
+        return {
+          id: typeof entry.id === 'string' ? entry.id : `ledger-${index}`,
+          type: creditAccount.includes('PAYOUT') ? 'PAYOUT_WITHDRAWAL' : entry.referralLevel === 'L2' ? 'COMMISSION_L2' : 'COMMISSION_L1',
+          description: typeof entry.description === 'string' ? entry.description : 'Ledger transaction',
+          amount: amountMinor / 100,
+          direction: creditAccount.includes('PARTNER_') ? 'CREDIT' : 'DEBIT',
+          timestamp: typeof entry.timestamp === 'string' ? new Date(entry.timestamp).toLocaleString('uk-UA') : updatedAt,
+          partnerLevel: entry.referralLevel === 'L2' ? 'L2' : entry.referralLevel === 'L1' ? 'L1' : undefined,
+          referenceId: typeof entry.transactionId === 'string' ? entry.transactionId : undefined,
+          balanceAfter: 0,
+        };
+      });
+      const state = remote.integrityCheck === 'ZERO_SUM_VERIFIED' ? 'DEMO' : 'LIVE';
+      return { data: entries, state, source: 'SIREN_UA_PARTNER_LEDGER', updatedAt, isRealData: state === 'LIVE' };
+    } catch {
+      return { data: null, state: runtimeConfig.apiBaseUrl ? 'NOT_CONNECTED' : 'DEMO', source: 'SIREN_UA_PARTNER_LEDGER', updatedAt, isRealData: false };
+    }
+  }
+
+  /** Read payout history without inventing a provider status or destination. */
+  public async getPayoutProjection(): Promise<DataEnvelope<PayoutTransaction[]>> {
+    const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+    try {
+      const remote = await getJsonFromPaths<unknown>(['/api/partner/payouts', '/api/v1/partner/payouts'], 2500);
+      if (!isJsonObject(remote) || !Array.isArray(remote.payouts)) throw new Error('Payout payload has invalid shape');
+      const payouts = remote.payouts.filter(isJsonObject).map((payout, index): PayoutTransaction => {
+        const amount = typeof payout.amountMinor === 'number' ? payout.amountMinor / 100 : 0;
+        const provider = String(payout.provider ?? '').toUpperCase();
+        return {
+          id: typeof payout.id === 'string' ? payout.id : `payout-${index}`,
+          amount,
+          fee: 0,
+          netAmount: amount,
+          currency: payout.currency === 'USDT' ? 'USDT' : 'UAH',
+          method: provider.includes('USDT') ? 'USDT_TRC20' : provider.includes('PRIVAT') ? 'PRIVATBANK' : 'MONOBANK',
+          targetAccount: typeof payout.destinationAccount === 'string' ? payout.destinationAccount : '—',
+          targetAccountMasked: typeof payout.destinationAccount === 'string' ? payout.destinationAccount : '—',
+          requestedAt: typeof payout.requestedAt === 'string' ? new Date(payout.requestedAt).toLocaleString('uk-UA') : updatedAt,
+          completedAt: typeof payout.completedAt === 'string' ? new Date(payout.completedAt).toLocaleString('uk-UA') : undefined,
+          status: payout.status === 'PAID' ? 'PAID' : payout.status === 'FAILED' ? 'FAILED' : 'PROCESSING',
+          statusStepIndex: payout.status === 'PAID' ? 6 : 2,
+          auditTrail: [],
+        };
+      });
+      const state = remote.status === 'DEMO_DATA' ? 'DEMO' : 'LIVE';
+      return { data: payouts, state, source: 'SIREN_UA_PARTNER_PAYOUTS', updatedAt, isRealData: state === 'LIVE' };
+    } catch {
+      return { data: null, state: runtimeConfig.apiBaseUrl ? 'NOT_CONNECTED' : 'DEMO', source: 'SIREN_UA_PARTNER_PAYOUTS', updatedAt, isRealData: false };
+    }
   }
 
   /**

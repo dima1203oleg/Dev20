@@ -121,7 +121,7 @@ export default function App() {
         setThreatPayload(response.data);
         setRegions(response.data.regions);
         setAlerts(response.data.alerts);
-        setSceneTrajectories(response.state === 'LIVE' ? response.data.trajectories : []);
+        setSceneTrajectories(response.state === 'LIVE' || response.state === 'DEMO' ? response.data.trajectories : []);
       } else if (response.state !== 'LIVE' && !isDemoMode) {
         setSceneTrajectories([]);
       }
@@ -260,7 +260,8 @@ export default function App() {
   };
 
   const safeRegions = regions || INITIAL_REGIONS;
-  const displayRegions = isDemoMode || threatDataState === 'LIVE'
+  const hasUsableThreatScene = threatDataState === 'LIVE' || threatDataState === 'DEMO';
+  const displayRegions = isDemoMode || hasUsableThreatScene
     ? safeRegions
     : safeRegions.map((region) => ({ ...region, isAlarm: false, threatType: 'none' as ThreatType, startedAt: null, durationMinutes: 0 }));
   const myRegionObj = displayRegions.find((r) => r.id === settings.myRegion) || {
@@ -272,12 +273,18 @@ export default function App() {
 
   const activeAlarmsCount = displayRegions.filter((r) => r.isAlarm).length;
   const currentTimestamp = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-  const currentDataMode = isDemoMode ? 'DEMO_DATA' : threatDataState === 'LIVE' ? 'LIVE' : 'NOT_CONNECTED';
-  const liveScene = currentDataMode === 'LIVE' ? threatPayload?.threatScene : null;
+  const currentDataMode = isDemoMode
+    ? 'DEMO_DATA'
+    : threatDataState === 'LIVE'
+      ? 'LIVE'
+      : threatDataState === 'DEMO'
+        ? 'DEMO_DATA'
+        : 'NOT_CONNECTED';
+  const liveScene = currentDataMode === 'LIVE' || currentDataMode === 'DEMO_DATA' ? threatPayload?.threatScene : null;
 
   const threatSceneModel: ThreatSceneModel = {
-    timestamp: isDemoMode ? currentTimestamp : currentDataMode === 'LIVE' ? threatUpdatedAt : '—',
-    freshness: isDemoMode ? 'STABLE' : currentDataMode === 'LIVE' ? 'REALTIME' : 'DEGRADED',
+    timestamp: isDemoMode || currentDataMode === 'DEMO_DATA' ? (threatUpdatedAt === '—' ? currentTimestamp : threatUpdatedAt) : currentDataMode === 'LIVE' ? threatUpdatedAt : '—',
+    freshness: isDemoMode || currentDataMode === 'DEMO_DATA' ? 'STABLE' : currentDataMode === 'LIVE' ? 'REALTIME' : 'DEGRADED',
     dataMode: currentDataMode,
     activeAlarmsCount,
     criticalRegions: displayRegions.filter((r) => r.isAlarm && (r.threatType === 'ballistic' || r.threatType === 'missile')).map((r) => r.id),
@@ -287,7 +294,7 @@ export default function App() {
       id: settings.myRegion,
       name: myRegionObj.name || 'Одеська область',
       isAlarm: myRegionObj.isAlarm || false,
-      etaMinutes: liveScene?.myRegionStatus.etaMinutes || (myRegionObj.isAlarm && isDemoMode ? 18 : 0),
+      etaMinutes: liveScene?.myRegionStatus.etaMinutes || (myRegionObj.isAlarm && (isDemoMode || currentDataMode === 'DEMO_DATA') ? 18 : 0),
       riskLevel: liveScene?.myRegionStatus.riskLevel || (myRegionObj.isAlarm ? 'HIGH' : 'LOW'),
     },
     partnerModeActive: activeSection === 'NETWORK' || activeSection === 'FINANCE',

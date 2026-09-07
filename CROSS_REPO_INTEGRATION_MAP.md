@@ -50,6 +50,26 @@ This document establishes the verified architectural map, roles, data flows, and
 
 ## 2. API Contract & Data Flow Map
 
+### Verified local integration boundary
+
+Dev20 now dual-reads the canonical Dev15 Express boundary before attempting
+the older `/api/v1` contracts:
+
+| Domain | Canonical Dev15 endpoint | Dev20 adapter | State handling |
+| :--- | :--- | :--- | :--- |
+| Threat status | `/api/threats/status` | `threatServerService` | `DEMO_DATA` remains `DEMO`; never promoted to `LIVE` |
+| Regions | `/api/threats/regions` | `threatServerService` | Region fields are merged onto the verified map geometry |
+| Threat vectors | `/api/threats/live` | `threatServerService` | Lat/lng paths become normalized trajectory view models |
+| Shelters | `/api/threats/shelters` | `shelterService` | Availability is not invented; demo source remains labelled |
+| Partner summary | `/api/partner/dashboard` | `networkService`, `financialService` | Wallet/rank fields are mapped from minor units |
+| Network | `/api/partner/network` | `networkService` | Aggregate L1/L2 response is rendered as aggregate nodes |
+| Ledger | `/api/partner/ledger` | `financialService` | Immutable entries are read-only projections |
+| Payout history | `/api/partner/payouts` | `financialService` | Provider status remains explicit |
+
+For local development, set `SIREN_DEV_PROXY_TARGET=http://127.0.0.1:3100`
+when Dev15 runs on port 3100. The Vite proxy is development-only; production
+must use an authenticated reverse proxy or explicitly configured API origin.
+
 ```
   [ OFFICIAL SOURCES (DSNS, Radar) ]
                  │
