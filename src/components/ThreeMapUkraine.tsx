@@ -121,7 +121,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = isDark ? 1.35 : 1.15;
 
@@ -414,13 +414,15 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
 
     // 9. Animation Render Loop
     let animationFrameId: number;
-    const clock = new THREE.Clock();
+    const clock = new THREE.Timer();
+    clock.connect(document);
     let currentRotX = -0.22;
     let currentRotY = 0.05;
 
-    const animate = () => {
+    const animate = (timestamp?: number) => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      clock.update(timestamp);
+      const elapsedTime = clock.getElapsed();
 
       // Smooth Camera / Group Rotation
       currentRotX += (controlsTargetRef.current.rotX - currentRotX) * 0.06;
@@ -467,6 +469,7 @@ export const ThreeMapUkraine: React.FC<ThreeMapUkraineProps> = ({
       if (renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
+      clock.dispose();
       renderer.dispose();
     };
   }, [regions, trajectories, selectedRegionId, variant, isDark]);
