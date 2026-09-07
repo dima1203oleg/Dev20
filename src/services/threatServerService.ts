@@ -12,6 +12,7 @@ import { RegionData, AlertEvent, ThreatTrajectory, ThreatSceneModel, Shelter, Da
 import { INITIAL_REGIONS, INITIAL_ALERTS_FEED } from '../data/ukraineMapData';
 import { INITIAL_TRAJECTORIES } from '../data/spatialThreatData';
 import { CacheManager } from '../utils/cacheManager';
+import { apiUrl } from '../config/runtime';
 
 export type ThreatServerConnectionStatus = 
   | 'CONNECTED' 
@@ -44,7 +45,7 @@ export interface LiveThreatsPayload {
   isRealData: boolean;
 }
 
-const API_BASE = '/api/v1';
+const API_BASE = apiUrl('/api/v1');
 const CACHE_KEY_THREATS = 'sirenua_threat_payload_cache';
 
 // Verified Shelters registry mapped to regions

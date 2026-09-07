@@ -63,13 +63,15 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
     <div className="w-full my-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (
-          <div 
+          <button
+            type="button"
             key={card.id}
+            aria-label={`Відкрити розділ ${card.title}`}
             onClick={() => {
               if (onNavigateToTab) onNavigateToTab(card.id as DashboardSection);
               playWebAudioSound('click');
             }}
-            className={`rounded-[22px] p-5 border flex flex-col justify-between cursor-pointer group transition-all duration-300 hover:-translate-y-1 ${
+            className={`w-full text-left rounded-[22px] p-5 border flex flex-col justify-between cursor-pointer group transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
               isDark 
                 ? 'bg-[#131C2B] border-[#24344D] text-white hover:border-[#334768] shadow-lg' 
                 : 'bg-white border-[#CBD6E2] text-[#0F172A] hover:border-blue-300 shadow-sm hover:shadow-md'
@@ -104,10 +106,9 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
                 ))}
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
   );
 };
-

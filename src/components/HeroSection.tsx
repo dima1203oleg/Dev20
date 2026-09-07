@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { RegionData, ThreatSceneModel } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
+import { runtimeConfig } from '../config/runtime';
 
 const ThreeMapUkraine = React.lazy(() => import('./ThreeMapUkraine').then((module) => ({
   default: module.ThreeMapUkraine,
@@ -94,7 +95,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="mt-7 lg:mt-5 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
             <button
               onClick={() => {
-                setDownloadNotice('App Store-посилання буде активне після підключення офіційного застосунку.');
+                if (runtimeConfig.appStoreUrl) {
+                  window.open(runtimeConfig.appStoreUrl, '_blank', 'noopener,noreferrer');
+                  return;
+                }
+                setDownloadNotice('App Store-посилання буде активне після публікації офіційного застосунку.');
                 playWebAudioSound('click');
                 window.setTimeout(() => setDownloadNotice(null), 4200);
               }}
@@ -165,6 +170,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <div className="text-[10px] font-bold leading-none">App Store</div>
                   </div>
                 </div>
+                {!runtimeConfig.appStoreUrl && (
+                  <span className={`text-[9px] font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                    Посилання готується
+                  </span>
+                )}
               </div>
             </div>
 

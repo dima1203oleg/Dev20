@@ -193,12 +193,14 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
         </div>
 
         {/* Card 5: Ваша партнерська програма */}
-        <div 
+        <button
+          type="button"
+          aria-label="Відкрити партнерську програму"
           onClick={() => {
             if (onNavigateToNetwork) onNavigateToNetwork();
             playWebAudioSound('click');
           }}
-          className={`rounded-[22px] p-5 border flex flex-col justify-between cursor-pointer group transition-all duration-200 ${
+          className={`w-full text-left rounded-[22px] p-5 border flex flex-col justify-between cursor-pointer group transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white hover:border-[#334768] shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] hover:border-blue-300 shadow-sm'
@@ -236,7 +238,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
               До Platinum: 46 / 200
             </div>
           </div>
-        </div>
+        </button>
 
       </div>
     </div>
