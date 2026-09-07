@@ -21,14 +21,15 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
   const isDark = theme === 'dark';
 
   const devices = [
-    { id: 'tv', name: 'Smart TV', sub: 'Телевізор' },
-    { id: 'laptop', name: 'Ноутбук', sub: 'macOS / Windows' },
-    { id: 'desktop', name: 'Десктоп', sub: 'Персональний' },
-    { id: 'tablet', name: 'Планшет', sub: 'iPad / Android' },
-    { id: 'smartphone', name: 'Смартфон', sub: 'iOS / Android' },
-    { id: 'car', name: 'Auto', sub: 'CarPlay' },
-    { id: 'ar_vr', name: 'AR / VR', sub: 'Шоломи' },
+    { id: 'tv', name: 'Smart TV', sub: 'Телевізор', description: 'Ситуаційний екран для дому та спільного простору.' },
+    { id: 'laptop', name: 'Ноутбук', sub: 'macOS / Windows', description: 'Робочий режим для аналізу подій і історії.' },
+    { id: 'desktop', name: 'Десктоп', sub: 'Персональний', description: 'Повна просторова картина та керування шарами.' },
+    { id: 'tablet', name: 'Планшет', sub: 'iPad / Android', description: 'Touch Spatial Intelligence для роботи з картою руками.' },
+    { id: 'smartphone', name: 'Смартфон', sub: 'iOS / Android', description: 'Персональний район, ризик і найближча дія.' },
+    { id: 'car', name: 'Auto', sub: 'CarPlay', description: 'Мінімальний driver-safe режим і голосові сповіщення.' },
+    { id: 'ar_vr', name: 'AR / VR', sub: 'Шоломи', description: 'Просторовий контекст і розширена аналітика.' },
   ];
+  const selectedDevice = devices[activeDeviceIndex] || devices[2];
 
   return (
     <div className={`siren-panel siren-device-panel w-full rounded-[28px] p-6 sm:p-8 lg:p-4 lg:h-[160px] border relative overflow-hidden my-2 transition-all duration-300 ${
@@ -102,9 +103,12 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
           {/* Labels Below Pedestal */}
           <div className="flex items-center justify-center gap-5 lg:gap-3 mt-2 lg:mt-0 hidden sm:flex flex-wrap">
             {devices.map((device, idx) => (
-              <div 
+              <button
                 key={device.id} 
-                className="flex flex-col items-center text-center cursor-pointer opacity-85 hover:opacity-100 transition-opacity"
+                type="button"
+                aria-pressed={activeDeviceIndex === idx}
+                aria-label={`Показати роль пристрою ${device.name}`}
+                className={`flex flex-col items-center text-center cursor-pointer opacity-85 hover:opacity-100 transition-opacity ${activeDeviceIndex === idx ? 'opacity-100' : ''}`}
                 onClick={() => {
                   setActiveDeviceIndex(idx);
                   playWebAudioSound('click');
@@ -116,15 +120,18 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
                 <span className={`text-[9px] lg:text-[7px] font-semibold mt-0.5 ${isDark ? 'text-slate-400' : 'text-[#5A6A80]'}`}>
                   {device.sub}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
           
           {/* Pagination Dots */}
           <div className="flex items-center gap-1.5 justify-center mt-4 lg:mt-1">
             {devices.map((_, idx) => (
-              <div
+              <button
                 key={idx}
+                type="button"
+                aria-label={`Обрати пристрій ${devices[idx].name}`}
+                aria-pressed={activeDeviceIndex === idx}
                 onClick={() => {
                   setActiveDeviceIndex(idx);
                   playWebAudioSound('click');
@@ -145,6 +152,14 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
             Одна платформа.<br />
             На всіх пристроях.
           </h3>
+
+          <div className={`mt-3 rounded-2xl border px-3 py-2.5 ${
+            isDark ? 'border-[#345562] bg-[#142D37] text-[#B9D8E2]' : 'border-[#D5E4EA] bg-[#F0F7F9] text-[#506A75]'
+          }`} aria-live="polite">
+            <div className="text-[9px] font-black uppercase tracking-[0.12em] opacity-70">Обраний пристрій</div>
+            <div className={`mt-1 text-[13px] font-black ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{selectedDevice.name}</div>
+            <div className="mt-0.5 text-[10px] leading-snug">{selectedDevice.description}</div>
+          </div>
 
           <div className="mt-3.5 lg:mt-2 space-y-2.5 lg:space-y-1.5">
             {[
