@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { ThreatSceneModel } from '../../types';
 import { playWebAudioSound } from '../../utils/sirenAudio';
-import devices3dCutout from '../../assets/images/devices_3d_cutout.png';
-import devices3dCutoutDark from '../../assets/images/devices_3d_cutout_dark.png';
+import devices3dCutout from '../../assets/images/devices_3d_cutout.webp';
+import devices3dCutoutDark from '../../assets/images/devices_3d_cutout_dark.webp';
 
 interface SirenOrbitalDeviceEcosystemProps {
   threatModel?: ThreatSceneModel;
@@ -92,6 +92,8 @@ export const SirenOrbitalDeviceEcosystem: React.FC<SirenOrbitalDeviceEcosystemPr
             <img
               src={isDark ? devices3dCutoutDark : devices3dCutout}
               alt="SIREN UA на всіх пристроях"
+              loading="lazy"
+              decoding="async"
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover object-center drop-shadow-[0_15px_30px_rgba(37,99,235,0.18)]"
             />

@@ -11,8 +11,8 @@ import {
 import { RegionData, ThreatSceneModel, ThreatTrajectory } from '../types';
 import { playWebAudioSound } from '../utils/sirenAudio';
 import { runtimeConfig } from '../config/runtime';
-import ukraine3dCutout from '../assets/images/ukraine_3d_cutout.png';
-import ukraine3dCutoutDark from '../assets/images/ukraine_3d_cutout_dark.png';
+import ukraine3dCutout from '../assets/images/ukraine_3d_cutout.webp';
+import ukraine3dCutoutDark from '../assets/images/ukraine_3d_cutout_dark.webp';
 
 const ThreeMapUkraine = React.lazy(() => import('./ThreeMapUkraine').then((module) => ({
   default: module.ThreeMapUkraine,
@@ -269,6 +269,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <img
                   src={isDark ? ukraine3dCutoutDark : ukraine3dCutout}
                   alt="3D Карта України SIREN UA — дизайн-прев’ю"
+                  decoding="async"
                   referrerPolicy="no-referrer"
                   style={{
                     opacity: isDark ? 0.92 : 0.78,
