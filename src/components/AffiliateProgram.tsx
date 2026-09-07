@@ -61,6 +61,9 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   const [edges, setEdges] = useState<{ from: string; to: string; level: 'L1' | 'L2' }[]>([]);
   const [activities, setActivities] = useState<NetworkActivity[]>([]);
   const [branches, setBranches] = useState<NetworkBranchStats[]>([]);
+  const [graphState, setGraphState] = useState<DataState>('LOADING');
+  const [activityState, setActivityState] = useState<DataState>('LOADING');
+  const [branchState, setBranchState] = useState<DataState>('LOADING');
 
   const summary: NetworkSummary = networkSummary || {
     totalNetworkSize: 2847,
@@ -113,6 +116,17 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   };
   const referralCode = summary.referralCode || 'OLEKSANDR25';
   const referralUrl = summary.referralUrl || 'https://siren.ua/r/OLEKSANDR25';
+  const activePartnerTotal = summary.activeL1Count + summary.activeL2Count;
+  const activeSharePercent = summary.totalNetworkSize > 0
+    ? Math.round((activePartnerTotal / summary.totalNetworkSize) * 100)
+    : 0;
+  const inactivePartnerTotal = Math.max(0, summary.totalNetworkSize - activePartnerTotal);
+  const l1SharePercent = summary.totalNetworkSize > 0
+    ? ((summary.activeL1Count / summary.totalNetworkSize) * 100).toFixed(1)
+    : '0.0';
+  const l2SharePercent = summary.totalNetworkSize > 0
+    ? ((summary.activeL2Count / summary.totalNetworkSize) * 100).toFixed(1)
+    : '0.0';
 
   useEffect(() => {
     networkService.getNetworkSummary().then(res => {
@@ -120,15 +134,18 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
       if (res.data) setNetworkSummary(res.data);
     });
     networkService.getNetworkGraph().then(res => {
+      setGraphState(res.state);
       if (res.data) {
         setPartnerNodes(res.data.nodes);
         setEdges(res.data.edges);
       }
     });
     networkService.getNetworkActivity().then(res => {
+      setActivityState(res.state);
       if (res.data) setActivities(res.data);
     });
     networkService.getBranchStats().then(res => {
+      setBranchState(res.state);
       if (res.data) setBranches(res.data);
     });
   }, []);
@@ -140,11 +157,156 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const partnerList = partnerNodes.filter((node) => node.level !== 'ME');
+  const topPartners = [...partnerList]
+    .sort((a, b) => b.rawEarningsUah - a.rawEarningsUah)
+    .slice(0, 5);
+  const recentReferrals = [...partnerList]
+    .sort((a, b) => {
+      const parseDate = (value: string) => value.split('.').reverse().join('-');
+      return parseDate(b.joinDate).localeCompare(parseDate(a.joinDate));
+    })
+    .slice(0, 5);
+  const graphIsDemo = graphState !== 'LIVE';
+  const activityIsDemo = activityState !== 'LIVE';
+  const branchIsDemo = branchState !== 'LIVE';
+  const partnerDataIsDemo = dataState !== 'LIVE' || graphIsDemo || activityIsDemo || branchIsDemo;
+
+  const tabButtonClass = (tab: typeof activeTab) => `px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+    activeTab === tab
+      ? 'bg-blue-600 text-white shadow-xs'
+      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
+  }`;
+
+  const renderSecondaryTab = () => {
+    if (activeTab === 'TREE') {
+      const l1Nodes = partnerList.filter((node) => node.level === 'L1');
+      const l2Nodes = partnerList.filter((node) => node.level === 'L2');
+      return (
+        <div className="space-y-5">
+          <div className={`rounded-3xl border p-5 ${isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+              <div>
+                <h2 className="text-xl font-black">Дерево партнерської мережі</h2>
+                <p className="text-xs text-slate-500 mt-1">Два фінансові рівні: L1 впливає на ранг, L2 — на мережеву комісію.</p>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2.5 py-1.5 rounded-lg bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">L1 · {summary.activeL1Count.toLocaleString('uk-UA')}</span>
+                <span className="px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300">L2 · {summary.activeL2Count.toLocaleString('uk-UA')}</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-100 bg-slate-50/70'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-sm">L1 · прямі партнери</h3>
+                  <span className="text-xs text-slate-500">{l1Nodes.length ? `${l1Nodes.length} показано` : 'Очікуємо API'}</span>
+                </div>
+                <div className="space-y-2">
+                  {l1Nodes.map((node) => (
+                    <button key={node.id} type="button" onClick={() => setSelectedPartner(node)} className={`w-full flex items-center gap-3 rounded-xl p-2 text-left transition-colors ${isDark ? 'hover:bg-slate-800' : 'hover:bg-white'}`}>
+                      <img src={node.avatar} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      <span className="min-w-0 flex-1"><span className="block text-xs font-bold truncate">{node.name}</span><span className="block text-[10px] text-slate-500">{node.qualifiedL1Count} кваліфікованих L1</span></span>
+                      <span className="text-xs font-black text-blue-600">{node.earnings}</span>
+                    </button>
+                  ))}
+                  {!l1Nodes.length && <p className="text-xs text-slate-500">Дані L1 ще не підключені.</p>}
+                </div>
+              </div>
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-100 bg-slate-50/70'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-sm">L2 · другий рівень</h3>
+                  <span className="text-xs text-slate-500">{l2Nodes.length ? `${l2Nodes.length} показано` : 'Очікуємо API'}</span>
+                </div>
+                <div className="space-y-2">
+                  {l2Nodes.map((node) => (
+                    <button key={node.id} type="button" onClick={() => setSelectedPartner(node)} className={`w-full flex items-center gap-3 rounded-xl p-2 text-left transition-colors ${isDark ? 'hover:bg-slate-800' : 'hover:bg-white'}`}>
+                      <img src={node.avatar} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      <span className="min-w-0 flex-1"><span className="block text-xs font-bold truncate">{node.name}</span><span className="block text-[10px] text-slate-500">{node.parentName || 'Гілка не вказана'}</span></span>
+                      <span className="text-xs font-black text-purple-600">{node.earnings}</span>
+                    </button>
+                  ))}
+                  {!l2Nodes.length && <p className="text-xs text-slate-500">Дані L2 ще не підключені.</p>}
+                </div>
+              </div>
+            </div>
+            <div className={`mt-4 rounded-2xl border p-3 text-xs ${isDark ? 'border-slate-800 bg-slate-950/50 text-slate-400' : 'border-slate-100 bg-slate-50 text-slate-600'}`}>
+              Зв’язків у завантаженому графі: <strong>{edges.length}</strong>. Повний граф відкривається порціями через network API, без передачі тисяч вузлів у браузер.
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'LIST') {
+      return (
+        <div className={`rounded-3xl border p-5 ${isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'}`}>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-xl font-black">Список партнерів</h2>
+              <p className="text-xs text-slate-500 mt-1">Показані вузли, які повернув network API. Відкрийте партнера для деталей.</p>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-slate-500">
+              Рівень
+              <select value={levelFilter} onChange={(event) => setLevelFilter(event.target.value as 'ALL' | 'L1' | 'L2')} className={`px-2.5 py-2 rounded-xl border text-xs font-semibold ${isDark ? 'bg-slate-950 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                <option value="ALL">L1 + L2</option>
+                <option value="L1">Тільки L1</option>
+                <option value="L2">Тільки L2</option>
+              </select>
+            </label>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[620px] text-xs">
+              <thead className={`text-left border-b ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-500'}`}>
+                <tr><th className="py-3 pr-3">Партнер</th><th className="py-3 pr-3">Рівень</th><th className="py-3 pr-3">Статус</th><th className="py-3 pr-3">Кваліфіковані L1</th><th className="py-3 text-right">Внесок</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {partnerList.filter((node) => levelFilter === 'ALL' || node.level === levelFilter).map((node) => (
+                  <tr key={node.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60" onClick={() => setSelectedPartner(node)}>
+                    <td className="py-3 pr-3"><div className="flex items-center gap-2"><img src={node.avatar} alt="" className="w-7 h-7 rounded-full object-cover" referrerPolicy="no-referrer" /><span className="font-bold">{node.name}</span></div></td>
+                    <td className="py-3 pr-3"><span className={node.level === 'L1' ? 'text-cyan-600 font-bold' : 'text-purple-600 font-bold'}>{node.level}</span></td>
+                    <td className="py-3 pr-3"><span className="inline-flex items-center gap-1"><span className={`w-1.5 h-1.5 rounded-full ${node.status === 'ACTIVE' ? 'bg-emerald-500' : node.status === 'NEW' ? 'bg-amber-500' : 'bg-slate-400'}`} />{node.status === 'ACTIVE' ? 'Активний' : node.status === 'NEW' ? 'Новий' : node.status === 'TRIAL' ? 'Trial' : 'Топ'}</span></td>
+                    <td className="py-3 pr-3">{node.qualifiedL1Count}</td>
+                    <td className="py-3 text-right font-black">{node.earnings}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!partnerList.length && <p className="py-8 text-center text-xs text-slate-500">Список партнерів ще не завантажено з API.</p>}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-5">
+        <div className={`rounded-3xl border p-5 ${isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'}`}>
+          <div className="flex items-start justify-between gap-3 mb-5">
+            <div><h2 className="text-xl font-black">Аналітика партнерської мережі</h2><p className="text-xs text-slate-500 mt-1">Конверсія, джерела та внесок гілок — без змішування з фінансовим ledger.</p></div>
+            <BarChart2 className="w-5 h-5 text-blue-500" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+            <div className={`rounded-2xl p-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-50'}`}><div className="text-xs text-slate-500">Конверсія в оплату</div><div className="text-2xl font-black mt-1">{summary.conversionRatePercent}%</div><div className="text-[10px] text-slate-500 mt-1">за даними summary API</div></div>
+            <div className={`rounded-2xl p-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-50'}`}><div className="text-xs text-slate-500">Нові за 30 днів</div><div className="text-2xl font-black mt-1">{summary.new30DaysCount.toLocaleString('uk-UA')}</div><div className="text-[10px] text-slate-500 mt-1">з нормалізованого summary</div></div>
+            <div className={`rounded-2xl p-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-50'}`}><div className="text-xs text-slate-500">Мережевий дохід</div><div className="text-2xl font-black mt-1">₴ {summary.monthlyNetworkIncomeUah.toLocaleString('uk-UA')}</div><div className="text-[10px] text-slate-500 mt-1">період: 30 днів</div></div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div><h3 className="text-sm font-bold mb-3">Джерела трафіку</h3><div className="space-y-3">{summary.trafficSources.map((source) => <div key={source.name}><div className="flex items-center justify-between text-xs mb-1"><span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: source.color }} />{source.name}</span><span className="font-bold">{source.percent}% · {source.count.toLocaleString('uk-UA')}</span></div><div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${source.percent}%`, backgroundColor: source.color }} /></div></div>)}</div></div>
+            <div><h3 className="text-sm font-bold mb-3">Гілки мережі</h3><div className="space-y-3">{branches.map((branch) => <div key={branch.branchId}><div className="flex items-center justify-between text-xs mb-1"><span className="font-semibold truncate pr-2">{branch.branchName}</span><span className="font-bold">{branch.sharePercent}%</span></div><div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.min(branch.sharePercent, 100)}%` }} /></div><div className="flex justify-between text-[10px] text-slate-500 mt-1"><span>L1 {branch.l1Members} · L2 {branch.l2Members}</span><span>Конверсія {branch.conversionPercent}%</span></div></div>)}{!branches.length && <p className="text-xs text-slate-500">Branch analytics ще не підключено.</p>}</div></div>
+          </div>
+        </div>
+        <div className={`rounded-3xl border p-5 ${isDark ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'}`}>
+          <div className="flex items-center justify-between mb-4"><h3 className="text-sm font-bold">Останні події мережі</h3><span className="text-[10px] text-slate-500">{activities.length} у відповіді API</span></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{activities.map((activity) => <div key={activity.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-100 bg-slate-50/70'}`}><img src={activity.partnerAvatar} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" /><div className="min-w-0 flex-1"><div className="text-xs font-bold truncate">{activity.partnerName} · {activity.level}</div><div className="text-[10px] text-slate-500 truncate">{activity.description}</div></div><span className="text-[10px] text-slate-500 whitespace-nowrap">{activity.timestamp}</span></div>)}{!activities.length && <p className="text-xs text-slate-500">Activity stream ще не підключено.</p>}</div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {dataState !== 'LIVE' && (
+      {partnerDataIsDemo && (
         <div className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${isDark ? 'border-amber-900/60 bg-amber-950/20 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
-          Демонстраційні дані партнерської мережі: підключіть partner API, щоб відображати реальні L1/L2, rank та earnings.
+          Демонстраційні або неповні дані партнерської мережі: підключіть partner API, щоб відображати реальні L1/L2, rank, earnings та activity stream.
         </div>
       )}
       
@@ -236,7 +398,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <Users className="w-4 h-4" />
               </div>
               <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                <TrendingUp className="w-2.5 h-2.5" /> +12%
+                <TrendingUp className="w-2.5 h-2.5" /> {dataState === 'LIVE' ? '—' : 'DEMO'}
               </span>
             </div>
             <div className={`text-xs font-medium mt-2 flex items-center ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
@@ -258,7 +420,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <UserPlus className="w-4 h-4" />
               </div>
               <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                <TrendingUp className="w-2.5 h-2.5" /> +8%
+                <TrendingUp className="w-2.5 h-2.5" /> {dataState === 'LIVE' ? '—' : 'DEMO'}
               </span>
             </div>
             <div className={`text-xs font-medium mt-2 flex items-center ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
@@ -280,7 +442,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <Layers className="w-4 h-4" />
               </div>
               <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                <TrendingUp className="w-2.5 h-2.5" /> +15%
+                <TrendingUp className="w-2.5 h-2.5" /> {dataState === 'LIVE' ? '—' : 'DEMO'}
               </span>
             </div>
             <div className={`text-xs font-medium mt-2 flex items-center ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
@@ -302,11 +464,11 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <Sparkles className="w-4 h-4" />
               </div>
               <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                <TrendingUp className="w-2.5 h-2.5" /> +42%
+                <TrendingUp className="w-2.5 h-2.5" /> {dataState === 'LIVE' ? '—' : 'DEMO'}
               </span>
             </div>
             <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Нові за 30 днів</div>
-            <div className="text-2xl font-black mt-0.5">84</div>
+            <div className="text-2xl font-black mt-0.5">{summary.new30DaysCount.toLocaleString('uk-UA')}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Приєдналися</div>
           </div>
 
@@ -321,11 +483,11 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <Percent className="w-4 h-4" />
               </div>
               <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                <TrendingUp className="w-2.5 h-2.5" /> +2.4%
+                <TrendingUp className="w-2.5 h-2.5" /> {dataState === 'LIVE' ? '—' : 'DEMO'}
               </span>
             </div>
             <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Конверсія в оплату</div>
-            <div className="text-2xl font-black mt-0.5">13.8%</div>
+            <div className="text-2xl font-black mt-0.5">{summary.conversionRatePercent}%</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Від активних</div>
           </div>
 
@@ -340,11 +502,11 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <Wallet className="w-4 h-4" />
               </div>
               <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                <TrendingUp className="w-2.5 h-2.5" /> +28%
+                <TrendingUp className="w-2.5 h-2.5" /> {dataState === 'LIVE' ? '—' : 'DEMO'}
               </span>
             </div>
             <div className={`text-xs font-medium mt-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Мережевий дохід</div>
-            <div className="text-2xl font-black mt-0.5">₴ 12 460</div>
+            <div className="text-2xl font-black mt-0.5">₴ {summary.monthlyNetworkIncomeUah.toLocaleString('uk-UA')}</div>
             <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>За 30 днів</div>
           </div>
 
@@ -352,6 +514,23 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
 
       </div>
 
+      <div className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-2 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-100 shadow-xs'}`}>
+        <div className="flex flex-wrap items-center gap-1">
+          {[
+            { id: 'VISUAL', label: 'Візуалізація' },
+            { id: 'TREE', label: 'Дерево' },
+            { id: 'LIST', label: 'Список' },
+            { id: 'ANALYTICS', label: 'Аналітика' },
+          ].map((tab) => (
+            <button key={tab.id} type="button" onClick={() => { setActiveTab(tab.id as typeof activeTab); playWebAudioSound('click'); }} className={tabButtonClass(tab.id as typeof activeTab)}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <span className="text-[10px] text-slate-500 px-2">Виберіть режим перегляду мережі</span>
+      </div>
+
+      {activeTab === 'VISUAL' ? <>
       {/* 2. Middle 3-Column Grid: Traffic Sources (Left) | 3D Node Constellation (Center) | Rank & Top Partners (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         
@@ -364,13 +543,13 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
           }`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold">Джерела трафіку</h3>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline">
+              <button onClick={() => { setActiveTab('ANALYTICS'); playWebAudioSound('click'); }} className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
                 <span>Всі</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
 
-            {/* Donut Chart with Center Total 2 847 */}
+            {/* Donut Chart with Center Total from the normalized summary */}
             <div className="flex items-center justify-center my-3 relative">
               <svg viewBox="0 0 100 100" className="w-32 h-32 transform -rotate-90">
                 {/* TikTok 38% */}
@@ -385,7 +564,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <circle cx="50" cy="50" r="38" fill="none" stroke="#CBD5E1" strokeWidth="12" strokeDasharray="23.9 238.7" strokeDashoffset="-214.8" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                <span className="text-base font-black leading-tight">2 847</span>
+                <span className="text-base font-black leading-tight">{summary.totalNetworkSize.toLocaleString('uk-UA')}</span>
                 <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Всього</span>
               </div>
 
@@ -408,41 +587,15 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
 
             {/* Legend breakdown */}
             <div className="space-y-1.5 text-xs pt-1">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                  <span>TikTok</span>
-                </span>
-                <span className="font-bold">38%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                  <span>Instagram</span>
-                </span>
-                <span className="font-bold">24%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                  <span>YouTube</span>
-                </span>
-                <span className="font-bold">16%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
-                  <span>Telegram</span>
-                </span>
-                <span className="font-bold">12%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                  <span>Інші</span>
-                </span>
-                <span className="font-bold">10%</span>
-              </div>
+              {summary.trafficSources.map((source) => (
+                <div key={source.name} className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: source.color }} />
+                    <span>{source.name}</span>
+                  </span>
+                  <span className="font-bold">{source.percent}%</span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -453,7 +606,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-sm font-bold">Динаміка зростання</h3>
-                <span className="text-xs font-bold text-emerald-500">+490%</span>
+                <span className="text-[10px] font-bold text-amber-500">ДЕМО-ГРАФІК</span>
               </div>
               <span className={`text-[11px] px-2 py-0.5 rounded-lg border ${
                 isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
@@ -490,59 +643,16 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
           isDark ? 'bg-[#090E18] border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-xs'
         }`}>
           
-          {/* Top Control Bar: Tabs & Filter */}
-          <div className="flex flex-wrap items-center justify-between gap-2 z-20">
-            {/* View switcher tabs */}
-            <div className={`p-1 rounded-xl inline-flex items-center gap-1 border ${
-              isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200/60'
-            }`}>
-              {[
-                { id: 'VISUAL', label: 'Візуалізація' },
-                { id: 'TREE', label: 'Дерево' },
-                { id: 'LIST', label: 'Список' },
-                { id: 'ANALYTICS', label: 'Аналітика' },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => {
-                    setActiveTab(t.id as any);
-                    playWebAudioSound('click');
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === t.id
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Level Filter & Controls */}
-            <div className="flex items-center gap-2">
-              <select 
-                value={levelFilter}
-                onChange={(e) => setLevelFilter(e.target.value as any)}
-                className={`text-xs font-semibold px-2.5 py-1 rounded-lg border outline-none cursor-pointer ${
-                  isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}
-              >
-                <option value="ALL">Рівні: L1 + L2</option>
-                <option value="L1">Тільки L1</option>
-                <option value="L2">Тільки L2</option>
-              </select>
-
-              <button 
-                onClick={() => setIsRotating(!isRotating)}
-                className={`p-1.5 rounded-lg border ${
-                  isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
-                }`}
-                title="Обертання сузір'я"
-              >
-                <RotateCw className={`w-3.5 h-3.5 ${isRotating ? 'animate-spin-slow' : ''}`} />
-              </button>
-            </div>
+          {/* Visual controls: level filter and rotation */}
+          <div className="flex items-center justify-end gap-2 z-20">
+            <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value as 'ALL' | 'L1' | 'L2')} className={`text-xs font-semibold px-2.5 py-1 rounded-lg border outline-none cursor-pointer ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+              <option value="ALL">Рівні: L1 + L2</option>
+              <option value="L1">Тільки L1</option>
+              <option value="L2">Тільки L2</option>
+            </select>
+            <button type="button" onClick={() => setIsRotating(!isRotating)} className={`p-1.5 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`} title="Обертання сузір'я">
+              <RotateCw className={`w-3.5 h-3.5 ${isRotating ? 'animate-spin-slow' : ''}`} />
+            </button>
           </div>
 
           {/* Legend Row (1:1 with Screenshot 1) */}
@@ -627,7 +737,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                       </div>
                       <div className="text-center mt-1">
                         <div className={`text-xs font-black leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{node.name}</div>
-                        <div className="text-[10px] text-blue-500 font-bold">Gold Partner • 20%</div>
+                        <div className="text-[10px] text-blue-500 font-bold">{summary.currentTier.badgeLabel} • {summary.currentTier.l1Percent}%</div>
                       </div>
                     </div>
                   ) : (
@@ -785,35 +895,29 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
           }`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold">Топ-партнери у мережі</h3>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline">
+              <button onClick={() => { setActiveTab('LIST'); setLevelFilter('ALL'); playWebAudioSound('click'); }} className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
                 <span>Всі</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
 
             <div className="space-y-2.5">
-              {[
-                { rank: 1, name: 'Марія К.', level: 'L1 • 284 людей', earnings: '₴ 4 230', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80', top: true },
-                { rank: 2, name: 'Ігор С.', level: 'L1 • 192 людини', earnings: '₴ 3 950', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80' },
-                { rank: 3, name: 'Анна В.', level: 'L1 • 176 людей', earnings: '₴ 3 120', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80' },
-                { rank: 4, name: 'Дмитро Л.', level: 'L2 • 148 людей', earnings: '₴ 2 460', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80' },
-                { rank: 5, name: 'Олена П.', level: 'L2 • 132 людини', earnings: '₴ 2 180', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80' },
-              ].map((p) => (
-                <div key={p.rank} className="flex items-center justify-between text-xs">
+              {topPartners.map((p, index) => (
+                <div key={p.id} onClick={() => setSelectedPartner(p)} className="flex items-center justify-between text-xs cursor-pointer rounded-xl p-1 -mx-1 hover:bg-slate-50 dark:hover:bg-slate-800/60">
                   <div className="flex items-center gap-2.5">
                     <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
-                      p.rank === 1 
+                      index === 0
                         ? 'bg-amber-100 text-amber-800' 
                         : (isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600')
                     }`}>
-                      {p.rank}
+                      {index + 1}
                     </span>
                     <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200">
                       <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     </div>
                     <div>
                       <div className="font-bold leading-tight">{p.name}</div>
-                      <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{p.level}</div>
+                      <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{p.level} · {p.peopleCount} людей</div>
                     </div>
                   </div>
                   <div className="font-black text-slate-900 dark:text-white">
@@ -821,6 +925,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                   </div>
                 </div>
               ))}
+              {!topPartners.length && <p className="text-xs text-slate-500">Топ партнерів ще не завантажено з API.</p>}
             </div>
           </div>
 
@@ -838,21 +943,15 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold">Останні реферали</h3>
-              <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline">
+              <button onClick={() => { setActiveTab('LIST'); setLevelFilter('ALL'); playWebAudioSound('click'); }} className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer">
                 <span>Всі</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
 
             <div className="space-y-2.5 text-xs">
-              {[
-                { name: 'Ірина М.', level: 'L1', date: '02.09.2026', status: 'Активний', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80' },
-                { name: 'Сергій Т.', level: 'L2', date: '01.09.2026', status: 'Новий', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80' },
-                { name: 'Катерина В.', level: 'L1', date: '31.08.2026', status: 'Активний', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80' },
-                { name: 'Максим Д.', level: 'L2', date: '30.08.2026', status: 'Неактивний', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80' },
-                { name: 'Олена С.', level: 'L1', date: '28.08.2026', status: 'Активний', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80' },
-              ].map((r, i) => (
-                <div key={i} className="flex items-center justify-between">
+              {recentReferrals.map((r) => (
+                <div key={r.id} onClick={() => setSelectedPartner(r)} className="flex items-center justify-between cursor-pointer rounded-xl p-1 -mx-1 hover:bg-slate-50 dark:hover:bg-slate-800/60">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full overflow-hidden border border-slate-200">
                       <img src={r.avatar} alt={r.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -864,17 +963,18 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                   }`}>
                     {r.level}
                   </span>
-                  <span className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{r.date}</span>
+                  <span className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{r.joinDate}</span>
                   <span className={`text-[11px] font-semibold flex items-center gap-1 ${
-                    r.status === 'Активний' ? 'text-emerald-500' : r.status === 'Новий' ? 'text-blue-500' : 'text-slate-400'
+                    r.status === 'ACTIVE' ? 'text-emerald-500' : r.status === 'NEW' ? 'text-blue-500' : 'text-slate-400'
                   }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${
-                      r.status === 'Активний' ? 'bg-emerald-500' : r.status === 'Новий' ? 'bg-blue-500' : 'bg-slate-400'
+                      r.status === 'ACTIVE' ? 'bg-emerald-500' : r.status === 'NEW' ? 'bg-blue-500' : 'bg-slate-400'
                     }`} />
-                    {r.status}
+                    {r.status === 'ACTIVE' ? 'Активний' : r.status === 'NEW' ? 'Новий' : r.status === 'TRIAL' ? 'Trial' : 'Топ'}
                   </span>
                 </div>
               ))}
+              {!recentReferrals.length && <p className="text-xs text-slate-500">Останні реферали ще не завантажені з API.</p>}
             </div>
           </div>
         </div>
@@ -886,15 +986,15 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
           <div>
             <h3 className="text-sm font-bold mb-3">Активність партнерів</h3>
             
-            {/* Donut Chart: 68% */}
+            {/* Donut Chart: derived from the normalized network summary */}
             <div className="flex items-center justify-center my-2 relative">
               <svg viewBox="0 0 100 100" className="w-28 h-28 transform -rotate-90">
                 <circle cx="50" cy="50" r="38" fill="none" stroke={isDark ? '#1E293B' : '#F1F5F9'} strokeWidth="12" />
                 <circle cx="50" cy="50" r="38" fill="none" stroke="#2563EB" strokeWidth="12" strokeDasharray="162.3 238.7" strokeDashoffset="0" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                <span className="text-lg font-black leading-tight">68%</span>
-                <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>931</span>
+                <span className="text-lg font-black leading-tight">{activeSharePercent}%</span>
+                <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{activePartnerTotal.toLocaleString('uk-UA')}</span>
                 <span className={`text-[9px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Активних</span>
               </div>
             </div>
@@ -902,15 +1002,15 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             <div className="space-y-1 text-xs pt-1">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Активні</span>
-                <span className="font-bold">931</span>
+                <span className="font-bold">{activePartnerTotal.toLocaleString('uk-UA')}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> Нові</span>
-                <span className="font-bold">84</span>
+                <span className="font-bold">{summary.new30DaysCount.toLocaleString('uk-UA')}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-300" /> Неактивні</span>
-                <span className="font-bold">1 916</span>
+                <span className="font-bold">{inactivePartnerTotal.toLocaleString('uk-UA')}</span>
               </div>
             </div>
           </div>
@@ -919,7 +1019,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             isDark ? 'bg-emerald-950/50 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
           }`}>
             <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Активність мережі зросла на 28% за останні 30 днів.</span>
+            <span>{dataState === 'LIVE' ? 'Порівняльний тренд очікує analytics API.' : 'Демонстраційний тренд: підключіть analytics API для фактичної динаміки.'}</span>
           </div>
         </div>
 
@@ -936,7 +1036,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
                 <circle cx="50" cy="50" r="38" fill="none" stroke="#38BDF8" strokeWidth="12" strokeDasharray="20.7 238.7" strokeDashoffset="-218" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                <span className="text-base font-black leading-tight">2 847</span>
+                <span className="text-base font-black leading-tight">{summary.totalNetworkSize.toLocaleString('uk-UA')}</span>
                 <span className={`text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Всього</span>
               </div>
             </div>
@@ -944,11 +1044,11 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
             <div className="space-y-1.5 text-xs pt-1">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-cyan-400" /> L1</span>
-                <span className="font-bold">247 (8.7%)</span>
+                <span className="font-bold">{summary.activeL1Count.toLocaleString('uk-UA')} ({l1SharePercent}%)</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500" /> L2</span>
-                <span className="font-bold">2 600 (91.3%)</span>
+                <span className="font-bold">{summary.activeL2Count.toLocaleString('uk-UA')} ({l2SharePercent}%)</span>
               </div>
             </div>
           </div>
@@ -999,6 +1099,9 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
         </div>
 
       </div>
+
+      </>
+      : renderSecondaryTab()}
 
       {/* Partner Detail Modal */}
       {selectedPartner && (

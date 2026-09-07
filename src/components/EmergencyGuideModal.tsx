@@ -185,13 +185,13 @@ export const EmergencyGuideModal: React.FC<EmergencyGuideModalProps> = ({ isOpen
                       : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:bg-slate-950'
                   }`}
                 >
-                  <button className="mt-0.5 text-emerald-400">
+                  <span className="mt-0.5 text-emerald-400" aria-hidden="true">
                     {item.checked ? (
                       <CheckSquare className="w-4 h-4 text-emerald-400" />
                     ) : (
                       <Square className="w-4 h-4 text-slate-600" />
                     )}
-                  </button>
+                  </span>
 
                   <div className="flex-1">
                     <h5 className={`text-xs font-bold ${item.checked ? 'text-slate-100 line-through opacity-75' : 'text-slate-200'}`}>
