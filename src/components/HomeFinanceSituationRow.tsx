@@ -58,9 +58,11 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
   const unavailable = effectiveDataState === 'NOT_CONNECTED';
 
   return (
-    <div className="w-full my-0 space-y-2">
+    <div className={`w-full my-0 rounded-[24px] border p-3 lg:p-3 ${
+      isDark ? 'bg-[#10232B]/80 border-[#2D4A55]' : 'bg-white/70 border-[#D9E2E8]'
+    }`}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-1">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-1 pb-2">
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h2 className={`text-xl sm:text-[22px] font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
@@ -86,9 +88,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
       </div>
 
       {/* Cards Grid */}
-      <div className={`rounded-[24px] border p-3 lg:p-2.5 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 ${
-        isDark ? 'bg-[#10232B]/80 border-[#2D4A55]' : 'bg-white/70 border-[#D9E2E8]'
-      }`}>
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
         
         {/* Card 1: Зароблено */}
         <div className={`rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
