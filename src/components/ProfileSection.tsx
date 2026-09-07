@@ -110,7 +110,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const displayFirstName = profile?.firstName || (profileUnavailable || profileLoading ? '—' : 'Демо');
   const displayLastName = profile?.lastName || (profileUnavailable || profileLoading ? '—' : 'користувач');
   const displayPartnerId = profile?.partnerId || '—';
-  const displayCode = profile?.partnerCode || '—';
+  const displayCode = profileState === 'LIVE' ? (profile?.partnerCode || '—') : profileState === 'DEMO' ? 'DEMO-КОД' : '—';
   const displayEmail = profile?.email || 'Дані недоступні';
   const displayPhone = profile?.phone || 'Дані недоступні';
   const displayCity = profile?.city || '—';
@@ -123,7 +123,9 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const displayRemainingL1 = profile?.remainingL1ToNextRank ?? 0;
   const displayRankProgress = profile?.rankProgressPercent ?? 0;
   const displayAvatar = profile?.avatarUrl || '';
-  const displayReferralUrl = profile?.partnerCode ? `https://siren.ua/r/${profile.partnerCode}` : '';
+  const liveReferralUrl = profileState === 'LIVE' && profile?.partnerCode ? `https://siren.ua/r/${profile.partnerCode}` : '';
+  const displayReferralUrl = liveReferralUrl || (profileState === 'DEMO' ? 'Посилання недоступне в DEMO' : 'Посилання недоступне');
+  const partnerActionsAvailable = Boolean(liveReferralUrl);
   const isKycLive = kycState === 'LIVE';
   const isSecurityLive = securityState === 'LIVE';
   const kycStatusLabel = isKycLive && kycData?.status === 'VERIFIED' ? 'Підтверджено' : 'Не підтверджено';
@@ -132,7 +134,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const accountVerificationLabel = profileState === 'LIVE' && isKycLive && kycData?.status === 'VERIFIED' ? 'Верифікований' : profileState === 'DEMO' ? 'DEMO-профіль' : 'Не підтверджено';
 
   const handleCopyCode = () => {
-    if (!profile?.partnerCode) return;
+    if (!partnerActionsAvailable || !profile?.partnerCode) return;
     navigator.clipboard.writeText(displayCode);
     setCopiedCode(true);
     playWebAudioSound('click');
@@ -140,8 +142,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   };
 
   const handleCopyLink = () => {
-    if (!displayReferralUrl) return;
-    navigator.clipboard.writeText(displayReferralUrl);
+    if (!liveReferralUrl) return;
+    navigator.clipboard.writeText(liveReferralUrl);
     setCopiedLink(true);
     playWebAudioSound('click');
     setTimeout(() => setCopiedLink(false), 2000);
@@ -486,7 +488,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               </div>
               <button 
                 onClick={handleCopyLink}
-                disabled={!displayReferralUrl}
+                disabled={!partnerActionsAvailable}
+                title={partnerActionsAvailable ? 'Поділитися referral-посиланням' : 'Referral API не підключений'}
                 className="text-xs text-blue-500 font-semibold flex items-center gap-1 hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Поділитися</span>
@@ -500,7 +503,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                   isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
                 }`}>
                   <span className="text-sm font-mono font-bold">{displayCode}</span>
-                  <button onClick={handleCopyCode} disabled={!profile?.partnerCode} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={handleCopyCode} disabled={!partnerActionsAvailable} title={partnerActionsAvailable ? 'Скопіювати referral-код' : 'Referral API не підключений'} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                     {copiedCode ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
@@ -512,7 +515,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                   isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
                 }`}>
                   <span className="text-xs font-mono truncate mr-2">{displayReferralUrl}</span>
-                  <button onClick={handleCopyLink} disabled={!displayReferralUrl} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={handleCopyLink} disabled={!partnerActionsAvailable} title={partnerActionsAvailable ? 'Скопіювати referral-посилання' : 'Referral API не підключений'} className="p-1 text-slate-400 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                     {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
@@ -521,21 +524,27 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               <div className="flex items-center justify-between gap-2 pt-2">
                 <button
                   onClick={handleCopyLink}
-                  className="flex-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center gap-1.5"
+                  disabled={!partnerActionsAvailable}
+                  title={partnerActionsAvailable ? 'Скопіювати referral-посилання' : 'Referral API не підключений'}
+                  className="flex-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   <span>Копіювати</span>
                 </button>
                 <button
                   onClick={handleCopyLink}
-                  className="flex-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center gap-1.5"
+                  disabled={!partnerActionsAvailable}
+                  title={partnerActionsAvailable ? 'Поділитися referral-посиланням' : 'Referral API не підключений'}
+                  className="flex-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Share2 className="w-3.5 h-3.5" />
                   <span>Поділитися</span>
                 </button>
                 <button
                   onClick={handleCopyLink}
-                  className="flex-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center gap-1.5"
+                  disabled={!partnerActionsAvailable}
+                  title={partnerActionsAvailable ? 'Завантажити QR referral-посилання' : 'Referral API не підключений'}
+                  className="flex-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Завантажити QR</span>
